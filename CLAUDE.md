@@ -26,6 +26,9 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 - Feature folders in every layer: `Appointments/`, `Patients/`, `Doctors/`, `Clinics/`, `Auth/`. New feature = new folder + spec.
 - Controllers (`Api/Controllers`, inherit `ApiControllerBase` → authenticated by default) are thin: bind → call an Application
   service → return. No business logic or EF queries in `Api`. Template in `.claude/skills/new-feature/SKILL.md` step 6.
+  Controllers hold **endpoints only**: no private/protected helper methods or constants (ArchitectureTests).
+  - Logic and mapping go in the Application service, which keeps its own private helpers.
+  - HTTP-only plumbing (cookies, headers) goes in an Api helper class next to its feature, e.g. `Api/Auth/RefreshTokenCookie`.
 - Background jobs: Hangfire job classes in Infrastructure, registered in `BackgroundJobs/BackgroundJobsSetup.cs` (ADR-0014).
 - `Program.cs` only composes: `builder.AddCoreConfiguration().AddApiConfiguration().AddSecurityConfiguration()…`, then the
   middleware order. Never register services inline in `Program.cs`:

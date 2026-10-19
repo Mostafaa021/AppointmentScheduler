@@ -31,6 +31,8 @@ Data access (ADR-0016):
 - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`.
 - Unit-test the use-case order with fakes; integration tests cover the real queries and constraints.
 
+Controllers hold endpoints only (no private helpers or constants): logic goes in the Application service, HTTP-only plumbing in an
+Api helper class like `Api/Auth/RefreshTokenCookie`.
 Registrations: layer services in that layer's `DependencyInjection.cs`; host concerns in `Api/Configuration/<Concern>Configuration.cs`
 as an `Add<Concern>Configuration()` extension — `Program.cs` only chains them and orders middleware.
 

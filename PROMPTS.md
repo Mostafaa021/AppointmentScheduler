@@ -160,3 +160,13 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
 - **Rejected:** a generic `IRepository<T>` exposing `IQueryable` (leaks EF include/tracking semantics back into Application).
   Wrapping Identity's `UserManager` in another repository was also rejected: it already is one. The Identity adapters keep
   their explicit transactions.
+
+### P-16 · Controllers hold endpoints only
+> "Let the controller hold only the endpoints; private methods can go to the application layers with private helpers, to keep
+> the controller clean."
+
+- **Accepted:** `AuthController` loses its cookie constants and `Issue`/`CookieOptions` helpers, and every controller is
+  endpoints-only. `ControllerConventionTests` (architecture tests) fail on any non-public method or constant in a controller.
+- **Changed:** the refresh-cookie code went to `Api/Auth/RefreshTokenCookie`, not to Application. Writing a cookie needs
+  `HttpResponse`, and Application may not reference ASP.NET Core (architecture rule). Use-case logic and its private helpers
+  were already in the Application services.

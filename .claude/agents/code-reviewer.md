@@ -13,6 +13,11 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
 - Correctness: edge cases (time boundaries, DST, cancelled rows, concurrency, null/empty), error codes match the spec.
 - Layer rule: run `dotnet test tests/AppointmentScheduler.ArchitectureTests`.
 - Conventions: `TimeProvider`, UTC, thin controllers, feature folders, async + `CancellationToken` passed.
+- Controllers hold endpoints only. Flag any private/protected method or constant:
+  - logic goes in the Application service;
+  - HTTP plumbing goes in an Api helper class (e.g. `Api/Auth/RefreshTokenCookie`).
+- Controllers: endpoints only — flag any private/protected method or constant (logic → Application service, HTTP plumbing →
+  Api helper class).
 - Contract (ADR-0015): actions return `ApiResponse<T>`; every status the action can produce has a `[ProducesResponseType]`
   (and none it can't); errors thrown as `SchedulerException` with an `ErrorCodes` constant — flag any string-literal code or
   a new code missing from `ErrorCodes`; `LogDetail` ids only; no `ModelState.IsValid` checks in actions.

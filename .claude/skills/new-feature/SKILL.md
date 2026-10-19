@@ -51,6 +51,12 @@ description: Single-session, spec-first checklist for adding a feature end to en
    }
    ```
    Reads: `return OkResponse(dto);` — with a short `message` for mutations (`OkResponse(dto, "Appointment cancelled.")`).
+   Controllers hold endpoints only: no private helpers or constants. Put the logic in the Application service, and
+   HTTP-only plumbing (cookies, headers) in an Api helper class (e.g. `Api/Auth/RefreshTokenCookie`). Enforced by
+   `ControllerConventionTests`.
+   Controllers hold endpoints only: no private helpers or constants. Put the logic in the Application service, and
+   HTTP-only plumbing (cookies, headers) in an Api helper class (e.g. `Api/Auth/RefreshTokenCookie`). Enforced by
+   `ControllerConventionTests`.
 7. **Web** — `web/src/app/core/api/` service + model typed with the `data` DTO (the `apiResponseInterceptor` unwraps it),
    `web/src/app/features/<feature>/` component + spec; branch on `error.errorCode`, flush envelope bodies in specs.
 8. **Verify** — `/verify`.

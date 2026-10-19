@@ -22,6 +22,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 - Data access through repositories (`IAppointmentRepository`, `IDoctorRepository`, `IPatientRepository`,
   `IAuditRecordRepository`) and `IUnitOfWork` (ADR-0016); `IAppDbContext` removed and Application no longer references EF
   Core (enforced by ArchitectureTests). First Application unit tests with fakes (`AppointmentServiceTests`).
+- Controllers hold endpoints only: refresh-cookie handling moved from `AuthController` to `Api/Auth/RefreshTokenCookie`;
+  `ControllerConventionTests` forbid private helpers and constants in controllers.
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
 ### Security

@@ -1,3 +1,4 @@
+using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Contracts;
 using AppointmentScheduler.Application.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -9,9 +10,6 @@ namespace AppointmentScheduler.Api.Controllers;
 [Tags("Auth")]
 public sealed class AuthController(IAuthService auth) : ApiControllerBase
 {
-    private const string RefreshCookie = "refresh_token";
-    private const string RefreshCookiePath = "/api/v1/auth";
-
     [HttpPost("auth/login")]
     [AllowAnonymous]
     [EndpointSummary("Sign in. 400 VALIDATION_FAILED, 401 INVALID_CREDENTIALS, 423 ACCOUNT_LOCKED. Sets the refresh_token cookie.")]
@@ -23,7 +21,8 @@ public sealed class AuthController(IAuthService auth) : ApiControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await auth.LoginAsync(request, cancellationToken);
-        return Issue(result, "Signed in.");
+        RefreshTokenCookie.Append(Response, result);
+        return OkResponse(result.Response, "Signed in.");
     }
 
     [HttpPost("auth/refresh")]
@@ -32,8 +31,9 @@ public sealed class AuthController(IAuthService auth) : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Refresh(CancellationToken cancellationToken = default)
     {
-        var result = await auth.RefreshAsync(Request.Cookies[RefreshCookie], cancellationToken);
-        return Issue(result, "Session refreshed.");
+        var result = await auth.RefreshAsync(RefreshTokenCookie.Read(Request), cancellationToken);
+        RefreshTokenCookie.Append(Response, result);
+        return OkResponse(result.Response, "Session refreshed.");
     }
 
     // 204 without a body: there is nothing to return, and the cookie deletion is the whole response.
@@ -42,8 +42,8 @@ public sealed class AuthController(IAuthService auth) : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken = default)
     {
-        await auth.LogoutAsync(Request.Cookies[RefreshCookie], cancellationToken);
-        Response.Cookies.Delete(RefreshCookie, CookieOptions(expires: null));
+        await auth.LogoutAsync(RefreshTokenCookie.Read(Request), cancellationToken);
+        RefreshTokenCookie.Delete(Response);
         return NoContent();
     }
 
@@ -55,20 +55,4 @@ public sealed class AuthController(IAuthService auth) : ApiControllerBase
         var me = await auth.GetMeAsync(cancellationToken);
         return OkResponse(me);
     }
-
-    private OkObjectResult Issue(AuthResult result, string message)
-    {
-        Response.Cookies.Append(RefreshCookie, result.RefreshToken, CookieOptions(result.RefreshTokenExpiresAt));
-        return OkResponse(result.Response, message);
-    }
-
-    // Secure in every environment: Chromium/Firefox treat http://localhost as a secure context (spec 004 Design).
-    private static CookieOptions CookieOptions(DateTimeOffset? expires) => new()
-    {
-        HttpOnly = true,
-        Secure = true,
-        SameSite = SameSiteMode.Strict,
-        Path = RefreshCookiePath,
-        Expires = expires,
-    };
 }
