@@ -50,7 +50,7 @@ Plan: [`.claude/plans/009-sprint-3-reliability.md`](../.claude/plans/009-sprint-
 | S-30 | Idempotency filter + records table + purge job + Angular key interceptor | 009 | Done |
 | S-31 | ETag / If-Match on appointments | 003 | Refined |
 | S-32 | Rate limiting policies (Polly pipelines) | 000 | Done |
-| S-33 | API versioning, output caching, Npgsql retry | 000 | Versioning done (ADR-0017); caching + retry Todo |
+| S-33 | API versioning; DB outage → 503 (no retry, ADR-0008) | 000 | Done — versioning (ADR-0017); DB: atomic unit of work, transient failure → 503 `SERVICE_UNAVAILABLE`, no retry (user decision); output caching won't do for now (availability must be live) |
 
 ## Sprint 4 — M4 Domain expansion
 | ID | Story | Spec | Status |

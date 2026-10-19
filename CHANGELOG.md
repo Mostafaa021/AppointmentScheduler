@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 
 ## [Unreleased]
 ### Added
+- 503 `SERVICE_UNAVAILABLE` + `Retry-After: 5` when the database fails transiently (S-33, ADR-0008 revised): no server-side
+  retry and no Polly for the database. The atomic unit of work guarantees nothing is half-saved, and the client retries with
+  the same `Idempotency-Key`. Polly stays for other services (SMTP, outbound HTTP) and the rate limits.
 - Rate limiting with Polly v8 (S-32, ADR-0009 revised, ADR-0008 "Polly only"): named pipelines `rate-limit:global` (200
   concurrent), `reads` (300/min sliding), `writes` (burst 10, 30/min token bucket) per user or IP, and `auth` (5/min per IP on
   login/refresh). Rejections → 429 `RATE_LIMITED` + `Retry-After`, counted in `scheduler.rate_limit.rejected`.

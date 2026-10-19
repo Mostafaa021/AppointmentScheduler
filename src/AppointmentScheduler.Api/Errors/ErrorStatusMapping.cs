@@ -8,6 +8,7 @@ namespace AppointmentScheduler.Api.Errors;
 internal static class ErrorStatusMapping
 {
     public const string ServerErrorMessage = "An unexpected error occurred. Quote the traceId when reporting it.";
+    public const string ServiceUnavailableMessage = "The service is temporarily unavailable. Please retry shortly.";
 
     public static (string Code, string Message) For(int status, string? problemType = null) => status switch
     {
@@ -19,6 +20,7 @@ internal static class ErrorStatusMapping
         StatusCodes.Status404NotFound => (ApiErrorCodes.RouteNotFound, "No endpoint matches this URL."),
         StatusCodes.Status405MethodNotAllowed => (ApiErrorCodes.MethodNotAllowed, "This endpoint does not support the HTTP method."),
         StatusCodes.Status415UnsupportedMediaType => (ApiErrorCodes.UnsupportedMediaType, "Send the request body as application/json."),
+        StatusCodes.Status503ServiceUnavailable => (ApiErrorCodes.ServiceUnavailable, ServiceUnavailableMessage),
         >= 500 => (ApiErrorCodes.InternalError, ServerErrorMessage),
         _ => (ApiErrorCodes.BadRequest, "The request could not be processed."),
     };

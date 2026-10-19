@@ -19,4 +19,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 006 | [Host config as extension blocks + versioning, observability, messaging](006-host-config-versioning-otel-messaging.md) | Done | S-33 (part), S-50 (wiring), S-60 (part), ADR-0007/0010/0017 |
 | 007 | [ApiResponse in the house template shape](007-api-response-house-template.md) | Done | ADR-0015 |
 | 008 | [RabbitMQ local credentials guest/guest](008-rabbitmq-guest-credentials.md) | Done | ADR-0007 |
-| 009 | [Sprint 3 — M3 reliability](009-sprint-3-reliability.md) | In progress | S-30, S-32, S-33; spec 009, ADR-0006/0009 |
+| 009 | [Sprint 3 — M3 reliability](009-sprint-3-reliability.md) | Done (S-31 set aside) | S-30, S-32, S-33; spec 009, ADR-0006/0009 |

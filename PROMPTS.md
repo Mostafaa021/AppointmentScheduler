@@ -296,3 +296,14 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   - **Tests:** the main factory runs the middleware with huge limits. A low-limit factory gets one fixture per test class, so
     the login-limit test doesn't consume the other tests' budget.
   - **Verified live:** 5 logins → 200, the 6th → 429 with `Retry-After: 60`; health stays 200.
+- **Clarification (2026-10-20):** "don't rely on Polly with database; Polly only when I communicate with another service; with
+  the database I depend on atomicity and EF Core (unit of work and repository)". The user chose **no retry at all** over EF's
+  built-in `EnableRetryOnFailure`. The Polly DB pipeline, execution strategy and circuit breaker were dropped from plan 009.
+- **S-33 (DB outage → 503):**
+  - `GlobalExceptionHandler` walks the inner-exception chain for a BCL `DbException { IsTransient: true }`, so the Api needs
+    no Npgsql reference. Queries throw it directly; `SaveChanges` wraps it in `DbUpdateException`.
+  - The answer is 503 `SERVICE_UNAVAILABLE` + `Retry-After: 5`. The log holds the exception type only, never the provider
+    message. A non-transient DB error stays a 500.
+  - The four `BeginTransactionAsync` blocks and `UnitOfWork` are unchanged: they are already atomic.
+  - **Tests:** throwing endpoints on the test-only `ErrorTestController` (transient, wrapped in `DbUpdateException`,
+    non-transient).

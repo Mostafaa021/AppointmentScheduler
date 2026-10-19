@@ -22,9 +22,9 @@ the IP.
 - **Exempt:** `/health` is never limited.
 - **Config:** limits come from configuration, so tests, k6 runs and production can differ. `RateLimiting:Enabled=false` removes
   the middleware.
-- **Why Polly here:** the same pipeline model as the database and SMTP resilience, so one library, one telemetry and one way to
-  tune everything (ADR-0008). Partitioned limiters (`System.Threading.RateLimiting`) keep per-user state bounded inside each
-  pipeline; Polly's context carries the partition key.
+- **Why Polly here:** the same pipeline model as the SMTP resilience, so one library, one telemetry and one way to tune both
+  (ADR-0008; the database deliberately has no Polly pipeline). Partitioned limiters (`System.Threading.RateLimiting`) keep
+  per-user state bounded inside each pipeline; Polly's context carries the partition key.
 
 ## Consequences
 + Protects login from brute force (with the account lockout) and the database from bursts; one busy user can't starve others.

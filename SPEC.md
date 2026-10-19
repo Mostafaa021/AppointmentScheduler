@@ -90,6 +90,7 @@ Reads without a specific message say "Request completed successfully".
 | 409 | `DOCTOR_CONFLICT`, `PATIENT_CONFLICT`, `CONCURRENCY_CONFLICT`, `EMAIL_TAKEN` |
 | 422 | `APPOINTMENT_IN_PAST`, `INVALID_SLOT`, `APPOINTMENT_NOT_MODIFIABLE` |
 | 500 | `INTERNAL_ERROR` — generic message only; details go to the server log with the `traceId` |
+| 503 | `SERVICE_UNAVAILABLE` + `Retry-After: 5` — the database is unreachable; nothing was half-saved (atomic unit of work, no server-side retry — ADR-0008); retry, with the same `Idempotency-Key` for writes |
 
 Expected failures are `SchedulerException` subclasses that carry their own `ErrorCode`, `StatusCode` and a log-only
 `LogDetail` (ids only). All of them become HTTP responses in one place, `Api/Errors/GlobalExceptionHandler.cs`; anything else

@@ -1,8 +1,9 @@
 # 009 — Sprint 3: M3 reliability
 
-- Status: **In progress** · Approved 2026-10-19 · Backlog S-30, S-32, S-33 (S-31 set aside) · Spec 009 · ADR-0006, 0008, 0009
+- Status: **Done** (S-31 set aside) · Approved 2026-10-19 · Backlog S-30, S-32, S-33 (S-31 set aside) · Spec 009 · ADR-0006, 0008, 0009
 - Changes: 2026-10-19 — S-32 and S-33 use Polly v8 for every resilience pattern (rate limiting, retry, circuit breaker, timeout).
-- Progress: Step P ☑ · Step 0 ☑ · S-30 ☑ · S-32 ☑ · S-33 ☐ (ticked as each step is verified; commits only when the user says so)
+  2026-10-20 — the database uses no Polly and no retry (user): atomic unit of work, transient failure → 503. S-33 rewritten.
+- Progress: Step P ☑ · Step 0 ☑ · S-30 ☑ · S-32 ☑ · S-33 ☑ (ticked as each step is verified; commits only when the user says so)
 
 ## Context
 Next is Sprint 3 from `docs/backlog.md`. Sprint 4 (clinics, working hours, patient CRUD) is set aside: the challenge has no
@@ -167,35 +168,28 @@ Today five Api files use `AppointmentScheduler.Domain` directly:
   - NFR-6, README config table, architecture row, CLAUDE.md ("resilience = Polly pipelines, registered by name"), devops agent;
   - CHANGELOG, PROMPTS, backlog.
 
-## S-33 — Database resilience with Polly (output caching skipped)
-- **Named pipeline `database`** in Infrastructure `Persistence/DatabaseResilience.cs` (registered in `AddPersistence`), in this
-  order: timeout (5 s per attempt) → retry → circuit breaker.
-  - **Retry:** 3 attempts, exponential backoff with jitter, only for transient Npgsql errors (`NpgsqlException.IsTransient`,
-    `TimeoutException`).
-  - **Circuit breaker:** opens at 50 % failures over 30 s with at least 10 calls, then stays open for 15 s.
-  - Limits come from section `Resilience:Database`.
-- **EF integration:** `PollyExecutionStrategy : IExecutionStrategy` runs every EF operation through the `database` pipeline. It is
-  installed with `UseNpgsql(cs, o => o.ExecutionStrategy(deps => new PollyExecutionStrategy(...)))`, so retries cover all
-  queries and `SaveChanges`.
-- **Required companion change:** a retrying strategy forbids user-started transactions. The four `BeginTransactionAsync` blocks
-  are wrapped in `db.Database.CreateExecutionStrategy().ExecuteAsync(...)`, so each whole transaction retries as a unit:
-  - `IdentityAuthService` (login reservation, refresh-family revoke);
-  - `IdentityUserAdminService` (create, set roles).
-- **Open circuit:** `BrokenCircuitException` → 503 `SERVICE_UNAVAILABLE` (`ApiErrorCodes`) with `Retry-After`, mapped in
-  `GlobalExceptionHandler`. It is not a 500, because the API is healthy and only its database is.
-- **Tests:**
-  - unit: the strategy retries a transient fault then succeeds; it does not retry a non-transient fault; the breaker opens after
-    the threshold;
-  - integration: the existing auth/user-admin tests prove the transactions still work under the strategy;
-  - integration: an open circuit maps to 503 + `Retry-After`.
-- **Backlog:** S-33 → "Versioning + DB resilience (Polly) done; output caching won't do for now (nothing safely cacheable:
-  availability must be live)". ADR-0008 status updated (NFR-7 DB part done; SMTP pipeline reuses the same pattern in M5).
+## S-33 — Database outage → 503, no retry (output caching skipped)
+> Changed 2026-10-20 (user): Polly only for other services; the database relies on atomicity (unit of work + repositories),
+> with **no retry at all** (not even EF's `EnableRetryOnFailure`). The earlier Polly `database` pipeline, execution strategy
+> and circuit breaker are dropped.
+- `ApiErrorCodes.ServiceUnavailable = "SERVICE_UNAVAILABLE"`; `ErrorStatusMapping` maps a framework 503 to it.
+- `GlobalExceptionHandler`: a `DbException { IsTransient: true }` anywhere in the inner-exception chain gives 503 +
+  `Retry-After: 5`, logged with the exception type only. It is BCL, so the Api has no Npgsql reference. A non-transient DB
+  error stays a 500.
+- No change to `UnitOfWork`, the repositories, `AddPersistence` or the four transactions: they are already atomic. The
+  idempotency filter releases the key on 5xx, so a client retry is safe.
+- **Tests:** in `GlobalExceptionHandlerTests` (test-only `ErrorTestController` endpoints):
+  - transient → 503;
+  - wrapped in `DbUpdateException` → 503;
+  - non-transient → 500;
+  - no provider message in the body or the log.
+- **Docs:** ADR-0008 revised, ADR-0009 note, CLAUDE.md resilience rule, NFR-7, SPEC 503 row, CHANGELOG, PROMPTS, backlog.
 
 ## Verification (per story, then end to end)
 - `dotnet build -warnaserror`; `dotnet test` (background); `cd web && npm test && npm run build`.
 - Live API + browser:
   - book (request carries `Idempotency-Key`), replay the same request with curl → `Idempotent-Replayed: true` and one appointment;
   - 6 quick logins with curl → 429 `RATE_LIMITED` with `Retry-After`;
-  - stop Postgres → requests fail fast with 503 `SERVICE_UNAVAILABLE` once the breaker opens; start it again → requests recover;
+  - stop Postgres → 503 `SERVICE_UNAVAILABLE` + `Retry-After`; start it again → requests recover;
   - normal receptionist booking, cancel, reschedule and the doctor read-only view still work.
 - Five steps (P, 0, S-30, S-32, S-33). After each I stop and ask "commit or leave in the working tree"; I never commit unasked.

@@ -1,6 +1,8 @@
 using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace AppointmentScheduler.IntegrationTests;
 
@@ -14,6 +16,18 @@ public sealed class ErrorTestController : ControllerBase
 
     [HttpGet("unexpected")]
     public IActionResult Unexpected() => throw new InvalidOperationException(SecretMessage);
+
+    // Npgsql marks a failure transient when its cause is I/O or a timeout (broken connection, database down).
+    [HttpGet("database-down")]
+    public IActionResult DatabaseDown() => throw new NpgsqlException(SecretMessage, new TimeoutException());
+
+    // SaveChanges wraps the provider exception (GET only to keep this test free of an Idempotency-Key).
+    [HttpGet("save-failed")]
+    public IActionResult SaveFailed() =>
+        throw new DbUpdateException("save failed", new NpgsqlException(SecretMessage, new System.IO.IOException("reset")));
+
+    [HttpGet("database-bug")]
+    public IActionResult DatabaseBug() => throw new NpgsqlException(SecretMessage); // not transient
 
     /// <summary>Completes once the server has observed a client abort on <c>slow</c>.</summary>
     public static TaskCompletionSource SlowAborted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -54,6 +68,32 @@ public class GlobalExceptionHandlerTests(ApiFactory api)
         Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
         Assert.False(body.TryGetProperty("data", out _));
         Assert.DoesNotContain(" at ", raw); // never a stack trace
+    }
+
+    [Theory] // ADR-0008: no retry; the unit of work rolled back, so the client retries after Retry-After
+    [InlineData("/test/errors/database-down")]
+    [InlineData("/test/errors/save-failed")]
+    public async Task Transient_database_failure_returns_503_with_retry_after(string path)
+    {
+        var response = await api.CreateClient().GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(TimeSpan.FromSeconds(5), response.Headers.RetryAfter?.Delta);
+        var raw = await response.Content.ReadAsStringAsync();
+        var body = await response.JsonAsync();
+        Assert.False(body.GetProperty("isSuccess").GetBoolean());
+        Assert.Equal(ApiErrorCodes.ServiceUnavailable, body.GetProperty("errorCode").GetString());
+        Assert.DoesNotContain("hunter2", raw); // not even errorDetails: the provider message stays in no response
+        Assert.Contains(api.Logs.Entries, e => e.Contains($"Database unavailable for GET {path}") && !e.Contains("hunter2"));
+    }
+
+    [Fact]
+    public async Task Non_transient_database_failure_stays_a_generic_500()
+    {
+        var response = await api.CreateClient().GetAsync("/test/errors/database-bug");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(ApiErrorCodes.InternalError, await response.ErrorCodeAsync());
     }
 
     [Fact]

@@ -2,7 +2,7 @@ namespace AppointmentScheduler.Api.Errors;
 
 /// <summary>
 /// Transport-level error codes: the ones the HTTP pipeline produces itself (unreadable request, unknown route, unsupported
-/// version, unexpected fault, and later idempotency and rate limiting). Business codes live in the Domain <c>ErrorCodes</c> and
+/// version, idempotency, rate limiting, unexpected fault, unreachable database). Business codes live in the Domain <c>ErrorCodes</c> and
 /// reach the Api only as strings through <c>ApplicationError</c>, so the Api never references Domain (ADR-0015, CLAUDE.md).
 /// Clients branch on these values, so a value never changes once shipped.
 /// </summary>
@@ -50,4 +50,8 @@ public static class ApiErrorCodes
     // ── Server ───────────────────────────────────────────────────────────────────────────────────────
     /// <summary>The catch-all for an unhandled fault. Accompanied by a trace id, never by internals.</summary>
     public const string InternalError = "INTERNAL_ERROR";
+
+    /// <summary>The database is unreachable (transient failure). Nothing was half-saved; retry after <c>Retry-After</c>
+    /// seconds, with the same <c>Idempotency-Key</c> for writes (503, ADR-0008).</summary>
+    public const string ServiceUnavailable = "SERVICE_UNAVAILABLE";
 }

@@ -66,15 +66,20 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   transport codes that only the HTTP pipeline produces (BAD_REQUEST, ROUTE_NOT_FOUND, INTERNAL_ERROR, idempotency, rate
   limits) go in `Api/Errors/ApiErrorCodes.cs`. Either way the code goes under its feature section, UPPER_SNAKE (catalogue
   tests keep the two classes disjoint). Use a message safe to show users, and put diagnostics in `LogDetail` (ids only,
-  never PII). `GlobalExceptionHandler` turns them into `ApiResponse` errors via `ApplicationError`; anything else becomes a logged, generic 500
-  `INTERNAL_ERROR`. Never catch-and-return errors in controllers.
+  never PII). `GlobalExceptionHandler` turns them into `ApiResponse` errors via `ApplicationError`; a transient database failure becomes 503
+  `SERVICE_UNAVAILABLE`; anything else becomes a logged, generic 500 `INTERNAL_ERROR`. Never catch-and-return errors in controllers.
 - Every write (POST/PUT/PATCH/DELETE) requires an `Idempotency-Key` header, enforced by the global `IdempotencyFilter`
   (spec 009). New write endpoints get it for free. Only `[SkipIdempotency]` (auth) is exempt. Don't add idempotency logic
   in a service.
-- Resilience = **Polly v8 only** (ADR-0008): every rate limit, retry, timeout or circuit breaker is a named pipeline
-  (`AddResiliencePipeline("<name>", …)`, resolved from `ResiliencePipelineProvider<string>`). No hand-written retry loops, no
-  `Microsoft.AspNetCore.RateLimiting`. Rate limits: `Api/Configuration/RateLimitingConfig.cs`; pick a non-default policy with
-  `[RateLimitPolicy(RateLimitPolicies.X)]` on the action.
+- Resilience (ADR-0008):
+  - **Polly v8** only for calls to other services (SMTP, outbound HTTP) and for inbound rate limits: each is a named pipeline
+    (`AddResiliencePipeline("<name>", …)`, resolved from `ResiliencePipelineProvider<string>`). No hand-written retry loops, no
+    `Microsoft.AspNetCore.RateLimiting`.
+  - **The database has no retry**: no `EnableRetryOnFailure`, no Polly DB pipeline. Consistency comes from atomicity (one
+    `IUnitOfWork.SaveChangesAsync` per use case, explicit transactions where needed); a transient DB failure becomes 503
+    `SERVICE_UNAVAILABLE` + `Retry-After` in `GlobalExceptionHandler`, and the client retries with the same `Idempotency-Key`.
+  - Rate limits: `Api/Configuration/RateLimitingConfig.cs`; pick a non-default policy with
+    `[RateLimitPolicy(RateLimitPolicies.X)]` on the action.
 - Never log patient names, phone numbers or emails — log ids only.
 - Fictional data only (seed in `Infrastructure/Persistence/Seed`).
 
