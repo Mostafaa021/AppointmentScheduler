@@ -285,3 +285,14 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
 - **Mid-sprint change:** the user asked for Polly for every resilience pattern. Plan 009 was amended in place: S-32 rate
   limiting uses Polly rate-limiter pipelines, and S-33 DB resilience is a Polly timeout + retry + circuit breaker behind an EF
   execution strategy.
+- **S-32 (rate limiting with Polly):**
+  - Polly v8 pipelines per policy: a concurrency limiter, plus `AddRateLimiter` over `PartitionedRateLimiter`s keyed by user
+    or IP. The key travels in Polly's `ResilienceContext`.
+  - A small middleware after authentication picks the pipeline (`[RateLimitPolicy]` or reads/writes by method) and maps
+    `RateLimiterRejectedException` to 429 `RATE_LIMITED` + `Retry-After`.
+  - **Rejected:** ASP.NET's built-in limiter (the user wants Polly for every resilience pattern).
+  - **Changed:** one `RateLimitPartition` name collided with `System.Threading.RateLimiting.RateLimitPartition`, so ours is
+    `RateLimitPartitionKey`.
+  - **Tests:** the main factory runs the middleware with huge limits. A low-limit factory gets one fixture per test class, so
+    the login-limit test doesn't consume the other tests' budget.
+  - **Verified live:** 5 logins → 200, the 6th → 429 with `Retry-After: 60`; health stays 200.

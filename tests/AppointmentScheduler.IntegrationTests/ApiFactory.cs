@@ -62,6 +62,11 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("BackgroundJobs:Enabled", "false"); // no Hangfire polling; jobs are run directly in tests
         builder.UseSetting("Observability:OtlpEndpoint", ""); // never export test traces, even if Jaeger runs locally
         builder.UseSetting("Messaging:RabbitMq:Enabled", "false"); // Wolverine runs on its PostgreSQL store only; never a local broker
+        // Rate limits stay on (the middleware runs in every test) but high enough that only RateLimitTests trip them.
+        builder.UseSetting("RateLimiting:Auth:PermitLimit", "100000");
+        builder.UseSetting("RateLimiting:Reads:PermitLimit", "100000");
+        builder.UseSetting("RateLimiting:Writes:TokenLimit", "100000");
+        builder.UseSetting("RateLimiting:Writes:TokensPerPeriod", "100000");
         builder.ConfigureLogging(logging => logging.AddProvider(Logs));
         builder.ConfigureTestServices(services =>
         {

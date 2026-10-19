@@ -43,6 +43,10 @@ public static class ApiErrorCodes
     /// <summary>The first request with this key is still running; retry after <c>Retry-After</c> seconds (409).</summary>
     public const string IdempotencyRequestInProgress = "IDEMPOTENCY_REQUEST_IN_PROGRESS";
 
+    // ── Rate limiting (ADR-0009) ─────────────────────────────────────────────────────────────────
+    /// <summary>A rate-limit policy rejected the request; retry after <c>Retry-After</c> seconds (429).</summary>
+    public const string RateLimited = "RATE_LIMITED";
+
     // ── Server ───────────────────────────────────────────────────────────────────────────────────────
     /// <summary>The catch-all for an unhandled fault. Accompanied by a trace id, never by internals.</summary>
     public const string InternalError = "INTERNAL_ERROR";

@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 
 ## [Unreleased]
 ### Added
+- Rate limiting with Polly v8 (S-32, ADR-0009 revised, ADR-0008 "Polly only"): named pipelines `rate-limit:global` (200
+  concurrent), `reads` (300/min sliding), `writes` (burst 10, 30/min token bucket) per user or IP, and `auth` (5/min per IP on
+  login/refresh). Rejections → 429 `RATE_LIMITED` + `Retry-After`, counted in `scheduler.rate_limit.rejected`.
 - Idempotent writes (spec 009, S-30): every POST/PUT/PATCH/DELETE except auth needs `Idempotency-Key`; replay with
   `Idempotent-Replayed: true`, 422 on reuse, 409 + `Retry-After` while in progress, 5xx not stored. `idempotency_records` table
   (unique `(user_id, key)` as the lock), hourly purge job, Angular `idempotencyKeyInterceptor`, header documented in OpenAPI.

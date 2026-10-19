@@ -44,6 +44,7 @@ Each layer registers its own services:
 | `AddApiVersioningConfiguration()` | `Api/Configuration/ApiVersioningConfig.cs` | Asp.Versioning: v1 default, URL segment + `X-Api-Version` + `api-version`, reported versions, API explorer groups (ADR-0017) |
 | `AddOpenApiConfiguration()` | `Api/Configuration/OpenApiConfig.cs` | OpenAPI document; app side `MapOpenApiDocs()` → `/openapi/v1.json`, `/scalar` |
 | `AddObservabilityConfiguration()` | `Api/Configuration/ObservabilityConfig.cs` | OpenTelemetry traces (ASP.NET Core, HttpClient, EF Core, Wolverine) → OTLP/Jaeger; metrics → OTLP when configured (ADR-0010) |
+| `AddRateLimitingConfiguration()` | `Api/Configuration/RateLimitingConfig.cs` | Polly pipelines `rate-limit:global/reads/writes/auth` (concurrency + partitioned limiters); app side `UseRateLimitingConfiguration()` after authentication (ADR-0009) |
 
 Every framework-made error has the same `ApiResponse` shape. The `errorCode` comes from `Api/Errors/ErrorStatusMapping`:
 - bodiless statuses (404/405) go through `UseStatusCodePages` → `IProblemDetailsService` → `ApiResponseProblemDetailsWriter`;
@@ -55,7 +56,7 @@ The middleware order stays written out in `Program.cs` on purpose, so you can re
 
 ## API request pipeline (M2)
 `SecurityHeaders` → `ExceptionHandler` (`SchedulerException` → `ApiResponse` error with `errorCode`, ADR-0015) → `StatusCodePages` (bodiless 404/405 → `ApiResponse`) → `Hsts` (non-Development)
-→ `Cors` → `Authentication` (JWT, 401 `UNAUTHORIZED`) → `Authorization` (role policies, 403 `FORBIDDEN`) → endpoint
+→ `Cors` → `Authentication` (JWT, 401 `UNAUTHORIZED`) → `PollyRateLimiting` (429 `RATE_LIMITED`) → `Authorization` (role policies, 403 `FORBIDDEN`) → endpoint
 (bind → Application service: validate → lookups → BR-7 check → rules → one `IUnitOfWork.SaveChangesAsync` incl. audit row).
 
 ## Sign-in, refresh rotation and reuse detection (spec 004, ADR-0005)

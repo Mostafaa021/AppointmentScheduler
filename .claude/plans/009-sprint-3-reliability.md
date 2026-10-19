@@ -2,7 +2,7 @@
 
 - Status: **In progress** · Approved 2026-10-19 · Backlog S-30, S-32, S-33 (S-31 set aside) · Spec 009 · ADR-0006, 0008, 0009
 - Changes: 2026-10-19 — S-32 and S-33 use Polly v8 for every resilience pattern (rate limiting, retry, circuit breaker, timeout).
-- Progress: Step P ☑ · Step 0 ☑ · S-30 ☑ · S-32 ☐ · S-33 ☐ (ticked as each step is verified; commits only when the user says so)
+- Progress: Step P ☑ · Step 0 ☑ · S-30 ☑ · S-32 ☑ · S-33 ☐ (ticked as each step is verified; commits only when the user says so)
 
 ## Context
 Next is Sprint 3 from `docs/backlog.md`. Sprint 4 (clinics, working hours, patient CRUD) is set aside: the challenge has no

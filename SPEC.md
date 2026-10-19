@@ -86,6 +86,7 @@ Reads without a specific message say "Request completed successfully".
 | 404 / 400 | `UNSUPPORTED_API_VERSION` (unknown URL version / mismatched header or query version) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` (body is not JSON) |
 | 400 / 409 / 422 | `IDEMPOTENCY_KEY_REQUIRED` / `IDEMPOTENCY_REQUEST_IN_PROGRESS` / `IDEMPOTENCY_KEY_REUSED` (spec 009) |
+| 429 | `RATE_LIMITED` + `Retry-After` (Polly rate limits: login 5/min per IP, writes burst 10 then 30/min, reads 300/min per user — ADR-0009) |
 | 409 | `DOCTOR_CONFLICT`, `PATIENT_CONFLICT`, `CONCURRENCY_CONFLICT`, `EMAIL_TAKEN` |
 | 422 | `APPOINTMENT_IN_PAST`, `INVALID_SLOT`, `APPOINTMENT_NOT_MODIFIABLE` |
 | 500 | `INTERNAL_ERROR` — generic message only; details go to the server log with the `traceId` |

@@ -11,7 +11,8 @@ builder
     .AddMessagingConfiguration()
     .AddApiVersioningConfiguration()
     .AddOpenApiConfiguration()
-    .AddObservabilityConfiguration();
+    .AddObservabilityConfiguration()
+    .AddRateLimitingConfiguration();
 
 var app = builder.Build();
 
@@ -26,6 +27,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors();
 app.UseAuthentication();
+app.UseRateLimitingConfiguration(); // after authentication so limits are per user (ADR-0009)
 app.UseAuthorization();
 
 if (app.Environment.IsDevelopment()) 

@@ -1,6 +1,7 @@
 using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Contracts;
 using AppointmentScheduler.Api.Idempotency;
+using AppointmentScheduler.Api.RateLimiting;
 using AppointmentScheduler.Application.Auth;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,7 @@ public sealed class AuthController(IAuthService auth) : ApiControllerBase
 {
     [HttpPost("auth/login")]
     [AllowAnonymous]
+    [RateLimitPolicy(RateLimitPolicies.Auth)] // 5/min per IP against password guessing
     [EndpointSummary("Sign in. 400 VALIDATION_FAILED, 401 INVALID_CREDENTIALS, 423 ACCOUNT_LOCKED. Sets the refresh_token cookie.")]
     [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -31,6 +33,7 @@ public sealed class AuthController(IAuthService auth) : ApiControllerBase
 
     [HttpPost("auth/refresh")]
     [AllowAnonymous]
+    [RateLimitPolicy(RateLimitPolicies.Auth)]
     [EndpointSummary("Rotate the refresh_token cookie. 401 INVALID_REFRESH_TOKEN / REFRESH_TOKEN_REUSED.")]
     [ProducesResponseType(typeof(ApiResponse<AuthResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Refresh(CancellationToken cancellationToken = default)

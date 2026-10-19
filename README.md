@@ -70,6 +70,8 @@ cd web && npm test -- --watch=false
 | `Jwt:SigningKey` (env `Jwt__SigningKey` / `JWT_SIGNING_KEY`) | dev-only value in `appsettings.Development.json` | ≥ 32-byte HS256 key; never commit a real one |
 | `BackgroundJobs:Enabled` | `true` | Run the Hangfire server and recurring jobs in the API process |
 | `Idempotency:RecordTtlHours` / `InProgressTimeoutSeconds` | `24` / `60` | How long a key is remembered; when a stuck in-progress key may be taken over |
+| `RateLimiting:Enabled` / `ConcurrentRequests` | `true` / `200` | Polly rate-limit pipelines on / global concurrency cap (ADR-0009) |
+| `RateLimiting:Reads` / `Writes` / `Auth` | 300/min sliding · burst 10 + 1 per 2 s · 5/min per IP | Per-user (or IP) limits; 429 `RATE_LIMITED` + `Retry-After` |
 | `Observability:ServiceName` | `appointment-scheduler-api` | OpenTelemetry service name (as shown in Jaeger) |
 | `Observability:OtlpEndpoint` (env `Observability__OtlpEndpoint`) | empty; `http://localhost:4317` in Development | OTLP traces target (Jaeger); empty = no export |
 | `Observability:MetricsEndpoint` | empty | OTLP metrics target (Jaeger has no metrics); empty = no export |

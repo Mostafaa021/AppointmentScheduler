@@ -24,6 +24,9 @@
     <!-- Transitive pin: Hangfire.Core references Newtonsoft.Json 11.0.1 (GHSA-5crp-9r3c-p9vr). -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="Polly.Core" Version="8.6.5" />
+    <PackageVersion Include="Polly.Extensions" Version="8.6.5" />
+    <PackageVersion Include="Polly.RateLimiting" Version="8.6.5" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />

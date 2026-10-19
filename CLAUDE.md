@@ -71,6 +71,10 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 - Every write (POST/PUT/PATCH/DELETE) requires an `Idempotency-Key` header, enforced by the global `IdempotencyFilter`
   (spec 009). New write endpoints get it for free. Only `[SkipIdempotency]` (auth) is exempt. Don't add idempotency logic
   in a service.
+- Resilience = **Polly v8 only** (ADR-0008): every rate limit, retry, timeout or circuit breaker is a named pipeline
+  (`AddResiliencePipeline("<name>", …)`, resolved from `ResiliencePipelineProvider<string>`). No hand-written retry loops, no
+  `Microsoft.AspNetCore.RateLimiting`. Rate limits: `Api/Configuration/RateLimitingConfig.cs`; pick a non-default policy with
+  `[RateLimitPolicy(RateLimitPolicies.X)]` on the action.
 - Never log patient names, phone numbers or emails — log ids only.
 - Fictional data only (seed in `Infrastructure/Persistence/Seed`).
 

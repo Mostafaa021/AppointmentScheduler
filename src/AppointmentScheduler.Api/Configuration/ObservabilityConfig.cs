@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using AppointmentScheduler.Api.RateLimiting;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -52,7 +53,8 @@ public static class ObservabilityConfig
                     // an OTLP metrics backend (Grafana LGTM, SigNoz, …) is set in Observability:MetricsEndpoint.
                     metrics
                         .AddAspNetCoreInstrumentation()
-                        .AddHttpClientInstrumentation();
+                        .AddHttpClientInstrumentation()
+                        .AddMeter(RateLimitMetrics.MeterName); // scheduler.* business counters (rate-limit rejections, …)
 
                     if (ToUri(metricsEndpoint) is { } endpoint)
                         metrics.AddOtlpExporter(o => o.Endpoint = endpoint);
