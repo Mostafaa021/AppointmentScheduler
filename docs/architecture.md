@@ -41,6 +41,7 @@ Each layer registers its own services:
 | `AddSecurityConfiguration()` | `Api/Configuration/SecurityConfig.cs` | role policies + JWT 401/403 bodies (`AddApiAuth`), HSTS, CORS from `Cors:AllowedOrigins` |
 | `AddApiVersioningConfiguration()` | `Api/Configuration/ApiVersioningConfig.cs` | Asp.Versioning: v1 default, URL segment + `X-Api-Version` + `api-version`, reported versions, API explorer groups (ADR-0017) |
 | `AddOpenApiConfiguration()` | `Api/Configuration/OpenApiConfig.cs` | OpenAPI document; app side `MapOpenApiDocs()` → `/openapi/v1.json`, `/scalar` |
+| `AddObservabilityConfiguration()` | `Api/Configuration/ObservabilityConfig.cs` | OpenTelemetry traces (ASP.NET Core, HttpClient, EF Core, Wolverine) → OTLP/Jaeger; metrics → OTLP when configured (ADR-0010) |
 
 Every framework-made error has the same `ApiResponse` shape. The `errorCode` comes from `Api/Errors/ErrorStatusMapping`:
 - bodiless statuses (404/405) go through `UseStatusCodePages` → `IProblemDetailsService` → `ApiResponseProblemDetailsWriter`;
