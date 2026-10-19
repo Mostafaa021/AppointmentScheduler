@@ -27,6 +27,10 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 - Controllers (`Api/Controllers`, inherit `ApiControllerBase` → authenticated by default) are thin: bind → call an Application
   service → return. No business logic or EF queries in `Api`. Template in `.claude/skills/new-feature/SKILL.md` step 6.
 - Background jobs: Hangfire job classes in Infrastructure, registered in `BackgroundJobs/BackgroundJobsSetup.cs` (ADR-0014).
+- `Program.cs` only composes: `builder.AddCoreConfiguration().AddApiConfiguration().AddSecurityConfiguration()…`, then the
+  middleware order. Never register services inline in `Program.cs`:
+  - a new host concern gets an `Add<Concern>Configuration()` extension in `Api/Configuration/<Concern>Configuration.cs`;
+  - layer services go in that layer's `DependencyInjection.cs` (see docs/architecture.md "Host composition").
 - Business rules live in Domain (`Appointment`, `DaySchedule`); the DB exclusion constraint is the final guard (see SPEC.md).
 
 ## Conventions

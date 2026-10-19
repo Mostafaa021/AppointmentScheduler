@@ -39,6 +39,7 @@ security / code-review gates are **pending** — run them before calling M2 Done
 | S-26 | Remove Worker project and Mailpit; Api is the single host | ADR-0014 | Done |
 | S-27 | Hangfire in the Api + hourly expired refresh-token purge | ADR-0014 | Done |
 | S-28 | `ApiResponse<T>` envelope, `[ProducesResponseType]` per status, `SchedulerException` + `ErrorCodes` (UPPER_SNAKE) | ADR-0015 | Done |
+| S-29 | `Program.cs` as composition root (`Api/Configuration/*Configuration` extensions) | architecture.md | Done |
 
 ## Sprint 3 — M3 Reliability
 | ID | Story | Spec | Status |

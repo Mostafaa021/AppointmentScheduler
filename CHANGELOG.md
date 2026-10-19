@@ -16,6 +16,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `ErrorCodes` (`doctor_conflict` → `DOCTOR_CONFLICT`). Unknown routes / wrong methods answer `ROUTE_NOT_FOUND` /
   `METHOD_NOT_ALLOWED`. Controllers declare every status with `[ProducesResponseType]`. Exceptions carry their own status
   and a log-only `LogDetail` (ADR-0015).
+- `Program.cs` is a composition root only: `AddCoreConfiguration` / `AddApiConfiguration` / `AddSecurityConfiguration` /
+  `AddOpenApiConfiguration` extensions in `Api/Configuration/`, `ApplyMigrationsAsync()`, health checks via
+  `MapHealthChecks("/health/live")`; `AddInfrastructure` split into `AddPersistence`, `AddIdentityAndJwt`, `AddBackgroundJobs`.
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
 ### Security

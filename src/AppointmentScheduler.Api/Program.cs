@@ -1,65 +1,38 @@
-using System.Text.Json.Serialization;
-using AppointmentScheduler.Api.Auth;
-using AppointmentScheduler.Api.Errors;
+using AppointmentScheduler.Api.Configuration;
 using AppointmentScheduler.Api.Security;
-using AppointmentScheduler.Application;
-using AppointmentScheduler.Application.Common;
-using AppointmentScheduler.Infrastructure;
 using AppointmentScheduler.Infrastructure.BackgroundJobs;
 using AppointmentScheduler.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOptions<ClinicOptions>().Bind(builder.Configuration.GetSection(ClinicOptions.Section))
-    .Validate(o => TimeZoneInfo.TryFindSystemTimeZoneById(o.TimeZone, out _), "Clinic:TimeZone must be a valid IANA zone.")
-    .ValidateOnStart();
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddApiAuth();
+builder
+    .AddCoreConfiguration()
+    .AddApiConfiguration()
+    .AddSecurityConfiguration()
+    .AddOpenApiConfiguration();
 
-builder.Services.AddControllers(o =>
-        // Required-ness is checked by FluentValidation in the Application layer (400 validation_failed, ADR-0013),
-        // so MVC must not reject missing non-nullable members first.
-        o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
-    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
-    .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = BadRequestResponse.FromModelState);
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddHsts(o => o.MaxAge = TimeSpan.FromDays(365));
-builder.Services.AddOpenApi();
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
-    .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
-    .AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+await app.ApplyMigrationsAsync(); // Development only
+
 // Order matters (docs/architecture.md): headers first so error/401/403 responses carry them; auth before endpoints (AC-004-8).
 app.UseSecurityHeaders();
-// GlobalExceptionHandler handles every exception; the middleware still demands a fallback without AddProblemDetails().
-app.UseExceptionHandler(new ExceptionHandlerOptions { ExceptionHandler = _ => Task.CompletedTask });
-app.UseStatusCodePages(BadRequestResponse.FromStatusCode); // bodiless 404/405/… → ApiResponse (ADR-0015)
+app.UseApiExceptionHandling();
 if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-    // shortcut: auto-migrate in Development only; containers use the migration bundle (M6).
-    await using var scope = app.Services.CreateAsyncScope();
-    await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
-}
-
-app.MapGet("/health/live", () => TypedResults.Ok("Healthy")).ExcludeFromDescription();
+if (app.Environment.IsDevelopment()) app.MapOpenApiDocs();
 
 // Controllers are authenticated by default (ApiControllerBase); login/refresh opt out, role policies narrow access.
 app.MapControllers();
+app.MapHealthChecks("/health/live");
 
-// Hangfire runs in this process (ADR-0014): recurring jobs + Development-only dashboard at /hangfire.
+// ─── Hangfire ──────────────────────────────────────────────────────────────
+// Runs in this process (ADR-0014): recurring jobs + Development-only dashboard at /hangfire.
 app.UseBackgroundJobs(app.Configuration, app.Environment.IsDevelopment());
 
 await app.RunAsync();

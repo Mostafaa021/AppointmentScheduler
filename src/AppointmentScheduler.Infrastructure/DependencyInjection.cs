@@ -18,10 +18,20 @@ namespace AppointmentScheduler.Infrastructure;
 
 public static class DependencyInjection
 {
+    /// <summary>Persistence (PostgreSQL, seed), Identity + JWT bearer, and Hangfire. Called once from the Api host.</summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Scheduler")
             ?? throw new InvalidOperationException("Connection string 'Scheduler' is missing.");
+
+        return services
+            .AddPersistence(configuration, connectionString)
+            .AddIdentityAndJwt(configuration)
+            .AddBackgroundJobs(configuration, connectionString);
+    }
+
+    private static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration, string connectionString)
+    {
         var seed = configuration.GetValue("Seed:Enabled", true);
 
         services.AddDbContext<AppDbContext>((sp, options) =>
@@ -38,7 +48,11 @@ public static class DependencyInjection
                 DbSeeder.SeedAsync(db, schedule, clock.GetUtcNow(), includeDemoUsers, CancellationToken.None).GetAwaiter().GetResult());
         });
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        return services;
+    }
 
+    private static IServiceCollection AddIdentityAndJwt(this IServiceCollection services, IConfiguration configuration)
+    {
         services.AddIdentityCore<AppUser>(o =>
             {
                 // Backstop copy of the validator's policy (PasswordPolicy; the 128 maximum is validator-only).
@@ -89,8 +103,6 @@ public static class DependencyInjection
                     },
                 };
             });
-
-        services.AddBackgroundJobs(configuration, connectionString);
 
         return services
             .AddSingleton<TokenIssuer>()

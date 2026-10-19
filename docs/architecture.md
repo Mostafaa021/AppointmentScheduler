@@ -25,6 +25,23 @@ Arrows point from a project to the projects that depend on it. Enforced by `Arch
 Identity types live in `Microsoft.AspNetCore.Identity`, so Identity stays in Infrastructure; Application owns the auth
 contracts (`IAuthService`, `IUserAdminService`, `ICurrentUser`, `AuditLog`) — spec 004.
 
+## Host composition (`Api/Program.cs`)
+`Program.cs` only composes. Each concern has its own `WebApplicationBuilder` extension in `Api/Configuration/`, and
+each layer registers its own services:
+
+| Call | File | Registers |
+|---|---|---|
+| `AddCoreConfiguration()` | `Api/Configuration/CoreConfiguration.cs` | `ClinicOptions` (validated on start), `TimeProvider`, `AddApplication()`, `AddInfrastructure()` |
+| ↳ `AddApplication()` | `Application/DependencyInjection.cs` | services, `AuditLog`, validators |
+| ↳ `AddInfrastructure()` | `Infrastructure/DependencyInjection.cs` | `AddPersistence` (DbContext, seed), `AddIdentityAndJwt`, `AddBackgroundJobs` (Hangfire) |
+| `AddApiConfiguration()` | `Api/Configuration/ApiConfiguration.cs` | controllers, JSON, model-state 400, `GlobalExceptionHandler` |
+| `AddSecurityConfiguration()` | `Api/Configuration/SecurityConfiguration.cs` | role policies + JWT 401/403 bodies (`AddApiAuth`), HSTS, CORS from `Cors:AllowedOrigins` |
+| `AddOpenApiConfiguration()` | `Api/Configuration/OpenApiConfiguration.cs` | OpenAPI document (+ `MapOpenApiDocs()` → `/openapi/v1.json`, `/scalar`) |
+
+On the app side: `ApplyMigrationsAsync()` (Development only), then the middleware below in order, then `MapControllers`,
+`MapHealthChecks("/health/live")`, then `UseBackgroundJobs()` (recurring jobs + Development-only `/hangfire`).
+The middleware order stays written out in `Program.cs` on purpose, so you can read it in one place.
+
 ## API request pipeline (M2)
 `SecurityHeaders` → `ExceptionHandler` (`SchedulerException` → `ApiResponse` error with `errorCode`, ADR-0015) → `StatusCodePages` (bodiless 404/405 → `ApiResponse`) → `Hsts` (non-Development)
 → `Cors` → `Authentication` (JWT, 401 `UNAUTHORIZED`) → `Authorization` (role policies, 403 `FORBIDDEN`) → endpoint

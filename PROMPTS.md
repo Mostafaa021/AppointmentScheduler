@@ -130,3 +130,18 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   A global `WhenWritingNull` would have dropped `doctorId: null` from DTOs the web app reads, so null-skipping is scoped to
   the envelope's own properties.
 - **Rejected:** action-name routes like `CreateDelegatedWallet` — the REST routes stay unchanged.
+
+### P-14 · Program.cs as a composition root
+> "For Program.cs follow this template [`builder.AddApiConfiguration().AddMessagingConfiguration()…`, `await
+> app.ApplyMigrationsAsync()`, Hangfire section] — instead of a lot of service injection in Program.cs use extension methods."
+
+- **Accepted:** `Add<Concern>Configuration()` extensions on `WebApplicationBuilder` in `Api/Configuration/` (Core, Api,
+  Security, OpenApi), `app.ApplyMigrationsAsync()` in Infrastructure, `AddHealthChecks` + `MapHealthChecks`, a Hangfire section;
+  `AddInfrastructure` split into `AddPersistence` / `AddIdentityAndJwt` / `AddBackgroundJobs`.
+- **Changed:** the middleware order stays explicit in `Program.cs` (it is the part reviewers must read in one place);
+  migrations still run in Development only; Hangfire recurring jobs stay inside `UseBackgroundJobs()` (honours
+  `BackgroundJobs:Enabled`) instead of static `RecurringJob.AddOrUpdate` calls in `Program.cs`.
+- **Rejected from the template:** `AllowAnyOrigin` CORS (the refresh cookie must not be usable from other sites),
+  a dashboard open in every environment, `UseHttpsRedirection` (TLS terminates at the proxy in M6; HSTS already set outside
+  Development), commented-out `UseAuthorization`; API versioning, messaging and observability extensions are added when M3/M5/M6
+  need them.

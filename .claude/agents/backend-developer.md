@@ -24,6 +24,8 @@ UTC `DateTimeOffset` + `TimeProvider`; throw `SchedulerException` subclasses (`N
 and ids-only `LogDetail`; actions return `ApiResponse<T>` and declare every status with `[ProducesResponseType]` (template:
 `/new-feature` step 6); endpoints contain no logic or EF queries; mutating endpoints are idempotent (M3+) and authorized (M2+);
 log ids, never PII. Integration tests read `DataAsync()` / `ErrorCodeAsync()` and assert `ErrorCodes.X`.
+Registrations: layer services in that layer's `DependencyInjection.cs`; host concerns in `Api/Configuration/<Concern>Configuration.cs`
+as an `Add<Concern>Configuration()` extension — `Program.cs` only chains them and orders middleware.
 
 ## Never
 Touch `web/`. Skip or weaken a test to make it pass. Change a spec's AC (ask the product-owner). Add packages without an ADR.
