@@ -20,12 +20,16 @@ await app.ApplyMigrationsAsync(); // Development only
 // Order matters (docs/architecture.md): headers first so error/401/403 responses carry them; auth before endpoints (AC-004-8).
 app.UseSecurityHeaders();
 app.UseApiExceptionHandling();
-if (!app.Environment.IsDevelopment()) app.UseHsts();
+
+if (!app.Environment.IsDevelopment())
+    app.UseHsts();
+
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsDevelopment()) app.MapOpenApiDocs();
+if (app.Environment.IsDevelopment()) 
+    app.MapOpenApiDocs();
 
 // Controllers are authenticated by default (ApiControllerBase); login/refresh opt out, role policies narrow access.
 app.MapControllers();
