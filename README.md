@@ -43,7 +43,7 @@ To reset: `docker compose down -v` and start again.
 
 > `docker compose up -d postgres rabbitmq jaeger` also starts the tracing UI: **Jaeger** at http://localhost:16686
 > (service `appointment-scheduler-api`; the API sends OTLP traces to `localhost:4317` in Development). RabbitMQ
-> (management UI http://localhost:15672) is used by messaging; the app also runs without it. Copy `.env.example` to `.env` to change ports/passwords (default Postgres port 5432).
+> (management UI http://localhost:15672, login `guest` / `guest`) is used by messaging; the app also runs without it. Copy `.env.example` to `.env` to change ports/passwords (default Postgres port 5432).
 
 ## Using it
 1. Pick a doctor and a date (times are shown in the clinic zone, Europe/London).
@@ -72,7 +72,7 @@ cd web && npm test -- --watch=false
 | `Observability:ServiceName` | `appointment-scheduler-api` | OpenTelemetry service name (as shown in Jaeger) |
 | `Observability:OtlpEndpoint` (env `Observability__OtlpEndpoint`) | empty; `http://localhost:4317` in Development | OTLP traces target (Jaeger); empty = no export |
 | `Observability:MetricsEndpoint` | empty | OTLP metrics target (Jaeger has no metrics); empty = no export |
-| `Messaging:RabbitMq:Enabled` / `Host` / `Port` / `UserName` / `Password` | `true` / `localhost` / `5672` / `scheduler` / dev value in Development | RabbitMQ for Wolverine; `Enabled=false` = PostgreSQL message store only |
+| `Messaging:RabbitMq:Enabled` / `Host` / `Port` / `UserName` / `Password` | `true` / `localhost` / `5672` / `guest` / `guest` in Development (local Docker only) | RabbitMQ for Wolverine; `Enabled=false` = PostgreSQL message store only |
 | `Messaging:Publishing:Exchange` | `appointment-scheduler.events` | Topic exchange for integration events (declared at startup) |
 | `Messaging:RecoveryIntervalMinutes` / `RestartOnRecovery` | `1` / true outside Development | Degraded mode: re-check the broker, then restart the host to attach it |
 

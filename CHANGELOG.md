@@ -35,6 +35,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   transport when the startup probe succeeds (topic exchange `appointment-scheduler.events`), degraded mode +
   `RabbitMqRecoveryService` otherwise. No events published yet (M5).
 ### Fixed
+- RabbitMQ dashboard login: local Docker now uses the default `guest` / `guest` (was `scheduler` / `scheduler_dev_pw`);
+  `appsettings` and `.env.example` updated to match.
 - Integration-test host crash ("Test Run Aborted") at shutdown: `ApiFactory` now disposes the host before the database.
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.

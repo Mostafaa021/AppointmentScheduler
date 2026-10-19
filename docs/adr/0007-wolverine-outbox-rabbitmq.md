@@ -25,6 +25,9 @@ Implemented in `Infrastructure/Messaging/MessagingSetup.cs` and called from `Api
   - **broker down: degraded mode.** HTTP keeps serving. `RabbitMqRecoveryService` logs a warning and re-probes every
     `RecoveryIntervalMinutes`. When the broker is back it stops the host (outside Development) so the orchestrator restarts
     it with the transport.
+- **Local credentials:** docker-compose creates RabbitMQ's default `guest` / `guest`, which the dashboard (:15672) and the API
+  (`Messaging:RabbitMq:*`, Development) both use. Every other environment must set `RABBITMQ_USER`/`RABBITMQ_PASSWORD` and
+  `Messaging__RabbitMq__UserName`/`Password`.
 - **Packages:** `WolverineFx.RuntimeCompilation` is required since Wolverine 6.39 (the runtime compiler is no longer in core).
 - **Tests** set `Messaging:RabbitMq:Enabled=false`. The test factory disposes the host before the database, because the
   durability agent polls PostgreSQL until the host stops.

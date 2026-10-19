@@ -235,3 +235,12 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   made them differ. It now ignores per-request fields (`traceId`, `timestamp`) only.
 - **Kept:** logout answers a real 204 without a body. `NoContent()` exists for template parity, since a 204 response can't carry
   the envelope.
+
+### P-19 · RabbitMQ default credentials
+> "The RabbitMQ admin dashboard says not authorized; you named the user scheduler in appsettings. Use the default guest/guest."
+
+- **Accepted:** `guest` / `guest` in docker-compose defaults, `.env.example` and the API's Development config.
+- **Changed:** the broker keeps its users in an anonymous volume, so a normal recreate would have kept the old `scheduler` user.
+  It was recreated with `--renew-anon-volumes`. That dropped only the exchange and the dead-letter queue, which the API declares
+  again on startup.
+- **Note:** guest/guest is documented as local-Docker only. Postgres credentials are unchanged.
