@@ -5,6 +5,8 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />

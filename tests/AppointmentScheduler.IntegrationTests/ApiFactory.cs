@@ -59,6 +59,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("ConnectionStrings:Scheduler", _db.GetConnectionString());
         builder.UseSetting("Seed:Enabled", SeedEnabled ? "true" : "false");
         builder.UseSetting("Jwt:SigningKey", SigningKey);
+        builder.UseSetting("BackgroundJobs:Enabled", "false"); // no Hangfire polling; jobs are run directly in tests
         builder.ConfigureLogging(logging => logging.AddProvider(Logs));
         builder.ConfigureTestServices(services =>
         {

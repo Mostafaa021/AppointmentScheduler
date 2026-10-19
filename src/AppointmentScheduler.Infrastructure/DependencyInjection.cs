@@ -2,6 +2,7 @@ using System.Text;
 using AppointmentScheduler.Application.Auth;
 using AppointmentScheduler.Application.Common;
 using AppointmentScheduler.Infrastructure.Auth;
+using AppointmentScheduler.Infrastructure.BackgroundJobs;
 using AppointmentScheduler.Infrastructure.Persistence;
 using AppointmentScheduler.Infrastructure.Persistence.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -88,6 +89,8 @@ public static class DependencyInjection
                     },
                 };
             });
+
+        services.AddBackgroundJobs(configuration, connectionString);
 
         return services
             .AddSingleton<TokenIssuer>()

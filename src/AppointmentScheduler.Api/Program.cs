@@ -5,6 +5,7 @@ using AppointmentScheduler.Api.Security;
 using AppointmentScheduler.Application;
 using AppointmentScheduler.Application.Common;
 using AppointmentScheduler.Infrastructure;
+using AppointmentScheduler.Infrastructure.BackgroundJobs;
 using AppointmentScheduler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -57,6 +58,9 @@ app.MapGet("/health/live", () => TypedResults.Ok("Healthy")).ExcludeFromDescript
 
 // Controllers are authenticated by default (ApiControllerBase); login/refresh opt out, role policies narrow access.
 app.MapControllers();
+
+// Hangfire runs in this process (ADR-0014): recurring jobs + Development-only dashboard at /hangfire.
+app.UseBackgroundJobs(app.Configuration, app.Environment.IsDevelopment());
 
 await app.RunAsync();
 
