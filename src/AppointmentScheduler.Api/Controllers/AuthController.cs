@@ -1,12 +1,14 @@
 using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Contracts;
 using AppointmentScheduler.Application.Auth;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentScheduler.Api.Controllers;
 
-[Route("api/v1")]
+[ApiVersion(1.0)]
+[Route("api/v{version:apiVersion}")]
 [Tags("Auth")]
 public sealed class AuthController(IAuthService auth) : ApiControllerBase
 {

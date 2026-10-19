@@ -46,6 +46,7 @@ description: Single-session, spec-first checklist for adding a feature end to en
    }
    ```
 6. **Api** — action on `Api/Controllers/<Feature>Controller.cs` (inherits `ApiControllerBase`); thin; correct policy,
+   The controller class carries `[ApiVersion(1.0)]` + `[Route("api/v{version:apiVersion}/<feature>")]` (ADR-0017).
    rate-limit and idempotent group. Return `ApiResponse<T>`, declare every status the action can produce (401/500 come from
    the base), no `ModelState.IsValid` check (`[ApiController]` already returns 400 `BAD_REQUEST`):
    ```csharp

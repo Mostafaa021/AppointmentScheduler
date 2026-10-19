@@ -26,6 +26,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `ControllerConventionTests` forbid private helpers and constants in controllers.
 - Framework-made errors (404/405 status pages, 415 from MVC, Asp.Versioning) all written as `ApiResponse` through
   `ApiResponseProblemDetailsWriter` / `ApiResponseClientErrorFactory`; new codes `UNSUPPORTED_MEDIA_TYPE`, `UNSUPPORTED_API_VERSION`.
+- API versioning (Asp.Versioning, ADR-0017): routes `api/v{version:apiVersion}/…`, `[ApiVersion(1.0)]` per controller,
+  `api-supported-versions` header, `X-Api-Version` / `api-version` accepted; unknown versions → `UNSUPPORTED_API_VERSION`.
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
 ### Security

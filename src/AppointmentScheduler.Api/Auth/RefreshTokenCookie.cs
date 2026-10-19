@@ -10,7 +10,8 @@ internal static class RefreshTokenCookie
 {
     public const string Name = "refresh_token";
 
-    // Scoped to the auth routes so the cookie never travels with ordinary API calls.
+    // Scoped to the v1 auth routes so the cookie never travels with ordinary API calls. A future v2 auth route needs its own
+    // path (or a version-neutral one) — browsers only send the cookie to this exact prefix.
     private const string Path = "/api/v1/auth";
 
     public static string? Read(HttpRequest request) => request.Cookies[Name];

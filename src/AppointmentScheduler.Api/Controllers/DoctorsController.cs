@@ -2,12 +2,14 @@ using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Contracts;
 using AppointmentScheduler.Application.Availability;
 using AppointmentScheduler.Application.Lookups;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentScheduler.Api.Controllers;
 
-[Route("api/v1/doctors")]
+[ApiVersion(1.0)]
+[Route("api/v{version:apiVersion}/doctors")]
 [Authorize(Policy = Policies.FrontDesk)]
 public sealed class DoctorsController(LookupQueries queries, AvailabilityService availability) : ApiControllerBase
 {

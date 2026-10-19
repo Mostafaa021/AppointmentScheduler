@@ -1,12 +1,14 @@
 using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Contracts;
 using AppointmentScheduler.Application.Auth;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentScheduler.Api.Controllers;
 
-[Route("api/v1/users")]
+[ApiVersion(1.0)]
+[Route("api/v{version:apiVersion}/users")]
 [Authorize(Policy = Policies.AdminOnly)]
 public sealed class UsersController(IUserAdminService users) : ApiControllerBase
 {

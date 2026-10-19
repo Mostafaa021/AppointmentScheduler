@@ -191,3 +191,9 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
 - **Rejected:**
   - Swashbuckle: built-in OpenAPI + Scalar is kept (user choice).
   - FluentValidation MVC auto-validation with joined messages: Application validation is kept (user choice, ADR-0013).
+- **Step 2 (versioning), debugging:** an unknown URL version (`/api/v2/doctors`) came back as 404 `ROUTE_NOT_FOUND`.
+  Asp.Versioning deliberately treats a URL-segment version it doesn't serve as a missing path, and
+  `UnsupportedApiVersionStatusCode` doesn't change that. The 404 stays, and the problem-details writer recognises
+  `/api/v{n}/` with an unserved `n` and returns `UNSUPPORTED_API_VERSION` listing the supported versions (taken from the
+  API explorer, not hard-coded). `[ApiVersion]` is not inherited from the base controller, so an architecture test makes sure
+  every controller states it.

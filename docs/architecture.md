@@ -39,6 +39,7 @@ Each layer registers its own services:
 | ↳ `AddApplication()` | `Application/DependencyInjection.cs` | services, `AuditLog`, validators |
 | ↳ `AddInfrastructure()` | `Infrastructure/DependencyInjection.cs` | `AddPersistence` (DbContext, seed, repositories + unit of work), `AddIdentityAndJwt`, `AddBackgroundJobs` (Hangfire) |
 | `AddSecurityConfiguration()` | `Api/Configuration/SecurityConfig.cs` | role policies + JWT 401/403 bodies (`AddApiAuth`), HSTS, CORS from `Cors:AllowedOrigins` |
+| `AddApiVersioningConfiguration()` | `Api/Configuration/ApiVersioningConfig.cs` | Asp.Versioning: v1 default, URL segment + `X-Api-Version` + `api-version`, reported versions, API explorer groups (ADR-0017) |
 | `AddOpenApiConfiguration()` | `Api/Configuration/OpenApiConfig.cs` | OpenAPI document; app side `MapOpenApiDocs()` → `/openapi/v1.json`, `/scalar` |
 
 Every framework-made error has the same `ApiResponse` shape. The `errorCode` comes from `Api/Errors/ErrorStatusMapping`:

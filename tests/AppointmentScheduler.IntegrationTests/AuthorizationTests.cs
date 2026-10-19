@@ -10,14 +10,14 @@ namespace AppointmentScheduler.IntegrationTests;
 [Collection(nameof(ApiCollection))]
 public class AuthorizationTests(ApiFactory api)
 {
-    private static readonly string[] Anonymous = ["api/v1/auth/login", "api/v1/auth/refresh"];
+    private static readonly string[] Anonymous = ["api/v{version:apiVersion}/auth/login", "api/v{version:apiVersion}/auth/refresh"];
 
     [Fact]
     public void AC_004_8_Every_api_endpoint_except_login_and_refresh_requires_authorization()
     {
         var endpoints = api.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>()
             // Controller route templates have no leading slash; normalize so the sweep is routing-style agnostic.
-            .Where(e => e.RoutePattern.RawText?.TrimStart('/').StartsWith("api/v1", StringComparison.Ordinal) == true)
+            .Where(e => e.RoutePattern.RawText?.TrimStart('/').StartsWith("api/v{version:apiVersion}", StringComparison.Ordinal) == true)
             .ToList();
 
         Assert.True(endpoints.Count >= 14, $"expected all /api/v1 endpoints, found {endpoints.Count}");

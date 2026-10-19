@@ -1,6 +1,7 @@
 using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Contracts;
 using AppointmentScheduler.Application.Appointments;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,8 @@ namespace AppointmentScheduler.Api.Controllers;
 
 // Policies AND-combine: the POSTs need ScheduleReader and FrontDesk, so a Doctor gets 403 (AC-004-8).
 // Reads are further limited to the doctor's own schedule inside AppointmentService (BR-7, ADR-0012).
-[Route("api/v1/appointments")]
+[ApiVersion(1.0)]
+[Route("api/v{version:apiVersion}/appointments")]
 [Authorize(Policy = Policies.ScheduleReader)]
 public sealed class AppointmentsController(AppointmentService appointments) : ApiControllerBase
 {

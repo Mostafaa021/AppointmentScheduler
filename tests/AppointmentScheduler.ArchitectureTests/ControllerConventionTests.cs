@@ -29,6 +29,16 @@ public class ControllerConventionTests
     }
 
     [Fact]
+    public void Controllers_declare_their_api_version()
+    {
+        // ADR-0017: [ApiVersion] is not inherited from ApiControllerBase, so each controller must state it.
+        var unversioned = Controllers.Where(c => !c.IsDefined(typeof(Asp.Versioning.ApiVersionAttribute), inherit: false))
+            .Select(c => c.Name).ToList();
+
+        Assert.True(unversioned.Count == 0, "Add [ApiVersion(...)] to: " + string.Join(", ", unversioned));
+    }
+
+    [Fact]
     public void Controllers_declare_no_constants()
     {
         var constants = Controllers

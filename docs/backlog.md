@@ -48,7 +48,7 @@ security / code-review gates are **pending** — run them before calling M2 Done
 | S-30 | Idempotency filter + records table + purge job + Angular key interceptor | 009 | Refined |
 | S-31 | ETag / If-Match on appointments | 003 | Refined |
 | S-32 | Rate limiting policies | 000 | Refined |
-| S-33 | API versioning, output caching, Npgsql retry | 000 | Todo |
+| S-33 | API versioning, output caching, Npgsql retry | 000 | Versioning done (ADR-0017); caching + retry Todo |
 
 ## Sprint 4 — M4 Domain expansion
 | ID | Story | Spec | Status |

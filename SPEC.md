@@ -51,6 +51,10 @@ Response envelope ([ADR-0015](docs/adr/0015-api-response-envelope.md)); members 
 ```
 `POST /auth/logout` is the one exception: **204** with no body.
 
+**Versioning** ([ADR-0017](docs/adr/0017-api-versioning.md)): the version is in the URL (`/api/v1/…`); responses carry
+`api-supported-versions`. An optional `X-Api-Version` header or `api-version` query must match the URL (else 400
+`UNSUPPORTED_API_VERSION`). An unknown URL version such as `/api/v2/…` → 404 `UNSUPPORTED_API_VERSION`.
+
 | Method | Route | Notes |
 |---|---|---|
 | POST | `/auth/login`, `/auth/refresh`, `/auth/logout` · GET `/me` | 15-min access token + rotating refresh cookie; login/refresh anonymous |
@@ -70,6 +74,8 @@ Response envelope ([ADR-0015](docs/adr/0015-api-response-envelope.md)); members 
 | 401 / 403 / 423 | `UNAUTHORIZED`, `INVALID_CREDENTIALS`, `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED` / `FORBIDDEN` / `ACCOUNT_LOCKED` |
 | 404 | `DOCTOR_NOT_FOUND`, `PATIENT_NOT_FOUND`, `APPOINTMENT_NOT_FOUND`, `USER_NOT_FOUND`, `ROUTE_NOT_FOUND` (no such URL) |
 | 405 | `METHOD_NOT_ALLOWED` |
+| 404 / 400 | `UNSUPPORTED_API_VERSION` (unknown URL version / mismatched header or query version) |
+| 415 | `UNSUPPORTED_MEDIA_TYPE` (body is not JSON) |
 | 409 | `DOCTOR_CONFLICT`, `PATIENT_CONFLICT`, `CONCURRENCY_CONFLICT`, `EMAIL_TAKEN` |
 | 422 | `APPOINTMENT_IN_PAST`, `INVALID_SLOT`, `APPOINTMENT_NOT_MODIFIABLE` |
 | 500 | `INTERNAL_ERROR` — generic message only; details go to the server log with the `traceId` |

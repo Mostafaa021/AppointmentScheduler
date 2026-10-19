@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder
     .AddApiConfiguration()
     .AddSecurityConfiguration()
+    .AddApiVersioningConfiguration()
     .AddOpenApiConfiguration();
 
 var app = builder.Build();

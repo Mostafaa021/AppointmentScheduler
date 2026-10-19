@@ -13,7 +13,7 @@ internal static class SecurityHeaders
             headers.XContentTypeOptions = "nosniff";
             headers.XFrameOptions = "DENY";
             headers["Referrer-Policy"] = "no-referrer";
-            if (http.Request.Path.StartsWithSegments("/api/v1")) headers.ContentSecurityPolicy = ApiCsp;
+            if (http.Request.Path.StartsWithSegments("/api")) headers.ContentSecurityPolicy = ApiCsp;
             return Task.CompletedTask;
         });
         return next(http);
