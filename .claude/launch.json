@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "api", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "src/AppointmentScheduler.Api", "--launch-profile", "http"], "port": 5080 },
+    { "name": "web", "runtimeExecutable": "npm", "runtimeArgs": ["start", "--prefix", "web"], "port": 4200 }
+  ]
+}

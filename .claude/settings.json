@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)", "Bash(dotnet test:*)", "Bash(dotnet run:*)", "Bash(dotnet ef:*)", "Bash(dotnet restore:*)", "Bash(dotnet format:*)",
+      "Bash(npm test:*)", "Bash(npm run:*)", "Bash(npm ci:*)", "Bash(npx ng:*)", "Bash(npx playwright:*)",
+      "Bash(docker compose:*)", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)"
+    ],
+    "deny": [
+      "Read(./.env)", "Read(./.env.*)", "Bash(git push --force:*)", "Bash(rm -rf /:*)"
+    ]
+  }
+}
