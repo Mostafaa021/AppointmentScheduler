@@ -72,6 +72,9 @@ cd web && npm test -- --watch=false
 | `Observability:ServiceName` | `appointment-scheduler-api` | OpenTelemetry service name (as shown in Jaeger) |
 | `Observability:OtlpEndpoint` (env `Observability__OtlpEndpoint`) | empty; `http://localhost:4317` in Development | OTLP traces target (Jaeger); empty = no export |
 | `Observability:MetricsEndpoint` | empty | OTLP metrics target (Jaeger has no metrics); empty = no export |
+| `Messaging:RabbitMq:Enabled` / `Host` / `Port` / `UserName` / `Password` | `true` / `localhost` / `5672` / `scheduler` / dev value in Development | RabbitMQ for Wolverine; `Enabled=false` = PostgreSQL message store only |
+| `Messaging:Publishing:Exchange` | `appointment-scheduler.events` | Topic exchange for integration events (declared at startup) |
+| `Messaging:RecoveryIntervalMinutes` / `RestartOnRecovery` | `1` / true outside Development | Degraded mode: re-check the broker, then restart the host to attach it |
 
 ## Project layout
 ```

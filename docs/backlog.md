@@ -61,7 +61,7 @@ security / code-review gates are **pending** — run them before calling M2 Done
 ## Sprint 5 — M5 Messaging
 | ID | Story | Spec | Status |
 |---|---|---|---|
-| S-50 | Domain events → Wolverine outbox → RabbitMQ → in-process handlers | 008 | Refined |
+| S-50 | Domain events → Wolverine outbox → RabbitMQ → in-process handlers | 008 | Wiring done (ADR-0007 status: store, transport, degraded mode); events + handlers Refined |
 | S-51 | E-mails + reminders + SMTP resilience pipeline + DLQ | 008 | Refined |
 
 ## Sprint 6 — M6 Observability & ops

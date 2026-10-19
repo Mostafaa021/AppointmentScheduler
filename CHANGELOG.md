@@ -30,6 +30,11 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `api-supported-versions` header, `X-Api-Version` / `api-version` accepted; unknown versions → `UNSUPPORTED_API_VERSION`.
 - OpenTelemetry tracing → Jaeger over OTLP (ASP.NET Core, HttpClient, EF Core, Wolverine source; `enduser.id` tag) and
   optional OTLP metrics, via `ObservabilityConfig` (ADR-0010 status).
+- Messaging wiring (ADR-0007 status): Wolverine in the Api host with a PostgreSQL message store (schema `wolverine`), RabbitMQ
+  transport when the startup probe succeeds (topic exchange `appointment-scheduler.events`), degraded mode +
+  `RabbitMqRecoveryService` otherwise. No events published yet (M5).
+### Fixed
+- Integration-test host crash ("Test Run Aborted") at shutdown: `ApiFactory` now disposes the host before the database.
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
 ### Security

@@ -31,6 +31,11 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.18.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
+    <PackageVersion Include="WolverineFx" Version="6.39.1" />
+    <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="6.39.1" />
+    <PackageVersion Include="WolverineFx.Postgresql" Version="6.39.1" />
+    <PackageVersion Include="WolverineFx.RabbitMQ" Version="6.39.1" />
+    <PackageVersion Include="WolverineFx.RuntimeCompilation" Version="6.39.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.13" />

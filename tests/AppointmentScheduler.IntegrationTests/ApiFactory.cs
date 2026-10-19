@@ -61,6 +61,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Jwt:SigningKey", SigningKey);
         builder.UseSetting("BackgroundJobs:Enabled", "false"); // no Hangfire polling; jobs are run directly in tests
         builder.UseSetting("Observability:OtlpEndpoint", ""); // never export test traces, even if Jaeger runs locally
+        builder.UseSetting("Messaging:RabbitMq:Enabled", "false"); // Wolverine runs on its PostgreSQL store only; never a local broker
         builder.ConfigureLogging(logging => logging.AddProvider(Logs));
         builder.ConfigureTestServices(services =>
         {
@@ -87,8 +88,10 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     async Task IAsyncLifetime.DisposeAsync()
     {
-        await _db.DisposeAsync();
+        // Host first: Wolverine's durability agent polls the database until the host stops; dropping the container first
+        // made it fail and log into disposed loggers, which crashed the test host.
         await base.DisposeAsync();
+        await _db.DisposeAsync();
     }
 
     /// <summary>Fresh doctors and patients per test, so tests never share schedules.</summary>

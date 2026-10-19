@@ -205,3 +205,19 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
     `enduser.id` tag (id only) and filtered out `/health` and `/hangfire`.
   - **Rejected:** Npgsql-level spans, because Hangfire's polling would flood them.
   - **Verified:** Jaeger listed the service with route-template request spans and EF Core database spans.
+- **Step 4 (messaging):** followed the template, adapted to PostgreSQL:
+  - options section; one AMQP probe at startup; degraded mode plus a recovery service; quorum queues; no request/reply queue;
+  - Wolverine's handler discovery includes Application.
+  - **Changed:**
+    - `PersistMessagesWithPostgresql` instead of SQL Server, so the SQL Server provider guard was dropped.
+    - `AutoProvision()` instead of `AddResourceSetupOnStartup()`: the template's AutoProvision bug only hits externally owned
+      queues, and we own every broker object.
+    - The recovery restart is off in Development, so `dotnet run` isn't killed.
+  - **Debugging:**
+    - Wolverine 6.39 refused to start without `WolverineFx.RuntimeCompilation` (no longer in core).
+    - The integration-test host then crashed at shutdown ("Test Run Aborted", with counts randomly short). `ApiFactory`
+      disposed the PostgreSQL container *before* the host, so Wolverine's durability agent failed and logged into a disposed
+      logger. Disposing the host first fixed it.
+  - **Verified live:**
+    - the exchange is declared as a durable topic and RabbitMQ shows two connections;
+    - with the broker stopped, the API logs the degraded-mode warning and still serves login and health.

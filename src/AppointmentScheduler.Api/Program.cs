@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder
     .AddApiConfiguration()
     .AddSecurityConfiguration()
+    .AddMessagingConfiguration()
     .AddApiVersioningConfiguration()
     .AddOpenApiConfiguration()
     .AddObservabilityConfiguration();
