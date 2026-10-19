@@ -10,6 +10,7 @@ public static class ScheduleAccess
     public static void EnsureCanRead(this ICurrentUser user, int doctorId)
     {
         var doctorOnly = user.Roles.Count > 0 && user.Roles.All(r => r == Roles.Doctor);
-        if (doctorOnly && user.DoctorId != doctorId) throw new ForbiddenException(); // null DoctorId fails closed
+        if (doctorOnly && user.DoctorId != doctorId) // null DoctorId fails closed
+            throw new ForbiddenException { LogDetail = $"BR-7: user {user.UserId} (doctor {user.DoctorId}) read doctor {doctorId}" };
     }
 }

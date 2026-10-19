@@ -7,7 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
-/** AC-004-15: sign in; 400/401/423 stay here and the problem interceptor shows the server's `detail`. */
+/** AC-004-15: sign in; 400/401/423 stay here and the error interceptor shows the server's `message`. */
 @Component({
   selector: 'app-login-page',
   imports: [FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule],

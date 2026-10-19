@@ -64,13 +64,18 @@ export interface BookAppointmentRequest {
   reason: string;
 }
 
-/** RFC 7807 body returned by the API for every error; `code` is stable (e.g. doctor_conflict). */
-export interface Problem {
-  status: number;
-  title?: string;
-  detail?: string;
-  code?: string;
+/**
+ * ADR-0015: the envelope of every API body. Success bodies are unwrapped to `data` by apiResponseInterceptor; error bodies
+ * reach callers as HttpErrorResponse.error, where `errorCode` is stable (e.g. DOCTOR_CONFLICT).
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  message?: string;
+  data?: T;
+  errorCode?: string;
   errors?: Record<string, string[]>;
+  traceId?: string;
 }
 
 export type Role = 'Admin' | 'Receptionist' | 'Doctor';

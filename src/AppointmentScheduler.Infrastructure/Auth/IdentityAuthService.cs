@@ -144,16 +144,16 @@ internal sealed class IdentityAuthService(
         return new AuthResult(new AuthResponse(accessToken, expiresAt, ToDto(user, roles)), refreshToken, entity.ExpiresAtUtc);
     }
 
-    private async Task<DomainException> LoginFailedAsync(Guid? userId, DomainException error, CancellationToken ct)
+    private async Task<SchedulerException> LoginFailedAsync(Guid? userId, SchedulerException error, CancellationToken ct)
     {
         audit.Record(AuditActions.LoginFailed, "User", userId?.ToString(), userId);
         await db.SaveChangesAsync(ct);
-        logger.LogInformation("Login failed ({Code}) for user {UserId}", error.Code, userId);
+        logger.LogInformation("Login failed ({Code}) for user {UserId}", error.ErrorCode, userId);
         return error;
     }
 
     /// <summary>AC-004-6: a rotated token was presented again — revoke every live token of its family.</summary>
-    private async Task<DomainException> RevokeFamilyAsync(RefreshToken token, CancellationToken ct)
+    private async Task<SchedulerException> RevokeFamilyAsync(RefreshToken token, CancellationToken ct)
     {
         var now = clock.GetUtcNow();
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -163,18 +163,21 @@ internal sealed class IdentityAuthService(
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
         logger.LogWarning("Refresh token reuse for user {UserId}; family {FamilyId} revoked", token.UserId, token.FamilyId);
-        return new UnauthorizedException("refresh_token_reused", "The refresh token was already used. Please sign in again.");
+        return new UnauthorizedException(ErrorCodes.RefreshTokenReused, "The refresh token was already used. Please sign in again.")
+        {
+            LogDetail = $"family {token.FamilyId} revoked for user {token.UserId}",
+        };
     }
 
     private static UnauthorizedException InvalidCredentials() =>
-        new("invalid_credentials", "The e-mail or password is incorrect.");
+        new(ErrorCodes.InvalidCredentials, "The e-mail or password is incorrect.");
 
     private static LockedException AccountLocked() =>
-        new("account_locked", "The account is temporarily locked after too many failed sign-in attempts. Try again later.");
+        new(ErrorCodes.AccountLocked, "The account is temporarily locked after too many failed sign-in attempts. Try again later.");
 
     private static UnauthorizedException InvalidRefreshToken() =>
-        new("invalid_refresh_token", "The refresh token is missing, expired or revoked. Please sign in again.");
+        new(ErrorCodes.InvalidRefreshToken, "The refresh token is missing, expired or revoked. Please sign in again.");
 
     private static UnauthorizedException Unauthenticated() =>
-        new("unauthorized", "Authentication is required.");
+        new(ErrorCodes.Unauthorized, "Authentication is required.");
 }

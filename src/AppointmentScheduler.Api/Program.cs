@@ -26,7 +26,6 @@ builder.Services.AddControllers(o =>
         o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
     .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = BadRequestResponse.FromModelState);
-builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddHsts(o => o.MaxAge = TimeSpan.FromDays(365));
 builder.Services.AddOpenApi();
@@ -38,8 +37,9 @@ var app = builder.Build();
 
 // Order matters (docs/architecture.md): headers first so error/401/403 responses carry them; auth before endpoints (AC-004-8).
 app.UseSecurityHeaders();
-app.UseExceptionHandler();
-app.UseStatusCodePages();
+// GlobalExceptionHandler handles every exception; the middleware still demands a fallback without AddProblemDetails().
+app.UseExceptionHandler(new ExceptionHandlerOptions { ExceptionHandler = _ => Task.CompletedTask });
+app.UseStatusCodePages(BadRequestResponse.FromStatusCode); // bodiless 404/405/… → ApiResponse (ADR-0015)
 if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseCors();
 app.UseAuthentication();

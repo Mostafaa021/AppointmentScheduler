@@ -17,7 +17,7 @@ public class AvailabilityEndpointTests(ApiFactory api) : IAsyncLifetime
     private async Task<JsonElement[]> SlotsAsync(int doctorId, DateOnly date, int? patientId = null)
     {
         var url = $"/api/v1/doctors/{doctorId}/availability?date={date:yyyy-MM-dd}" + (patientId is null ? "" : $"&patientId={patientId}");
-        var body = await (await _client.GetAsync(url)).JsonAsync();
+        var body = await (await _client.GetAsync(url)).DataAsync();
         Assert.Equal("Europe/London", body.GetProperty("timeZone").GetString());
         return body.GetProperty("slots").EnumerateArray().ToArray();
     }
@@ -41,7 +41,7 @@ public class AvailabilityEndpointTests(ApiFactory api) : IAsyncLifetime
     public async Task AC_001_2_and_3_Booked_slot_is_Booked_and_frees_after_cancel()
     {
         var (d, p) = await api.CreatePeopleAsync();
-        var id = (await (await _client.BookAsync(d[0], p[0], At(9, 30))).JsonAsync()).GetProperty("id").GetGuid();
+        var id = (await (await _client.BookAsync(d[0], p[0], At(9, 30))).DataAsync()).GetProperty("id").GetGuid();
 
         var booked = (await SlotsAsync(d[0], Day)).Single(s => s.GetProperty("localStart").GetString() == "09:30");
         Assert.Equal("Booked", booked.GetProperty("status").GetString());
@@ -80,7 +80,7 @@ public class AvailabilityEndpointTests(ApiFactory api) : IAsyncLifetime
         var badDate = await _client.GetAsync("/api/v1/doctors/1/availability?date=not-a-date");
 
         Assert.Equal(HttpStatusCode.NotFound, notFound.StatusCode);
-        Assert.Equal("doctor_not_found", await notFound.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.DoctorNotFound, await notFound.ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.BadRequest, badDate.StatusCode);
     }
 }

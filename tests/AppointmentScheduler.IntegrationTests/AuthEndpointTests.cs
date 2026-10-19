@@ -46,7 +46,7 @@ public class AuthEndpointTests(ApiFactory api)
     {
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal("Bearer", Assert.Single(response.Headers.WwwAuthenticate).Scheme);
-        Assert.Equal("unauthorized", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.Unauthorized, await response.ErrorCodeAsync());
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class AuthEndpointTests(ApiFactory api)
         var (email, response) = await LoginNewUserAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.JsonAsync();
+        var body = await response.DataAsync();
         Assert.False(string.IsNullOrEmpty(body.GetProperty("accessToken").GetString()));
         Assert.Equal(api.Clock.GetUtcNow().AddMinutes(15), body.GetProperty("expiresAt").GetDateTimeOffset());
         var user = body.GetProperty("user");
@@ -79,7 +79,7 @@ public class AuthEndpointTests(ApiFactory api)
         var response = await _anon.LoginAsync(email, password);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("validation_failed", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.ValidationFailed, await response.ErrorCodeAsync());
         var errors = (await response.JsonAsync()).GetProperty("errors");
         Assert.True(errors.TryGetProperty("email", out _));
         Assert.True(errors.TryGetProperty("password", out _));
@@ -95,7 +95,7 @@ public class AuthEndpointTests(ApiFactory api)
 
         Assert.Equal(HttpStatusCode.Unauthorized, unknown.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
-        Assert.Equal("invalid_credentials", await unknown.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidCredentials, await unknown.ErrorCodeAsync());
         Assert.Equal(await WithoutTraceIdAsync(unknown), await WithoutTraceIdAsync(wrong));
     }
 
@@ -130,7 +130,7 @@ public class AuthEndpointTests(ApiFactory api)
     [Fact]
     public async Task AC_004_4_Malformed_bad_signature_issuer_audience_or_expired_token_returns_401()
     {
-        var adminId = (await (await _anon.LoginAsync(TestUsers.Admin, TestUsers.Password)).JsonAsync())
+        var adminId = (await (await _anon.LoginAsync(TestUsers.Admin, TestUsers.Password)).DataAsync())
             .GetProperty("user").GetProperty("id").GetString()!;
         var now = api.Clock.GetUtcNow();
 
@@ -154,7 +154,7 @@ public class AuthEndpointTests(ApiFactory api)
         var refreshed = await _anon.RefreshAsync(first);
 
         Assert.Equal(HttpStatusCode.OK, refreshed.StatusCode);
-        var body = await refreshed.JsonAsync();
+        var body = await refreshed.DataAsync();
         Assert.False(string.IsNullOrEmpty(body.GetProperty("accessToken").GetString()));
         Assert.Equal(email, body.GetProperty("user").GetProperty("email").GetString());
         var second = refreshed.RefreshToken();
@@ -170,8 +170,8 @@ public class AuthEndpointTests(ApiFactory api)
         var unknown = await _anon.RefreshAsync("not-a-real-token");
 
         Assert.Equal(HttpStatusCode.Unauthorized, none.StatusCode);
-        Assert.Equal("invalid_refresh_token", await none.ProblemCodeAsync());
-        Assert.Equal("invalid_refresh_token", await unknown.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidRefreshToken, await none.ErrorCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidRefreshToken, await unknown.ErrorCodeAsync());
     }
 
     [Fact]
@@ -179,11 +179,11 @@ public class AuthEndpointTests(ApiFactory api)
     {
         var (d, _) = await api.CreatePeopleAsync(doctors: 1, patients: 0);
         var (_, login) = await LoginNewUserAsync();
-        var userId = (await login.JsonAsync()).GetProperty("user").GetProperty("id").GetGuid();
+        var userId = (await login.DataAsync()).GetProperty("user").GetProperty("id").GetGuid();
         var admin = await api.ClientForAsync(TestUsers.Admin);
         Assert.Equal(HttpStatusCode.OK, (await admin.PutAsJsonAsync($"/api/v1/users/{userId}/roles", new { roles = RoleSets.Doctor, doctorId = d[0] })).StatusCode);
 
-        var user = (await (await _anon.RefreshAsync(login.RefreshToken())).JsonAsync()).GetProperty("user");
+        var user = (await (await _anon.RefreshAsync(login.RefreshToken())).DataAsync()).GetProperty("user");
 
         Assert.Equal(["Doctor"], user.GetProperty("roles").EnumerateArray().Select(r => r.GetString()));
         Assert.Equal(d[0], user.GetProperty("doctorId").GetInt32());
@@ -200,9 +200,9 @@ public class AuthEndpointTests(ApiFactory api)
         var newest = await _anon.RefreshAsync(second);
 
         Assert.Equal(HttpStatusCode.Unauthorized, reuse.StatusCode);
-        Assert.Equal("refresh_token_reused", await reuse.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.RefreshTokenReused, await reuse.ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.Unauthorized, newest.StatusCode);
-        Assert.Equal("invalid_refresh_token", await newest.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidRefreshToken, await newest.ErrorCodeAsync());
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public class AuthEndpointTests(ApiFactory api)
     public async Task AC_004_7_Logout_revokes_the_refresh_token_and_clears_the_cookie()
     {
         var (_, login) = await LoginNewUserAsync();
-        var accessToken = (await login.JsonAsync()).GetProperty("accessToken").GetString()!;
+        var accessToken = (await login.DataAsync()).GetProperty("accessToken").GetString()!;
         var refreshToken = login.RefreshToken();
         _anon.DefaultRequestHeaders.Authorization = new("Bearer", accessToken);
 
@@ -232,7 +232,7 @@ public class AuthEndpointTests(ApiFactory api)
         Assert.Contains("expires=thu, 01 jan 1970", cleared);
         Assert.Contains("path=/api/v1/auth", cleared);
         _anon.DefaultRequestHeaders.Authorization = null;
-        Assert.Equal("invalid_refresh_token", await (await _anon.RefreshAsync(refreshToken)).ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidRefreshToken, await (await _anon.RefreshAsync(refreshToken)).ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.OK, (await MeAsync(accessToken)).StatusCode); // access token lives until it expires
     }
 
@@ -252,7 +252,7 @@ public class AuthEndpointTests(ApiFactory api)
         var email = await api.CreateDoctorUserAsync(d[0]);
         var client = await api.ClientForAsync(email);
 
-        var me = await (await client.GetAsync("/api/v1/me")).JsonAsync();
+        var me = await (await client.GetAsync("/api/v1/me")).DataAsync();
 
         Assert.Equal(email, me.GetProperty("email").GetString());
         Assert.Equal(["Doctor"], me.GetProperty("roles").EnumerateArray().Select(r => r.GetString()));

@@ -14,7 +14,7 @@ public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     private async Task<Guid> BookIdAsync(int doctorId, int patientId, DateTimeOffset start) =>
-        (await (await _client.BookAsync(doctorId, patientId, start)).JsonAsync()).GetProperty("id").GetGuid();
+        (await (await _client.BookAsync(doctorId, patientId, start)).DataAsync()).GetProperty("id").GetGuid();
 
     private Task<HttpResponseMessage> RescheduleAsync(Guid id, DateTimeOffset startUtc) =>
         _client.PostAsJsonAsync($"/api/v1/appointments/{id}/reschedule", new { startUtc });
@@ -30,7 +30,7 @@ public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
         var early = await BookIdAsync(d[0], p[1], At(9));
         await CancelAsync(late);
 
-        var schedule = (await (await _client.GetAsync($"/api/v1/appointments?doctorId={d[0]}&date={Day:yyyy-MM-dd}")).JsonAsync())
+        var schedule = (await (await _client.GetAsync($"/api/v1/appointments?doctorId={d[0]}&date={Day:yyyy-MM-dd}")).DataAsync())
             .EnumerateArray().ToArray();
 
         Assert.Equal([early, late], schedule.Select(a => a.GetProperty("id").GetGuid()));
@@ -48,9 +48,9 @@ public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
         var second = await CancelAsync(id);
 
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-        Assert.Equal("Cancelled", (await first.JsonAsync()).GetProperty("status").GetString());
+        Assert.Equal("Cancelled", (await first.DataAsync()).GetProperty("status").GetString());
         Assert.Equal(HttpStatusCode.UnprocessableEntity, second.StatusCode);
-        Assert.Equal("appointment_not_modifiable", await second.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.AppointmentNotModifiable, await second.ErrorCodeAsync());
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await RescheduleAsync(id, At(14, 30, dayOffset: 1));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("14:30", (await response.JsonAsync()).GetProperty("localStart").GetString());
+        Assert.Equal("14:30", (await response.DataAsync()).GetProperty("localStart").GetString());
         Assert.Equal(HttpStatusCode.Created, (await _client.BookAsync(d[0], p[1], At(11))).StatusCode);
     }
 
@@ -78,8 +78,8 @@ public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
         var patientClash = await RescheduleAsync(id, At(15));
         var sameSlot = await RescheduleAsync(id, At(12));
 
-        Assert.Equal("doctor_conflict", await doctorClash.ProblemCodeAsync());
-        Assert.Equal("patient_conflict", await patientClash.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.DoctorConflict, await doctorClash.ErrorCodeAsync());
+        Assert.Equal(ErrorCodes.PatientConflict, await patientClash.ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.OK, sameSlot.StatusCode);
     }
 
@@ -89,8 +89,8 @@ public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
         var (d, p) = await api.CreatePeopleAsync();
         var id = await BookIdAsync(d[0], p[0], At(16));
 
-        Assert.Equal("appointment_in_past", await (await RescheduleAsync(id, At(7))).ProblemCodeAsync());
-        Assert.Equal("invalid_slot", await (await RescheduleAsync(id, At(16, 45))).ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.AppointmentInPast, await (await RescheduleAsync(id, At(7))).ErrorCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidSlot, await (await RescheduleAsync(id, At(16, 45))).ErrorCodeAsync());
     }
 
     [Fact]
@@ -99,6 +99,6 @@ public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await CancelAsync(Guid.NewGuid());
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal("appointment_not_found", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.AppointmentNotFound, await response.ErrorCodeAsync());
     }
 }

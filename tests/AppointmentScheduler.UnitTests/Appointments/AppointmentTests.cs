@@ -30,7 +30,7 @@ public class AppointmentTests
     {
         var ex = Assert.Throws<BusinessRuleException>(() => Book(At(2026, 11, 2, hour, minute)));
 
-        Assert.Equal("appointment_in_past", ex.Code);
+        Assert.Equal(ErrorCodes.AppointmentInPast, ex.ErrorCode);
     }
 
     [Theory]
@@ -70,7 +70,7 @@ public class AppointmentTests
 
         var ex = Assert.Throws<BusinessRuleException>(() => a.Cancel(null, Now));
 
-        Assert.Equal("appointment_not_modifiable", ex.Code);
+        Assert.Equal(ErrorCodes.AppointmentNotModifiable, ex.ErrorCode);
     }
 
     [Fact]
@@ -99,9 +99,9 @@ public class AppointmentTests
     {
         var a = Book(At(2026, 11, 2, 11, 0));
 
-        Assert.Equal("appointment_in_past",
-            Assert.Throws<BusinessRuleException>(() => a.Reschedule(At(2026, 11, 2, 9, 30), Schedule, Now)).Code);
-        Assert.Equal("invalid_slot",
-            Assert.Throws<BusinessRuleException>(() => a.Reschedule(At(2026, 11, 3, 18, 0), Schedule, Now)).Code);
+        Assert.Equal(ErrorCodes.AppointmentInPast,
+            Assert.Throws<BusinessRuleException>(() => a.Reschedule(At(2026, 11, 2, 9, 30), Schedule, Now)).ErrorCode);
+        Assert.Equal(ErrorCodes.InvalidSlot,
+            Assert.Throws<BusinessRuleException>(() => a.Reschedule(At(2026, 11, 3, 18, 0), Schedule, Now)).ErrorCode);
     }
 }

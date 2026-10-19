@@ -42,7 +42,7 @@ internal sealed class IdentityUserAdminService(
     {
         setRolesValidator.ValidateOrThrow(request);
         var user = await users.FindByIdAsync(id.ToString())
-            ?? throw new NotFoundException("user_not_found", $"User {id} was not found.");
+            ?? throw new NotFoundException(ErrorCodes.UserNotFound, $"User {id} was not found.");
         await EnsureDoctorExistsAsync(request.DoctorId, ct);
 
         var target = request.Roles!.Distinct().ToList();
@@ -63,7 +63,7 @@ internal sealed class IdentityUserAdminService(
     private async Task EnsureDoctorExistsAsync(int? doctorId, CancellationToken ct)
     {
         if (doctorId is { } d && !await db.Doctors.AnyAsync(x => x.Id == d, ct))
-            throw new NotFoundException("doctor_not_found", $"Doctor {d} was not found.");
+            throw new NotFoundException(ErrorCodes.DoctorNotFound, $"Doctor {d} was not found.");
     }
 
     /// <summary>Duplicate e-mail → 409; any other Identity failure means our validator and Identity disagree → 500.</summary>
@@ -76,5 +76,5 @@ internal sealed class IdentityUserAdminService(
         throw new InvalidOperationException($"Identity rejected the change: {string.Join(", ", codes)}");
     }
 
-    internal static ConflictException EmailTaken() => new("email_taken", "A user with this e-mail already exists.");
+    internal static ConflictException EmailTaken() => new(ErrorCodes.EmailTaken, "A user with this e-mail already exists.");
 }

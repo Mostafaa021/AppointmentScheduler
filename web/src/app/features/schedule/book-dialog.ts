@@ -112,7 +112,7 @@ export class BookDialog {
         next: () => this.ref.close('booked'),
         error: (e: HttpErrorResponse) => {
           this.saving.set(false);
-          if (e.status === 409 && e.error?.code === 'doctor_conflict') this.ref.close('refresh'); // slot taken meanwhile
+          if (e.status === 409 && e.error?.errorCode === 'DOCTOR_CONFLICT') this.ref.close('refresh'); // slot taken meanwhile
           else this.confirming.set(false);
         },
       });

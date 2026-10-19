@@ -23,7 +23,7 @@ public class ValidationExtensionsTests
     {
         var ex = Assert.Throws<ValidationException>(() => new SampleValidator().ValidateOrThrow(new Sample("", ["ok", "", " "])));
 
-        Assert.Equal("validation_failed", ex.Code);
+        Assert.Equal(ErrorCodes.ValidationFailed, ex.ErrorCode);
         Assert.Equal(["firstName", "tags"], ex.Errors.Keys.Order());
         Assert.Equal(2, ex.Errors["firstName"].Length); // NotEmpty + MinimumLength, both reported
         Assert.Single(ex.Errors["tags"]);               // Tags[1] and Tags[2] -> "tags", same message once

@@ -36,7 +36,7 @@ public class AuthorizationTests(ApiFactory api)
         var (d, p) = await api.CreatePeopleAsync();
         var doctor = await api.ClientForAsync(await api.CreateDoctorUserAsync(d[0]));
         var reception = await api.ClientForAsync(TestUsers.Receptionist);
-        var id = (await (await reception.BookAsync(d[0], p[0], At(10))).JsonAsync()).GetProperty("id").GetGuid();
+        var id = (await (await reception.BookAsync(d[0], p[0], At(10))).DataAsync()).GetProperty("id").GetGuid();
 
         HttpResponseMessage[] responses =
         [
@@ -53,9 +53,9 @@ public class AuthorizationTests(ApiFactory api)
         foreach (var response in responses)
         {
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-            Assert.Equal("forbidden", await response.ProblemCodeAsync());
+            Assert.Equal(ErrorCodes.Forbidden, await response.ErrorCodeAsync());
         }
-        var schedule = await (await reception.GetAsync($"/api/v1/appointments?doctorId={d[0]}&date={Day:yyyy-MM-dd}")).JsonAsync();
+        var schedule = await (await reception.GetAsync($"/api/v1/appointments?doctorId={d[0]}&date={Day:yyyy-MM-dd}")).DataAsync();
         var only = Assert.Single(schedule.EnumerateArray());
         Assert.Equal("Scheduled", only.GetProperty("status").GetString());
         Assert.Equal("10:00", only.GetProperty("localStart").GetString());
@@ -70,7 +70,7 @@ public class AuthorizationTests(ApiFactory api)
         var roles = await reception.PutAsJsonAsync($"/api/v1/users/{Guid.NewGuid()}/roles", new { roles = RoleSets.Admin });
 
         Assert.Equal(HttpStatusCode.Forbidden, create.StatusCode);
-        Assert.Equal("forbidden", await create.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.Forbidden, await create.ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.Forbidden, roles.StatusCode);
     }
 
@@ -89,8 +89,8 @@ public class AuthorizationTests(ApiFactory api)
     {
         var (d, p) = await api.CreatePeopleAsync();
         var reception = await api.ClientForAsync(TestUsers.Receptionist);
-        var own = (await (await reception.BookAsync(d[0], p[0], At(14))).JsonAsync()).GetProperty("id").GetGuid();
-        var other = (await (await reception.BookAsync(d[1], p[1], At(14))).JsonAsync()).GetProperty("id").GetGuid();
+        var own = (await (await reception.BookAsync(d[0], p[0], At(14))).DataAsync()).GetProperty("id").GetGuid();
+        var other = (await (await reception.BookAsync(d[1], p[1], At(14))).DataAsync()).GetProperty("id").GetGuid();
         var doctor = await api.ClientForAsync(await api.CreateDoctorUserAsync(d[0]));
 
         var ownDay = await doctor.GetAsync($"/api/v1/appointments?doctorId={d[0]}&date={Day:yyyy-MM-dd}");
@@ -100,12 +100,12 @@ public class AuthorizationTests(ApiFactory api)
         var unknown = await doctor.GetAsync($"/api/v1/appointments/{Guid.NewGuid()}");
 
         Assert.Equal(HttpStatusCode.OK, ownDay.StatusCode);
-        Assert.Equal(own, Assert.Single((await ownDay.JsonAsync()).EnumerateArray()).GetProperty("id").GetGuid());
+        Assert.Equal(own, Assert.Single((await ownDay.DataAsync()).EnumerateArray()).GetProperty("id").GetGuid());
         Assert.Equal(HttpStatusCode.Forbidden, otherDay.StatusCode);
-        Assert.Equal("forbidden", await otherDay.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.Forbidden, await otherDay.ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.OK, ownById.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, otherById.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
-        Assert.Equal("appointment_not_found", await unknown.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.AppointmentNotFound, await unknown.ErrorCodeAsync());
     }
 }

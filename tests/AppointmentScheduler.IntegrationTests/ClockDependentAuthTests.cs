@@ -35,9 +35,9 @@ public class ClockDependentAuthTests(ClockApiFactory api)
         var unlocked = await _anon.LoginAsync(email, TestUsers.Password);
 
         Assert.Equal((HttpStatusCode)423, fifth.StatusCode);
-        Assert.Equal("account_locked", await fifth.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.AccountLocked, await fifth.ErrorCodeAsync());
         Assert.Equal((HttpStatusCode)423, correctWhileLocked.StatusCode);
-        Assert.Equal("account_locked", await correctWhileLocked.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.AccountLocked, await correctWhileLocked.ErrorCodeAsync());
         Assert.Equal((HttpStatusCode)423, stillLocked.StatusCode);
         Assert.Equal(HttpStatusCode.OK, unlocked.StatusCode);
     }
@@ -77,7 +77,7 @@ public class ClockDependentAuthTests(ClockApiFactory api)
 
         Assert.Equal(HttpStatusCode.OK, withinSkew.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, expired.StatusCode);
-        Assert.Equal("unauthorized", await expired.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.Unauthorized, await expired.ErrorCodeAsync());
         Assert.Equal("Bearer", Assert.Single(expired.Headers.WwwAuthenticate).Scheme);
     }
 
@@ -95,6 +95,6 @@ public class ClockDependentAuthTests(ClockApiFactory api)
 
         Assert.Equal(HttpStatusCode.OK, beforeExpiry.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, expired.StatusCode);
-        Assert.Equal("invalid_refresh_token", await expired.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidRefreshToken, await expired.ErrorCodeAsync());
     }
 }

@@ -37,7 +37,7 @@ public class DevelopmentSeedTests(SeededDevelopmentFactory api) : IClassFixture<
         var response = await api.CreateAnonymousClient().LoginAsync(email, "DemoClinic2026");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var user = (await response.JsonAsync()).GetProperty("user");
+        var user = (await response.DataAsync()).GetProperty("user");
         Assert.Equal([role], user.GetProperty("roles").EnumerateArray().Select(r => r.GetString()));
         if (role == "Doctor")
         {

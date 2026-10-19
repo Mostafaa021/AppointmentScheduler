@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, provideRouter } from '@angular/router';
 import { authInterceptor } from '../../core/auth/auth.interceptor';
-import { problemInterceptor } from '../../core/http/problem.interceptor';
+import { apiErrorInterceptor } from '../../core/http/api-error.interceptor';
+import { apiResponseInterceptor } from '../../core/http/api-response.interceptor';
 import { LoginPage } from './login-page';
 
 describe('LoginPage (AC-004-15)', () => {
@@ -15,7 +16,7 @@ describe('LoginPage (AC-004-15)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([problemInterceptor, authInterceptor])),
+        provideHttpClient(withInterceptors([apiErrorInterceptor, authInterceptor, apiResponseInterceptor])),
         provideHttpClientTesting(),
         provideRouter([]),
       ],
@@ -62,26 +63,30 @@ describe('LoginPage (AC-004-15)', () => {
     expect(button.disabled).toBe(true);
     const req = http.expectOne('/api/v1/auth/login');
     expect(req.request.body).toEqual({ email: 'reception@clinic.test', password: 'Secret123456' });
-    req.flush({ accessToken: 't', expiresAt: '2026-11-02T10:15:00Z', user: { id: 'u', email: 'e', roles: ['Receptionist'] } });
+    req.flush({
+      success: true,
+      statusCode: 200,
+      data: { accessToken: 't', expiresAt: '2026-11-02T10:15:00Z', user: { id: 'u', email: 'e', roles: ['Receptionist'] } },
+    });
 
     expect(navigate).toHaveBeenCalledWith('/schedule');
   });
 
-  for (const [status, code, detail] of [
-    [401, 'invalid_credentials', 'Invalid e-mail or password.'],
-    [423, 'account_locked', 'The account is locked. Try again later.'],
+  for (const [status, errorCode, message] of [
+    [401, 'INVALID_CREDENTIALS', 'Invalid e-mail or password.'],
+    [423, 'ACCOUNT_LOCKED', 'The account is locked. Try again later.'],
   ] as const) {
-    it(`stays on /login, re-enables submit and shows the problem detail on ${status} ${code}`, async () => {
+    it(`stays on /login, re-enables submit and shows the server message on ${status} ${errorCode}`, async () => {
       const { fixture, button } = await render();
       button.click();
       await fixture.whenStable();
 
-      http.expectOne('/api/v1/auth/login').flush({ status, code, detail }, { status, statusText: code });
+      http.expectOne('/api/v1/auth/login').flush({ success: false, statusCode: status, errorCode, message }, { status, statusText: errorCode });
       await fixture.whenStable();
 
       http.expectNone('/api/v1/auth/refresh');
       expect(navigate).not.toHaveBeenCalled();
-      expect(snack).toHaveBeenCalledWith(detail, 'Dismiss', expect.anything());
+      expect(snack).toHaveBeenCalledWith(message, 'Dismiss', expect.anything());
       expect(button.disabled).toBe(false);
     });
   }

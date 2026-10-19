@@ -3,15 +3,21 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, provideRouter } from '@angular/router';
-import { AuthResponse } from '../api/models';
-import { problemInterceptor } from '../http/problem.interceptor';
+import { ApiResponse, AuthResponse } from '../api/models';
+import { apiErrorInterceptor } from '../http/api-error.interceptor';
+import { apiResponseInterceptor } from '../http/api-response.interceptor';
 import { authInterceptor } from './auth.interceptor';
 import { AuthService } from './auth.service';
 
-const response = (token: string): AuthResponse => ({
-  accessToken: token,
-  expiresAt: '2026-11-02T10:15:00Z',
-  user: { id: 'u1', email: 'user@clinic.test', roles: ['Receptionist'] },
+// Real server shape: the envelope, unwrapped by apiResponseInterceptor before AuthService sees it (ADR-0015).
+const response = (token: string): ApiResponse<AuthResponse> => ({
+  success: true,
+  statusCode: 200,
+  data: {
+    accessToken: token,
+    expiresAt: '2026-11-02T10:15:00Z',
+    user: { id: 'u1', email: 'user@clinic.test', roles: ['Receptionist'] },
+  },
 });
 const unauthorized = { status: 401, statusText: 'Unauthorized' };
 
@@ -25,7 +31,7 @@ describe('authInterceptor (spec 004)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([problemInterceptor, authInterceptor])),
+        provideHttpClient(withInterceptors([apiErrorInterceptor, authInterceptor, apiResponseInterceptor])),
         provideHttpClientTesting(),
         provideRouter([]),
       ],
@@ -112,16 +118,16 @@ describe('authInterceptor (spec 004)', () => {
     client.get('/api/v1/appointments/a').subscribe({ error: () => (failed = true) });
 
     http.expectOne('/api/v1/appointments/a').flush({}, unauthorized);
-    http.expectOne('/api/v1/auth/refresh').flush({ code: 'invalid_refresh_token' }, unauthorized);
+    http.expectOne('/api/v1/auth/refresh').flush({ success: false, statusCode: 401, errorCode: 'INVALID_REFRESH_TOKEN', message: 'Sign in again.' }, unauthorized);
 
     expect(failed).toBe(true);
     expect(auth.user()).toBeNull();
     expect(navigate).toHaveBeenCalledWith('/login');
   });
 
-  it('non-401 errors pass through to the problem snackbar without refresh', () => {
+  it('non-401 errors pass through to the error snackbar without refresh', () => {
     client.get('/api/v1/appointments/a').subscribe({ error: () => undefined });
-    http.expectOne('/api/v1/appointments/a').flush({ detail: 'Forbidden.' }, { status: 403, statusText: 'Forbidden' });
+    http.expectOne('/api/v1/appointments/a').flush({ success: false, statusCode: 403, errorCode: 'FORBIDDEN', message: 'Forbidden.' }, { status: 403, statusText: 'Forbidden' });
 
     http.expectNone('/api/v1/auth/refresh');
     expect(snack).toHaveBeenCalledWith('Forbidden.', 'Dismiss', expect.anything());

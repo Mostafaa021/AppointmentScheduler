@@ -76,7 +76,7 @@ public class AuditTests(ApiFactory api)
         var receptionistId = await UserIdAsync(TestUsers.Receptionist);
         var bookedBefore = (await AuditAsync(q => q.Where(a => a.Action.StartsWith("appointment.")))).Count;
 
-        var id = (await (await client.BookAsync(d[0], p[0], At(10))).JsonAsync()).GetProperty("id").GetGuid();
+        var id = (await (await client.BookAsync(d[0], p[0], At(10))).DataAsync()).GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.Conflict, (await client.BookAsync(d[0], p[1], At(10))).StatusCode);       // 409: no record
         Assert.Equal(HttpStatusCode.BadRequest, (await client.BookAsync(d[0], p[1], At(11), " ")).StatusCode); // 400: no record
         await client.PostAsJsonAsync($"/api/v1/appointments/{id}/reschedule", new { startUtc = At(12) });
@@ -98,7 +98,7 @@ public class AuditTests(ApiFactory api)
         var email = $"audited-{Guid.NewGuid():N}@test.local";
 
         var id = (await (await admin.PostAsJsonAsync("/api/v1/users", new { email, password = "Audited-Pass-42", roles = RoleSets.Receptionist }))
-            .JsonAsync()).GetProperty("id").GetGuid();
+            .DataAsync()).GetProperty("id").GetGuid();
         await admin.PostAsJsonAsync("/api/v1/users", new { email, password = "Audited-Pass-42", roles = RoleSets.Receptionist }); // 409
         await admin.PutAsJsonAsync($"/api/v1/users/{id}/roles", new { roles = RoleSets.Admin });
 
@@ -128,17 +128,17 @@ public class AuditTests(ApiFactory api)
         var anon = api.CreateAnonymousClient();
 
         var id = (await (await admin.PostAsJsonAsync("/api/v1/users", new { email, password, roles = RoleSets.Receptionist }))
-            .JsonAsync()).GetProperty("id").GetGuid();
+            .DataAsync()).GetProperty("id").GetGuid();
         await admin.PutAsJsonAsync($"/api/v1/users/{id}/roles", new { roles = RoleSets.AdminReceptionist });
         await anon.LoginAsync(email, "Wrong-" + password);
         var login = await anon.LoginAsync(email, password);
-        var accessToken = (await login.JsonAsync()).GetProperty("accessToken").GetString()!;
+        var accessToken = (await login.DataAsync()).GetProperty("accessToken").GetString()!;
         var refresh1 = login.RefreshToken();
         var refreshed = await anon.RefreshAsync(refresh1);
         var refresh2 = refreshed.RefreshToken();
         await anon.RefreshAsync(refresh1); // reuse
         var user = await api.ClientForAsync(email, password);
-        var appointment = (await (await user.BookAsync(doctorId, patientId, At(15))).JsonAsync()).GetProperty("id").GetGuid();
+        var appointment = (await (await user.BookAsync(doctorId, patientId, At(15))).DataAsync()).GetProperty("id").GetGuid();
         await user.PostAsJsonAsync($"/api/v1/appointments/{appointment}/cancel", new { reason = "x" });
         await user.GetAsync($"/api/v1/patients?search={Uri.EscapeDataString("Quillon")}");
         await user.PostWithRefreshCookieAsync("/api/v1/auth/logout", refresh2);

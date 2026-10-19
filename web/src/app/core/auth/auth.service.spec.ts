@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthResponse, Role } from '../api/models';
-import { SILENT } from '../http/problem.interceptor';
+import { SILENT } from '../http/api-error.interceptor';
 import { AuthService } from './auth.service';
 
 const response = (token: string, roles: Role[] = ['Receptionist'], doctorId: number | null = null): AuthResponse => ({
@@ -82,7 +82,7 @@ describe('AuthService (spec 004)', () => {
 
   it('restore resolves when refresh fails and leaves the user signed out (AC-004-16)', async () => {
     const done = auth.restore();
-    http.expectOne('/api/v1/auth/refresh').flush({ code: 'invalid_refresh_token' }, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne('/api/v1/auth/refresh').flush({ success: false, statusCode: 401, errorCode: 'INVALID_REFRESH_TOKEN', message: 'Sign in again.' }, { status: 401, statusText: 'Unauthorized' });
 
     await expect(done).resolves.toBeUndefined();
     expect(auth.isAuthenticated()).toBe(false);

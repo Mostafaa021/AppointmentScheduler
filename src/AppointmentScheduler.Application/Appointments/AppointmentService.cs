@@ -85,15 +85,15 @@ public sealed class AppointmentService(
     {
         var query = tracked ? db.Appointments : db.Appointments.AsNoTracking();
         return await query.Include(a => a.Doctor).Include(a => a.Patient).FirstOrDefaultAsync(a => a.Id == id, ct)
-            ?? throw new NotFoundException("appointment_not_found", $"Appointment {id} was not found.");
+            ?? throw new NotFoundException(ErrorCodes.AppointmentNotFound, $"Appointment {id} was not found.");
     }
 
     private async Task EnsureExistsAsync(int doctorId, int patientId, CancellationToken ct)
     {
         if (!await db.Doctors.AnyAsync(d => d.Id == doctorId, ct))
-            throw new NotFoundException("doctor_not_found", $"Doctor {doctorId} was not found.");
+            throw new NotFoundException(ErrorCodes.DoctorNotFound, $"Doctor {doctorId} was not found.");
         if (!await db.Patients.AnyAsync(p => p.Id == patientId, ct))
-            throw new NotFoundException("patient_not_found", $"Patient {patientId} was not found.");
+            throw new NotFoundException(ErrorCodes.PatientNotFound, $"Patient {patientId} was not found.");
     }
 
     private async Task EnsureNoOverlapAsync(Appointment a, CancellationToken ct)
@@ -110,12 +110,14 @@ public sealed class AppointmentService(
 /// <summary>Conflict errors shared by the pre-check and the DB-constraint translation, so both return the same code.</summary>
 public static class AppointmentConflicts
 {
-    public static ConflictException Doctor() =>
-        new("doctor_conflict", "The doctor already has an appointment at this time.");
+    /// <param name="logDetail">Where the conflict was detected (pre-check or DB constraint); log-only.</param>
+    public static ConflictException Doctor(string? logDetail = null) =>
+        new(ErrorCodes.DoctorConflict, "The doctor already has an appointment at this time.") { LogDetail = logDetail };
 
-    public static ConflictException Patient() =>
-        new("patient_conflict", "The patient already has an appointment at this time.");
+    /// <param name="logDetail">Where the conflict was detected (pre-check or DB constraint); log-only.</param>
+    public static ConflictException Patient(string? logDetail = null) =>
+        new(ErrorCodes.PatientConflict, "The patient already has an appointment at this time.") { LogDetail = logDetail };
 
     public static ConflictException Concurrency() =>
-        new("concurrency_conflict", "The appointment was changed by someone else. Reload and try again.");
+        new(ErrorCodes.ConcurrencyConflict, "The appointment was changed by someone else. Reload and try again.");
 }

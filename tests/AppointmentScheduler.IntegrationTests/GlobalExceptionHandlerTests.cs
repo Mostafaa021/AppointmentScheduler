@@ -37,18 +37,43 @@ public sealed class ErrorTestController : ControllerBase
 public class GlobalExceptionHandlerTests(ApiFactory api)
 {
     [Fact]
-    public async Task Unexpected_exception_returns_generic_500_problem_without_internals()
+    public async Task Unexpected_exception_returns_generic_500_without_internals()
     {
         var response = await api.CreateClient().GetAsync("/test/errors/unexpected");
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal("internal_error", await response.ProblemCodeAsync());
-        Assert.Contains("traceId", body);
-        Assert.DoesNotContain("hunter2", body);
-        Assert.DoesNotContain("InvalidOperationException", body);
-        Assert.DoesNotContain(" at ", body); // no stack trace
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        var raw = await response.Content.ReadAsStringAsync();
+        var body = await response.JsonAsync();
+        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.Equal(500, body.GetProperty("statusCode").GetInt32());
+        Assert.Equal(ErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
+        Assert.False(body.TryGetProperty("data", out _));
+        Assert.DoesNotContain("hunter2", raw);
+        Assert.DoesNotContain("InvalidOperationException", raw);
+        Assert.DoesNotContain(" at ", raw); // no stack trace
+    }
+
+    [Fact]
+    public async Task Unknown_route_returns_404_api_response()
+    {
+        var response = await api.CreateClient().GetAsync("/api/v1/no-such-endpoint");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var body = await response.JsonAsync();
+        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.Equal(ErrorCodes.RouteNotFound, body.GetProperty("errorCode").GetString());
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
+    }
+
+    [Fact]
+    public async Task Wrong_method_returns_405_api_response()
+    {
+        var response = await api.CreateClient().DeleteAsync("/api/v1/auth/login");
+
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
+        Assert.Equal(ErrorCodes.MethodNotAllowed, await response.ErrorCodeAsync());
     }
 
     [Fact]

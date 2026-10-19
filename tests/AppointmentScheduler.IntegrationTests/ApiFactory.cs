@@ -124,7 +124,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         var client = CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
         var response = await client.LoginAsync(email, password);
         response.EnsureSuccessStatusCode();
-        var token = (await response.JsonAsync()).GetProperty("accessToken").GetString();
+        var token = (await response.DataAsync()).GetProperty("accessToken").GetString();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
@@ -190,15 +190,20 @@ internal static class HttpExtensions
     public static string RefreshToken(this HttpResponseMessage response) =>
         response.RefreshSetCookie().Split(';')[0][(RefreshCookie.Length + 1)..];
 
-    /// <summary>The ProblemDetails <c>code</c> extension of an error response.</summary>
-    public static async Task<string?> ProblemCodeAsync(this HttpResponseMessage response)
+    /// <summary>The <c>errorCode</c> of an <c>ApiResponse</c> error body (ADR-0015).</summary>
+    public static async Task<string?> ErrorCodeAsync(this HttpResponseMessage response)
     {
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        return doc.RootElement.TryGetProperty("code", out var code) ? code.GetString() : null;
+        return doc.RootElement.TryGetProperty("errorCode", out var code) ? code.GetString() : null;
     }
 
+    /// <summary>The whole <c>ApiResponse</c> envelope (success flag, message, errors, traceId…).</summary>
     public static async Task<JsonElement> JsonAsync(this HttpResponseMessage response) =>
         JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.Clone();
+
+    /// <summary>The envelope's <c>data</c>: the DTO the endpoint returned.</summary>
+    public static async Task<JsonElement> DataAsync(this HttpResponseMessage response) =>
+        (await response.JsonAsync()).GetProperty("data");
 }
 
 /// <summary>Role arrays for request bodies (static to satisfy CA1861).</summary>

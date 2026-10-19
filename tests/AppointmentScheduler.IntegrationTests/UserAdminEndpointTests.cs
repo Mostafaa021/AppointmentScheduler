@@ -37,7 +37,7 @@ public class UserAdminEndpointTests(ApiFactory api) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.Null(response.Headers.Location);
-        var body = await response.JsonAsync();
+        var body = await response.DataAsync();
         Assert.NotEqual(Guid.Empty, body.GetProperty("id").GetGuid());
         Assert.Equal(email, body.GetProperty("email").GetString());
         Assert.Equal(["Receptionist"], body.GetProperty("roles").EnumerateArray().Select(r => r.GetString()));
@@ -50,8 +50,8 @@ public class UserAdminEndpointTests(ApiFactory api) : IAsyncLifetime
         var (d, _) = await api.CreatePeopleAsync(doctors: 1, patients: 0);
         var email = NewEmail();
 
-        var body = await (await CreateAsync(email, roles: ["Doctor"], doctorId: d[0])).JsonAsync();
-        var login = await (await api.CreateAnonymousClient().LoginAsync(email, Password)).JsonAsync();
+        var body = await (await CreateAsync(email, roles: ["Doctor"], doctorId: d[0])).DataAsync();
+        var login = await (await api.CreateAnonymousClient().LoginAsync(email, Password)).DataAsync();
 
         Assert.Equal(d[0], body.GetProperty("doctorId").GetInt32());
         Assert.Equal(d[0], login.GetProperty("user").GetProperty("doctorId").GetInt32());
@@ -72,7 +72,7 @@ public class UserAdminEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await CreateAsync(email, password, roles, doctorId);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("validation_failed", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.ValidationFailed, await response.ErrorCodeAsync());
         var errors = (await response.JsonAsync()).GetProperty("errors");
         Assert.Equal([field], errors.EnumerateObject().Select(p => p.Name));
         Assert.False(await UserExistsAsync(email));
@@ -88,21 +88,21 @@ public class UserAdminEndpointTests(ApiFactory api) : IAsyncLifetime
         var taken = await CreateAsync(email.ToUpperInvariant());
 
         Assert.Equal(HttpStatusCode.NotFound, noDoctor.StatusCode);
-        Assert.Equal("doctor_not_found", await noDoctor.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.DoctorNotFound, await noDoctor.ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.Conflict, taken.StatusCode);
-        Assert.Equal("email_taken", await taken.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.EmailTaken, await taken.ErrorCodeAsync());
     }
 
     [Fact]
     public async Task AC_004_14_Set_roles_replaces_roles_and_doctor_link()
     {
         var (d, _) = await api.CreatePeopleAsync(doctors: 1, patients: 0);
-        var id = (await (await CreateAsync(NewEmail(), roles: ["Doctor"], doctorId: d[0])).JsonAsync()).GetProperty("id").GetGuid();
+        var id = (await (await CreateAsync(NewEmail(), roles: ["Doctor"], doctorId: d[0])).DataAsync()).GetProperty("id").GetGuid();
 
         var response = await _admin.PutAsJsonAsync($"/api/v1/users/{id}/roles", new { roles = RoleSets.AdminReceptionist });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.JsonAsync();
+        var body = await response.DataAsync();
         Assert.Equal(["Admin", "Receptionist"], body.GetProperty("roles").EnumerateArray().Select(r => r.GetString()));
         Assert.Equal(System.Text.Json.JsonValueKind.Null, body.GetProperty("doctorId").ValueKind);
         using var scope = api.Services.CreateScope();
@@ -112,15 +112,15 @@ public class UserAdminEndpointTests(ApiFactory api) : IAsyncLifetime
     [Fact]
     public async Task AC_004_14_Set_roles_errors()
     {
-        var id = (await (await CreateAsync(NewEmail())).JsonAsync()).GetProperty("id").GetGuid();
+        var id = (await (await CreateAsync(NewEmail())).DataAsync()).GetProperty("id").GetGuid();
 
         var unknownUser = await _admin.PutAsJsonAsync($"/api/v1/users/{Guid.NewGuid()}/roles", new { roles = RoleSets.Admin });
         var unknownDoctor = await _admin.PutAsJsonAsync($"/api/v1/users/{id}/roles", new { roles = RoleSets.Doctor, doctorId = int.MaxValue });
         var invalid = await _admin.PutAsJsonAsync($"/api/v1/users/{Guid.NewGuid()}/roles", new { roles = Array.Empty<string>() });
 
-        Assert.Equal("user_not_found", await unknownUser.ProblemCodeAsync());
-        Assert.Equal("doctor_not_found", await unknownDoctor.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.UserNotFound, await unknownUser.ErrorCodeAsync());
+        Assert.Equal(ErrorCodes.DoctorNotFound, await unknownDoctor.ErrorCodeAsync());
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode); // validation before lookups
-        Assert.Equal("validation_failed", await invalid.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.ValidationFailed, await invalid.ErrorCodeAsync());
     }
 }

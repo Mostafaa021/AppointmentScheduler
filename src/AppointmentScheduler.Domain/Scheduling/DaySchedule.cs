@@ -36,7 +36,7 @@ public sealed record DaySchedule(TimeZoneInfo TimeZone, TimeOnly Open, TimeOnly 
     /// <summary>BR-4: the start must be exactly one of the day's generated slot starts.</summary>
     public Slot EnsureValidSlot(DateTimeOffset startUtc) =>
         SlotsFor(LocalDateOf(startUtc)).FirstOrDefault(s => s.StartUtc == startUtc)
-        ?? throw new BusinessRuleException("invalid_slot",
+        ?? throw new BusinessRuleException(ErrorCodes.InvalidSlot,
             $"Appointments must start on a {SlotLength.TotalMinutes:0}-minute slot between {Open:HH\\:mm} and {Close:HH\\:mm} ({TimeZone.Id}).");
 
     // Ambiguous local times (DST fall-back) resolve to the standard offset, which GetUtcOffset returns.

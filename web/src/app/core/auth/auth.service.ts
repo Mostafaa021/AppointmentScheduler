@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, firstValueFrom, map, of, share } from 'rxjs';
 import { AuthResponse, AuthUser } from '../api/models';
-import { SILENT } from '../http/problem.interceptor';
+import { SILENT } from '../http/api-error.interceptor';
 
 /** Spec 004 (S-22): session state. The refresh token is an HttpOnly cookie the browser handles; JS never sees it. */
 @Injectable({ providedIn: 'root' })

@@ -1,13 +1,14 @@
+using AppointmentScheduler.Api.Errors;
 using AppointmentScheduler.Application.Auth;
 using AppointmentScheduler.Application.Common;
+using AppointmentScheduler.Domain.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentScheduler.Api.Auth;
 
 internal static class AuthSetup
 {
-    /// <summary>Role policies, 401/403 as ProblemDetails (<c>unauthorized</c> / <c>forbidden</c>) and <see cref="ICurrentUser"/>.</summary>
+    /// <summary>Role policies, 401/403 as ApiResponse (<c>UNAUTHORIZED</c> / <c>FORBIDDEN</c>) and <see cref="ICurrentUser"/>.</summary>
     public static IServiceCollection AddApiAuth(this IServiceCollection services)
     {
         services.AddAuthorizationBuilder()
@@ -21,21 +22,13 @@ internal static class AuthSetup
             {
                 ctx.HandleResponse(); // replace the default empty 401
                 ctx.Response.Headers.WWWAuthenticate = "Bearer";
-                return WriteProblemAsync(ctx.HttpContext, StatusCodes.Status401Unauthorized, "Unauthorized", "unauthorized",
+                return ApiErrorWriter.WriteAsync(ctx.HttpContext, StatusCodes.Status401Unauthorized, ErrorCodes.Unauthorized,
                     "Authentication is required.");
             },
-            OnForbidden = ctx => WriteProblemAsync(ctx.HttpContext, StatusCodes.Status403Forbidden, "Forbidden", "forbidden",
+            OnForbidden = ctx => ApiErrorWriter.WriteAsync(ctx.HttpContext, StatusCodes.Status403Forbidden, ErrorCodes.Forbidden,
                 "You are not allowed to access this resource."),
         });
 
         return services.AddHttpContextAccessor().AddScoped<ICurrentUser, HttpCurrentUser>();
-    }
-
-    private static async Task WriteProblemAsync(HttpContext http, int status, string title, string code, string detail)
-    {
-        http.Response.StatusCode = status;
-        var problem = new ProblemDetails { Status = status, Title = title, Detail = detail, Extensions = { ["code"] = code } };
-        await http.RequestServices.GetRequiredService<IProblemDetailsService>()
-            .WriteAsync(new ProblemDetailsContext { HttpContext = http, ProblemDetails = problem });
     }
 }

@@ -38,7 +38,7 @@ public class ExclusionConstraintTests(ApiFactory api)
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() => SaveDirectlyAsync(New(d[0], p[1], 10)));
 
-        Assert.Equal("doctor_conflict", ex.Code);
+        Assert.Equal(ErrorCodes.DoctorConflict, ex.ErrorCode);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class ExclusionConstraintTests(ApiFactory api)
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() => SaveDirectlyAsync(New(d[1], p[0], 11)));
 
-        Assert.Equal("patient_conflict", ex.Code);
+        Assert.Equal(ErrorCodes.PatientConflict, ex.ErrorCode);
     }
 
     [Fact]

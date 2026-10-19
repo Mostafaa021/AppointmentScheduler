@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using static AppointmentScheduler.IntegrationTests.ApiFactory;
 
 namespace AppointmentScheduler.IntegrationTests;
@@ -21,12 +22,27 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await _client.BookAsync(d[0], p[0], At(10), "  Annual check-up ");
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var body = await response.JsonAsync();
+        var body = await response.DataAsync();
         Assert.Equal("Scheduled", body.GetProperty("status").GetString());
         Assert.Equal("10:00", body.GetProperty("localStart").GetString());
         Assert.Equal("10:30", body.GetProperty("localEnd").GetString());
         Assert.Equal("Annual check-up", body.GetProperty("reason").GetString());
         Assert.EndsWith($"/api/v1/appointments/{body.GetProperty("id").GetGuid()}", response.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task Success_body_is_an_api_response_envelope()
+    {
+        var (d, p) = await api.CreatePeopleAsync();
+
+        var envelope = await (await _client.BookAsync(d[0], p[0], At(11))).JsonAsync();
+
+        Assert.True(envelope.GetProperty("success").GetBoolean());
+        Assert.Equal(201, envelope.GetProperty("statusCode").GetInt32());
+        Assert.Equal("Appointment booked.", envelope.GetProperty("message").GetString());
+        Assert.Equal(JsonValueKind.Object, envelope.GetProperty("data").ValueKind);
+        Assert.False(envelope.TryGetProperty("errorCode", out _)); // unused envelope members are omitted
+        Assert.False(envelope.TryGetProperty("traceId", out _));
     }
 
     [Fact]
@@ -38,7 +54,7 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await _client.BookAsync(d[0], p[1], At(11));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Equal("doctor_conflict", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.DoctorConflict, await response.ErrorCodeAsync());
     }
 
     [Fact]
@@ -50,7 +66,7 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await _client.BookAsync(d[1], p[0], At(12));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Equal("patient_conflict", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.PatientConflict, await response.ErrorCodeAsync());
     }
 
     [Fact]
@@ -70,7 +86,7 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await _client.BookAsync(d[0], p[0], At(9, dayOffset: -1));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Equal("appointment_in_past", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.AppointmentInPast, await response.ErrorCodeAsync());
     }
 
     [Theory]
@@ -83,7 +99,7 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
         var response = await _client.BookAsync(d[0], p[0], At(hour, minute));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Equal("invalid_slot", await response.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.InvalidSlot, await response.ErrorCodeAsync());
     }
 
     [Fact]
@@ -106,8 +122,8 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
         var noPatient = await _client.BookAsync(d[0], int.MaxValue, At(15));
 
         Assert.Equal(HttpStatusCode.NotFound, noDoctor.StatusCode);
-        Assert.Equal("doctor_not_found", await noDoctor.ProblemCodeAsync());
-        Assert.Equal("patient_not_found", await noPatient.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.DoctorNotFound, await noDoctor.ErrorCodeAsync());
+        Assert.Equal(ErrorCodes.PatientNotFound, await noPatient.ErrorCodeAsync());
     }
 
     [Fact]
@@ -121,7 +137,7 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
         Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Created);
         Assert.All(responses.Where(r => r.StatusCode != HttpStatusCode.Created),
             r => Assert.Equal(HttpStatusCode.Conflict, r.StatusCode));
-        var schedule = await _client.GetFromJsonAsync<List<object>>($"/api/v1/appointments?doctorId={d[0]}&date={Day:yyyy-MM-dd}");
-        Assert.Single(schedule!);
+        var schedule = await (await _client.GetAsync($"/api/v1/appointments?doctorId={d[0]}&date={Day:yyyy-MM-dd}")).DataAsync();
+        Assert.Single(schedule.EnumerateArray());
     }
 }

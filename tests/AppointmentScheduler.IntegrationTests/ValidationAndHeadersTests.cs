@@ -34,10 +34,10 @@ public class ValidationAndHeadersTests(ApiFactory api) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.JsonAsync();
-        Assert.Equal("Validation failed", body.GetProperty("title").GetString());
-        Assert.Equal(400, body.GetProperty("status").GetInt32());
-        Assert.Equal("validation_failed", body.GetProperty("code").GetString());
-        Assert.False(string.IsNullOrEmpty(body.GetProperty("detail").GetString()));
+        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.Equal(400, body.GetProperty("statusCode").GetInt32());
+        Assert.Equal(ErrorCodes.ValidationFailed, body.GetProperty("errorCode").GetString());
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("message").GetString()));
         Assert.Equal(["doctorId", "patientId", "reason", "startUtc"],
             body.GetProperty("errors").EnumerateObject().Select(p => p.Name).Order());
         Assert.Equal(before, await AuditCountAsync());
@@ -65,8 +65,8 @@ public class ValidationAndHeadersTests(ApiFactory api) : IAsyncLifetime
             new StringContent("""{"doctorId":"one","patientId":1,"startUtc":"2026-11-02T10:00:00Z","reason":"x"}""", Encoding.UTF8, "application/json"));
 
         Assert.Equal(HttpStatusCode.BadRequest, json.StatusCode);
-        Assert.Equal("bad_request", await json.ProblemCodeAsync());
-        Assert.Equal("bad_request", await types.ProblemCodeAsync());
+        Assert.Equal(ErrorCodes.BadRequest, await json.ErrorCodeAsync());
+        Assert.Equal(ErrorCodes.BadRequest, await types.ErrorCodeAsync());
     }
 
     private static void AssertBaseHeaders(HttpResponseMessage response)

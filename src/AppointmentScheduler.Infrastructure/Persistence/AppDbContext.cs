@@ -43,9 +43,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation } pg)
         {
+            var detail = $"exclusion constraint {pg.ConstraintName}";
             throw pg.ConstraintName == AppointmentConfiguration.PatientOverlapConstraint
-                ? AppointmentConflicts.Patient()
-                : AppointmentConflicts.Doctor();
+                ? AppointmentConflicts.Patient(detail)
+                : AppointmentConflicts.Doctor(detail);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
                                            {

@@ -24,7 +24,7 @@ public class ScheduleAccessTests
     {
         var ex = Assert.Throws<ForbiddenException>(() => new User([Roles.Doctor], 7).EnsureCanRead(8));
 
-        Assert.Equal("forbidden", ex.Code);
+        Assert.Equal(ErrorCodes.Forbidden, ex.ErrorCode);
     }
 
     [Fact]

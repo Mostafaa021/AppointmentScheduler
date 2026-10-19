@@ -69,13 +69,13 @@ public sealed class Appointment
     private void EnsureModifiable(DateTimeOffset nowUtc)
     {
         if (Status != AppointmentStatus.Scheduled || StartUtc <= nowUtc)
-            throw new BusinessRuleException("appointment_not_modifiable", "Only future scheduled appointments can be changed.");
+            throw new BusinessRuleException(ErrorCodes.AppointmentNotModifiable, "Only future scheduled appointments can be changed.");
     }
 
     private static Slot ValidateNewTime(DateTimeOffset startUtc, DaySchedule schedule, DateTimeOffset nowUtc)
     {
         if (startUtc <= nowUtc)
-            throw new BusinessRuleException("appointment_in_past", "Appointments cannot be booked in the past.");
+            throw new BusinessRuleException(ErrorCodes.AppointmentInPast, "Appointments cannot be booked in the past.");
         return schedule.EnsureValidSlot(startUtc);
     }
 

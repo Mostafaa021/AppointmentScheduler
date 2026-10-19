@@ -47,7 +47,7 @@ public class DayScheduleTests
     {
         var ex = Assert.Throws<BusinessRuleException>(() => Schedule.EnsureValidSlot(At(2026, 11, 2, hour, minute)));
 
-        Assert.Equal("invalid_slot", ex.Code);
+        Assert.Equal(ErrorCodes.InvalidSlot, ex.ErrorCode);
     }
 
     [Fact]

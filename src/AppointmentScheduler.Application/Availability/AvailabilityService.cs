@@ -18,7 +18,7 @@ public sealed class AvailabilityService(IAppDbContext db, TimeProvider clock, IO
     public async Task<AvailabilityDto> GetAsync(int doctorId, DateOnly date, int? patientId, CancellationToken ct)
     {
         if (!await db.Doctors.AnyAsync(d => d.Id == doctorId, ct))
-            throw new NotFoundException("doctor_not_found", $"Doctor {doctorId} was not found.");
+            throw new NotFoundException(ErrorCodes.DoctorNotFound, $"Doctor {doctorId} was not found.");
 
         var schedule = clinic.Value.ToDaySchedule();
         var (from, to) = schedule.UtcWindowOf(date);
