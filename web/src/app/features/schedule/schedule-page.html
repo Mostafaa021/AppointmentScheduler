@@ -1,0 +1,78 @@
+<section class="filters" aria-label="Choose doctor and date">
+  <mat-form-field appearance="outline">
+    <mat-label>Doctor</mat-label>
+    <mat-select [value]="doctorId()" (valueChange)="selectDoctor($event)">
+      @for (d of doctors(); track d.id) {
+        <mat-option [value]="d.id">{{ d.fullName }} — {{ d.specialty }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <div class="date">
+    <button mat-icon-button (click)="shiftDay(-1)" aria-label="Previous day" matTooltip="Previous day">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <mat-form-field appearance="outline">
+      <mat-label>Date</mat-label>
+      <input matInput [matDatepicker]="picker" [ngModel]="date()" (ngModelChange)="selectDate($event)" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+    </mat-form-field>
+    <button mat-icon-button (click)="shiftDay(1)" aria-label="Next day" matTooltip="Next day">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-button (click)="selectDate(today())">Today</button>
+  </div>
+</section>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (!doctorId()) {
+  <p class="hint">Select a doctor to see the day's availability.</p>
+} @else {
+  <div class="layout">
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Availability</mat-card-title>
+        <mat-card-subtitle>{{ freeCount() }} free · times in {{ timeZone() }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <app-slot-grid [slots]="slots()" (pick)="book($event)" />
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Day schedule</mat-card-title>
+        <mat-card-subtitle>{{ appointments().length }} appointment(s)</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <ul class="appointments">
+          @for (a of appointments(); track a.id) {
+            <li [class.cancelled]="a.status === 'Cancelled'">
+              <div class="when">{{ a.localStart }}–{{ a.localEnd }}</div>
+              <div class="who">
+                <strong>{{ a.patientName }}</strong> <span class="mrn">{{ a.patientMrn }}</span>
+                <div class="reason">{{ a.reason }}</div>
+                @if (a.cancellationReason) {
+                  <div class="reason">Cancelled: {{ a.cancellationReason }}</div>
+                }
+              </div>
+              <mat-chip-set><mat-chip [highlighted]="a.status === 'Scheduled'">{{ a.status }}</mat-chip></mat-chip-set>
+              @if (isModifiable(a)) {
+                <div class="actions">
+                  <button mat-stroked-button (click)="reschedule(a)">Reschedule</button>
+                  <button mat-button class="danger" (click)="cancel(a)">Cancel</button>
+                </div>
+              }
+            </li>
+          } @empty {
+            <li class="empty">No appointments.</li>
+          }
+        </ul>
+      </mat-card-content>
+    </mat-card>
+  </div>
+}

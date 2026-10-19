@@ -26,7 +26,7 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 - Dependency direction: **Domain ← Application ← Infrastructure ← Api / Worker**. Domain references nothing.
 - Feature folders in every layer: `Appointments/`, `Patients/`, `Doctors/`, `Clinics/`, `Auth/`. New feature = new folder + spec.
 - Endpoints are thin: bind → call an Application service → map result. No business logic or EF queries in `Api`.
-- Business rules live in Domain (`Appointment`, `AvailabilityPolicy`); the DB exclusion constraint is the final guard (see SPEC.md).
+- Business rules live in Domain (`Appointment`, `DaySchedule`); the DB exclusion constraint is the final guard (see SPEC.md).
 
 ## Conventions
 - Store time as UTC `DateTimeOffset`/`timestamptz` only. Clinic-local conversion happens server-side via the clinic's IANA zone.

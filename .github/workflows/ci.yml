@@ -39,18 +39,4 @@ jobs:
       - run: npm test -- --watch=false
       - run: npm run build
 
-  k6-smoke:
-    runs-on: ubuntu-latest
-    needs: [backend, frontend]
-    steps:
-      - uses: actions/checkout@v4
-      - run: cp .env.example .env
-      - run: docker compose up -d --build --wait
-      - run: docker compose --profile perf run --rm k6 run /scripts/smoke.js
-      - if: always()
-        run: docker compose logs --no-color > compose.log
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: compose-logs
-          path: compose.log
+  # k6 smoke job is added in M6/M7 once the full stack runs in docker compose (spec 000, NFR-2).

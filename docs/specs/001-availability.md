@@ -1,6 +1,6 @@
 # 001 — Doctor availability
 
-| Status | Refined ☑ · Designed ☑ · Built ☐ · Tested ☐ · Reviewed ☐ · Released ☐ · Documented ☐ |
+| Status | Refined ☑ · Designed ☑ · Built ☑ · Tested ☑ · Reviewed ☐ · Released ☐ · Documented ☑ (M1 scope) |
 |---|---|
 | Milestone | M1 (single clinic, fixed 09:00–17:00) → M4 (working hours, breaks, time off, holidays, appointment types) |
 | Business rules touched | BR-3, BR-4 |
@@ -33,7 +33,7 @@ As a receptionist, I want to see a doctor's slots for a date, so that I only off
 `status` ∈ `Free | Booked | Past | PatientBusy | Unavailable`.
 
 ## Design
-- `Domain/Scheduling/AvailabilityPolicy` generates candidate slots in clinic-local time and converts them to UTC with
+- `Domain/Scheduling/DaySchedule` generates slots in clinic-local time and converts them to UTC with
   `TimeZoneInfo`; DST-invalid local times are skipped.
 - `Application/Availability/AvailabilityService` loads Scheduled appointments overlapping that local day's UTC window for the
   doctor (and patient) — one query each — then classifies the slots.
@@ -47,7 +47,7 @@ Slot grid: Free = primary button, Booked = patient chip + actions, Past/Unavaila
 ## Test plan
 | AC | Test |
 |---|---|
-| AC-001-1, 4, 6 | UnitTests › AvailabilityPolicyTests |
+| AC-001-1, 4, 6 | UnitTests › DayScheduleTests |
 | AC-001-2, 3, 5, 7 | IntegrationTests › AvailabilityEndpointTests |
 
 ## Out of scope

@@ -1,6 +1,6 @@
 # 002 — Book an appointment
 
-| Status | Refined ☑ · Designed ☑ · Built ☐ · Tested ☐ · Reviewed ☐ · Released ☐ · Documented ☐ |
+| Status | Refined ☑ · Designed ☑ · Built ☑ · Tested ☑ · Reviewed ☐ · Released ☐ · Documented ☑ (M1 scope) |
 |---|---|
 | Milestone | M1 |
 | Business rules touched | BR-1, BR-2, BR-3, BR-4 |
@@ -36,7 +36,7 @@ Domain `Appointment.Schedule(...)` enforces BR-3/4 → `AppointmentService.BookA
 | AC | Test |
 |---|---|
 | AC-002-4, 5 | UnitTests › AppointmentTests |
-| AC-002-1..3, 6..8 | IntegrationTests › BookingEndpointTests, ConcurrencyTests |
+| AC-002-1..3, 6..8 | IntegrationTests › BookingEndpointTests, ExclusionConstraintTests |
 
 ## Out of scope
 Recurring appointments, overbooking overrides.

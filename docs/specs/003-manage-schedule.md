@@ -1,6 +1,6 @@
 # 003 — Manage the day's schedule
 
-| Status | Refined ☑ · Designed ☑ · Built ☐ · Tested ☐ · Reviewed ☐ · Released ☐ · Documented ☐ |
+| Status | Refined ☑ · Designed ☑ · Built ☑ · Tested ☑ · Reviewed ☐ · Released ☐ · Documented ☑ (M1 scope) |
 |---|---|
 | Milestone | M1 (ETag/If-Match in M3, roles in M2) |
 | Business rules touched | BR-1, BR-2, BR-3, BR-5, BR-7 |
