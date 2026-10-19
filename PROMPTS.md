@@ -380,3 +380,10 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
     - re-measured: 1×201, 7×409 `DOCTOR_CONFLICT`, about 0.4 s for all eight, 0 deadlocks.
   - SPEC §4–§6 rewritten: per-layer table, rejected alternatives for each choice, a DST worked example, and a copy-paste
     "See it yourself" race check (run verbatim to verify).
+- **Plan 016 (no Angular unit tests):** "remove all … tests from angular projects, keep only required; I don't need unit
+  testing in angular for now". Kept what is required for a working app: `npm run build` (local and CI) and live browser
+  checks.
+  - Removed the 10 spec files, `tsconfig.spec.json`, the `test` target and script, and the `vitest`/`jsdom` dependencies (via
+    `npm uninstall`, so the lock file follows).
+  - Updated every Claude file and doc that planned or ran Vitest.
+  - AC-004-21 (no token in browser storage), formerly a Vitest spec, was re-checked live.

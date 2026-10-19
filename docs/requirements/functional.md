@@ -13,7 +13,6 @@ what is required in plain words, its status, where it lives in the code, and how
 
 **Verified by**
 - a unit or architecture test (`tests/`);
-- a Vitest spec (`web/**/*.spec.ts`);
 - or **live**: checked against the running API with `curl` or the browser. There are no integration tests by design
   ([plan 011](../../.claude/plans/011-unit-and-architecture-tests-only.md)).
 
@@ -43,8 +42,8 @@ Paths are relative to `src/AppointmentScheduler.*` (e.g. `Domain/…`) or the re
 | FR-001-5 | Return each slot as UTC start/end plus the clinic-local `HH:mm`, so the browser never converts zones (correct across DST) | all | ✅ | same | `DaySchedule.SlotsFor`, `ClinicOptions` | `DayScheduleTests.AC_001_6…` | AC-001-6 |
 | FR-001-6 | Unknown doctor → 404 `DOCTOR_NOT_FOUND`; a malformed date → 400 | all | ✅ | same | `IRepository.ExistsAsync`, MVC binding → `BadRequestResponse` | live | AC-001-7 |
 | FR-001-7 | Slots follow the doctor's working hours, breaks, time off, holidays and appointment type length | — | 📋 | `…&appointmentTypeId=` | spec 006/007 | — | AC-001-8 |
-| FR-001-8 | The schedule opens on the **clinic's** today (and **Today** returns to it), not the browser's date: the clinic zone decides the day | all | ✅ | `GET /clinic` | `Application/Clinics/ClinicQueries.cs`, `Api/Controllers/ClinicController.cs`, `web/…/schedule-page.ts`, `doctor-schedule-page.ts` | `ClinicQueriesTests`, `doctor-schedule-page.spec.ts`, `scheduler-api.spec.ts` (`fromIsoDate`) | AC-001-6, ADR-0003 |
-| UI | Pick doctor and date; a slot grid colours Free/Booked/Past/PatientBusy; only Free slots are clickable | R | ✅ | — | `web/src/app/features/schedule/schedule-page.ts`, `slot-grid.ts` | `slot-grid.spec.ts` | — |
+| FR-001-8 | The schedule opens on the **clinic's** today (and **Today** returns to it), not the browser's date: the clinic zone decides the day | all | ✅ | `GET /clinic` | `Application/Clinics/ClinicQueries.cs`, `Api/Controllers/ClinicController.cs`, `web/…/schedule-page.ts`, `doctor-schedule-page.ts` | `ClinicQueriesTests`; live (browser opens on the clinic date, **Today** returns to it) | AC-001-6, ADR-0003 |
+| UI | Pick doctor and date; a slot grid colours Free/Booked/Past/PatientBusy; only Free slots are clickable | R | ✅ | — | `web/src/app/features/schedule/schedule-page.ts`, `slot-grid.ts` | live (browser) | — |
 
 ## 002 — Booking ✅ ([spec](../specs/002-booking.md) · [architecture](../architecture/booking.md))
 | ID | Requirement | Roles | Status | API | Implemented in | Verified by | ACs |
@@ -71,7 +70,7 @@ Paths are relative to `src/AppointmentScheduler.*` (e.g. `Domain/…`) or the re
 | FR-003-7 | Unknown appointment → 404 `APPOINTMENT_NOT_FOUND` | all | ✅ | all three | `AppointmentService.FindAsync` | live | AC-003-7 |
 | FR-003-8 | Two concurrent changes to one appointment never silently overwrite each other → 409 `CONCURRENCY_CONFLICT` | R, A | ✅ | cancel, reschedule | PostgreSQL `xmin` token (ADR-0004) | live | AC-003-8 (part) |
 | FR-003-9 | `ETag` / `If-Match` on cancel and reschedule → 412 on a stale ETag | R, A | 📋 set aside (S-31) | — | — | — | AC-003-8 |
-| UI | Day schedule with **Reschedule** (busy slots marked) and **Cancel** dialogs; a Doctor sees only their own day, read-only | R, D | ✅ | — | `doctor-schedule-page.ts`, `reschedule-dialog.ts`, `cancel-dialog.ts` | `doctor-schedule-page.spec.ts` | AC-004-17 |
+| UI | Day schedule with **Reschedule** (busy slots marked) and **Cancel** dialogs; a Doctor sees only their own day, read-only | R, D | ✅ | — | `doctor-schedule-page.ts`, `reschedule-dialog.ts`, `cancel-dialog.ts` | live (browser, as Receptionist and as Doctor) | AC-004-17 |
 
 ## 004 — Authentication, users and audit ✅ ([spec](../specs/004-auth.md) · [architecture](../architecture/auth-and-users.md))
 | ID | Requirement | Roles | Status | API | Implemented in | Verified by | ACs |
@@ -89,7 +88,7 @@ Paths are relative to `src/AppointmentScheduler.*` (e.g. `Domain/…`) or the re
 | FR-004-11 | Validation failures return 400 `VALIDATION_FAILED` with every failing field at once (camelCase names) | all | ✅ | all writes | `Application/Common/ValidationExtensions.cs` | `ValidationExtensionsTests.AC_004_22…`, `AppointmentValidatorTests.AC_004_22…` | AC-004-22 |
 | FR-004-12 | Audit: login success/failure, logout, token reuse, booking, cancel, reschedule, user created, roles changed — one row each, ids only, committed with the change | — | ✅ | — | `Application/Common/AuditLog.cs`, `audit_records` (ADR-0011) | `AppointmentServiceTests` (no audit on rejection); live SQL | AC-004-24, AC-004-25 |
 | FR-004-13 | Development seeds three fictional users (Admin, Receptionist, Doctor) | — | ✅ | — | `Infrastructure/Persistence/Seed/DbSeeder.cs` | live | AC-004-26 |
-| UI | Login page; the token is kept in memory only; one silent refresh for all pending 401s, then retry once; log out always visible | all | ✅ | — | `web/src/app/features/auth/login-page.ts`, `core/auth/auth.interceptor.ts`, `auth.service.ts` | `login-page.spec.ts`, interceptor specs | AC-004-15…21 |
+| UI | Login page; the token is kept in memory only; one silent refresh for all pending 401s, then retry once; log out always visible | all | ✅ | — | `web/src/app/features/auth/login-page.ts`, `core/auth/auth.interceptor.ts`, `auth.service.ts` | live (browser: sign in, token refresh, log out) | AC-004-15…21 |
 
 ## 005 — Patients 🟡 ([spec](../specs/005-patients.md) · [architecture](../architecture/lookups.md))
 | ID | Requirement | Roles | Status | API | Implemented in | Verified by | ACs |
@@ -142,4 +141,4 @@ Today there is one clinic, configured by `Clinic:TimeZone` (default `Europe/Lond
 | FR-009-3 | The same key with a different request → 422 `IDEMPOTENCY_KEY_REUSED`; still running → 409 + `Retry-After: 1` | all | ✅ | same | same | live | AC-009-4, AC-009-5 |
 | FR-009-4 | 5xx answers aren't stored (the key is released), 4xx answers are | all | ✅ | same | `IdempotencyFilter` | live | AC-009-6 |
 | FR-009-5 | Keys live 24 h per user and are purged hourly | — | ✅ | — | `PurgeExpiredIdempotencyRecordsJob` (Hangfire) | live | AC-009-7, AC-009-8 |
-| UI | The app adds a fresh key to every POST and resends the same key after a silent token refresh | — | ✅ | — | `web/src/app/core/http/idempotency-key.interceptor.ts` | `idempotency-key.interceptor.spec.ts` | — |
+| UI | The app adds a fresh key to every POST and resends the same key after a silent token refresh | — | ✅ | — | `web/src/app/core/http/idempotency-key.interceptor.ts` | live (request headers in the browser) | — |

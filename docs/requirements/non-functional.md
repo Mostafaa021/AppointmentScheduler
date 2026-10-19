@@ -90,7 +90,7 @@ outside the repository.
   - the `idempotency_records` table with a unique `(user_id, key)` index as the lock;
   - a 24 h time-to-live and an hourly purge ([spec 009](../specs/009-idempotency.md), [ADR-0006](../adr/0006-idempotency-records.md),
     plan 012).
-- **Verified:** `IdempotencyScopeTests`; live (replay, reuse 422, missing key 400); the Angular interceptor spec.
+- **Verified:** `IdempotencyScopeTests`; live (replay, reuse 422, missing key 400; the browser's POSTs carry the key).
 - **Status:** ✅
 
 ## NFR-6 — Abuse protection: rate limits
@@ -226,12 +226,13 @@ outside the repository.
 - **Status:** ✅ (local demo stack; production configuration is still to do)
 
 ## NFR-17 — Testability
-- **Requirement:** rules and use cases are testable without a database or host. The suite is unit + architecture tests
-  (+ Vitest) and runs without Docker.
+- **Requirement:** rules and use cases are testable without a database or host. The suite is .NET unit + architecture
+  tests and runs without Docker. The Angular app has no unit tests for now (plan 016): it is checked by `npm run build`
+  and live in the browser.
 - **How:**
   - `TimeProvider` injected everywhere;
   - repositories and the unit of work behind interfaces (fakes in `AppointmentServiceTests`);
   - validators separate from services;
   - pure helpers (`IdempotencyFilter.Applies`, `RateLimitPartitionKey`) are unit-testable.
-- **Verified:** `dotnet test`, `npm test`.
+- **Verified:** `dotnet test`, `npm run build`.
 - **Status:** ✅

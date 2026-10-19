@@ -110,8 +110,11 @@ dotnet test
 Runs unit tests (domain rules, DST, use cases with fakes) and architecture tests (layer rules). No Docker needed: there are
 no integration tests by design (plan 011). Behaviour that needs a real database or HTTP host (the exclusion constraints,
 idempotency replay, rate limits) is checked live against the running API. Load testing is done outside the repo.
+
+The Angular app has no unit tests for now (plan 016). It is checked by its production build and by using the changed
+screens in the browser:
 ```bash
-cd web && npm test -- --watch=false
+cd web && npm run build
 ```
 
 ## Troubleshooting

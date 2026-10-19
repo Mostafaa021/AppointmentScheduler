@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 
 ## [Unreleased]
 ### Removed
+- Angular unit tests (plan 016, user decision): the 10 `*.spec.ts` files, `tsconfig.spec.json`, the `test` target and
+  script, and the `vitest` + `jsdom` dev dependencies. CI builds the web app only; UI behaviour is checked live in the browser.
+  Claude agents, skills and docs no longer plan or run Angular tests.
 - Integration tests, Testcontainers and `WebApplicationFactory` (plan 011, user decision): only unit and architecture tests
   (plus Vitest) remain, and `dotnet test` no longer needs Docker. The pure `RateLimitPartitionKeyTests` moved to UnitTests.
   Planned Playwright e2e and the in-repo k6 suite are dropped (`/load-test` skill removed); load testing happens outside

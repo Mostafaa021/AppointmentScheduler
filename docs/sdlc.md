@@ -30,7 +30,7 @@ flowchart LR
 | product-owner | `docs/specs/NNN-*.md`, backlog row | **DoR**: every AC testable (Given/When/Then), BR impact listed, out-of-scope stated, no open questions |
 | architect | Design section in spec, ADR when a decision is made | Layer rule respected; NFR impact (auth, idempotency, rate limit, observability, time zones, PII) written down |
 | backend-developer | Code + unit tests named after AC IDs (no integration tests, plan 011) | `dotnet build` + `dotnet test` green; no logic in endpoints |
-| frontend-developer | Angular feature + Vitest specs | `npm test` + `npm run build` green; accessible controls |
+| frontend-developer | Angular feature (no unit specs, plan 016) | `npm run build` green; screens checked live; accessible controls |
 | qa-engineer | Test plan table in spec, missing unit tests, manual checks | Every AC mapped to a passing test or a documented manual check |
 | security-engineer | `docs/reviews/NNN-security.md` | No must-fix open (authz, validation, PII, secrets, rate limits, OWASP API Top 10) |
 | code-reviewer | `docs/reviews/NNN-code.md` | No must-fix open; ArchitectureTests green |
@@ -46,7 +46,7 @@ flowchart LR
 
 ## Definition of Done
 - [ ] All AC have passing automated tests (IDs in test names)
-- [ ] `dotnet test`, `npm test`, `npm run build` green; ArchitectureTests green
+- [ ] `dotnet test`, `npm run build` green; ArchitectureTests green; UI checked live
 - [ ] Reviews have no open must-fix
 - [ ] SPEC.md / spec status / README / CHANGELOG updated; notable prompts logged in PROMPTS.md
 - [ ] Spec Status row fully ticked; backlog row `Done`

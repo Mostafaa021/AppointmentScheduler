@@ -6,8 +6,9 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 - **Header**: `Status: Draft | Approved | In progress | Done | Superseded by NNN`, the date, and the backlog stories, specs and
   ADRs the plan implements.
 - **Changes during the work**: edit the same file (append a dated "Changes" note). Don't open a new plan for an amendment.
-- **Tests in a plan** (plan 011): unit + architecture tests (and Vitest) only. Never plan integration tests, Testcontainers,
-  `WebApplicationFactory`, Playwright or an in-repo k6 suite; behaviour that needs a real host or database is a live check.
+- **Tests in a plan** (plans 011, 016): .NET unit + architecture tests only. Never plan Angular unit tests, integration
+  tests, Testcontainers, `WebApplicationFactory`, Playwright or an in-repo k6 suite. Behaviour that needs a real host,
+  database or browser is a live check.
 - **Claude Code** writes plan-mode plans here directly (`plansDirectory` in `.claude/settings.json`). When it runs from another
   root, copy the approved plan here before coding.
 
@@ -28,3 +29,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 013 | [Generic repository base for every repository](013-generic-repository-base.md) | Done | ADR-0016 |
 | 014 | [Docker run-anywhere, README, requirements, feature architecture](014-docker-readme-requirements-architecture.md) | Done | S-61 (part), all specs |
 | 015 | [Judgment test 07: clinic-local today, SPEC §4–§6 choices](015-judgment-test-time-zones-concurrency.md) | Done | SPEC §4–§6, ADR-0002/0003/0004 |
+| 016 | [No Angular unit tests (for now)](016-no-angular-unit-tests.md) | Done — rule for all later plans | — |

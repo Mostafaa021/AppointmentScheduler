@@ -53,7 +53,7 @@ ADR-0006 (amended). Plan: `.claude/plans/009-sprint-3-reliability.md`.
 | AC | Test |
 |---|---|
 | AC-009-1…8 | Manual check against the running API (integration tests removed 2026-10-20, plan 011) |
-| interceptor | web › idempotency-key.interceptor.spec.ts |
+| interceptor | live: the browser's POSTs carry `Idempotency-Key` (no Angular unit tests, plan 016) |
 
 ## Out of scope
 Cross-region replication of keys.

@@ -22,7 +22,8 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
 - Layering: flag any `AppointmentScheduler.Domain` usage in `src/AppointmentScheduler.Api` and any Domain type exposed by a DTO.
 - Simplicity: no speculative abstractions, dead code, duplicate helpers, unnecessary packages; reuse existing types.
 - Tests: meaningful asserts, named after AC IDs, no sleeps/flakiness. Flag any integration test, Testcontainers,
-  `WebApplicationFactory`, Playwright or in-repo k6 script: only unit + architecture tests and Vitest (plan 011).
+  `WebApplicationFactory`, Playwright, Angular `*.spec.ts` or in-repo k6 script: only .NET unit + architecture tests
+  (plans 011, 016).
 - Host config: new concerns live in `Api/Configuration/<Concern>Config.cs` as C# 14 `extension` blocks; flag any service
   registration written inline in `Program.cs`.
 - Data access (ADR-0016): no EF Core outside Infrastructure; services inject `IUnitOfWork` only (flag a repository in

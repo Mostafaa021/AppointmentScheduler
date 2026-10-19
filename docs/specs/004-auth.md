@@ -127,7 +127,8 @@ All routes below are under `/api/v1`. Every body is an `ApiResponse<T>` envelope
   `POST /auth/logout`), Then the in-memory access token and user are cleared and the app navigates to `/login`, even if the
   logout call fails.
 - **AC-004-21** Given a login or refresh succeeds, Then the access token is never written to `localStorage`,
-  `sessionStorage`, IndexedDB or a JavaScript-readable cookie (checked in Vitest via storage spies).
+  `sessionStorage`, IndexedDB or a JavaScript-readable cookie (checked live in the browser's storage after sign-in; the
+  Vitest storage spies were removed with all Angular unit tests, plan 016).
 
 ### Validation, security headers, audit (S-23)
 - **AC-004-22** Given a request body that fails validation, When it reaches any endpoint below, Then 400 with the same shape as
@@ -354,6 +355,8 @@ never echo the e-mail; `INVALID_CREDENTIALS` uses one fixed text for both cases 
 | `app.config.ts` | `withInterceptors([problemInterceptor, authInterceptor])` — **problem outermost**, so a 401 that the auth interceptor recovers from never reaches the snackbar; `provideAppInitializer(() => inject(AuthService).restore())` → exactly one `POST /auth/refresh` (SILENT) at start; resolves on success or failure, so guards are synchronous |
 | `app.ts` | toolbar shows a **Log out** button whenever `auth.user()` is set → `auth.logout()` |
 
+> Removed 2026-10-20 (plan 016): the Angular specs below no longer exist; these behaviours are checked live in the browser.
+
 Vitest: `auth.service.spec` (storage spies on `localStorage`/`sessionStorage`/`indexedDB`/`document.cookie`),
 `auth.interceptor.spec` (header only same-origin; N concurrent 401 → 1 refresh; retry once), `login-page.spec`,
 `doctor-schedule-page.spec` (`HttpTestingController.expectNone` for `/doctors`, `/patients`, availability, mutations).
@@ -365,7 +368,8 @@ Vitest: `auth.service.spec` (storage spies on `localStorage`/`sessionStorage`/`i
 | `Microsoft.AspNetCore.Authentication.JwtBearer` 10.0.13 | Infrastructure (flows to Api) | bearer validation; brings `Microsoft.IdentityModel.JsonWebTokens` used to issue tokens, so no third JWT package |
 | `FluentValidation` 12.x (12.1.1 in the local cache) | Application | request validators (ADR-0013, human decision); `FluentValidation.DependencyInjectionExtensions` deliberately not added — 6 explicit registrations |
 
-No npm package. AC-004-21 is covered by Vitest storage spies only; Playwright was dropped (plan 011).
+No npm package. AC-004-21 is checked live in the browser (storage inspected after sign-in); its Vitest spies were removed
+(plan 016) and Playwright was dropped (plan 011).
 
 ### Role matrix check (AC-004-8 vs code today)
 All 8 existing `/api/v1` routes (`GET /doctors`, `GET /doctors/{id}/availability`, `GET /patients`, `GET /appointments`,
