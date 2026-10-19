@@ -16,10 +16,16 @@ description: Single-session, spec-first checklist for adding a feature end to en
    ```csharp
    throw new ConflictException(ErrorCodes.ClinicClosed, "The clinic is closed on this day.") { LogDetail = $"clinic {clinicId} {date}" };
    ```
+   New aggregate or new query → add a named method to the aggregate's repository contract
+   (`Domain/<Feature>/I<Aggregate>Repository.cs`, ADR-0016). It returns entities, never `IQueryable`; tracked only when the
+   caller will change the entity.
 4. **Application** — `src/AppointmentScheduler.Application/<Feature>/`: service method + request/response records +
-   FluentValidation validator (`ValidateOrThrow`); register in `Application/DependencyInjection.cs`.
+   FluentValidation validator (`ValidateOrThrow`); register in `Application/DependencyInjection.cs`. Data access only via
+   repositories; stage changes, then **one** `await unitOfWork.SaveChangesAsync(ct)` per use case (after `audit.Record(...)`).
+   No EF Core here (architecture test). Use-case order can be unit-tested with fakes (see `AppointmentServiceTests`).
 5. **Infrastructure** — EF configuration in `Infrastructure/Persistence/Configurations/`; schema change → `/add-migration`.
-   Register in `Infrastructure/DependencyInjection.cs` (the matching `Add…` part). Never in `Program.cs`. A new host-level
+   Repository implementation `internal sealed` in `Infrastructure/Persistence/Repositories/`, registered in `AddPersistence`
+   (`Infrastructure/DependencyInjection.cs`). Never in `Program.cs`. A new host-level
    concern (e.g. rate limiting, OpenTelemetry) gets `Api/Configuration/<Concern>Configuration.cs` with an
    `Add<Concern>Configuration()` extension, chained in `Program.cs`.
 6. **Api** — action on `Api/Controllers/<Feature>Controller.cs` (inherits `ApiControllerBase`); thin; correct policy,

@@ -227,7 +227,7 @@ Infrastructure copies the same constants into `IdentityOptions.Password` (`Requi
 | File | Change |
 |---|---|
 | `Common/ICurrentUser.cs` | port: `Guid? UserId`, `IReadOnlyCollection<string> Roles`, `int? DoctorId`, `string? TraceId` (implemented in Api) |
-| `Common/AuditLog.cs` | scoped class (`IAppDbContext`, `ICurrentUser`, `TimeProvider`): `Record(action, entityType, entityId)` uses the current user; overload `Record(action, entityType, entityId, Guid? actingUserId)` for login events. Only **adds** the row — the caller's single `SaveChangesAsync` commits it with the change. `AuditActions` constants (`auth.login_succeeded` … `user.roles_changed`) in the same file |
+| `Common/AuditLog.cs` | scoped class (`IAppDbContext` — now `IAuditRecordRepository`, ADR-0016 —, `ICurrentUser`, `TimeProvider`): `Record(action, entityType, entityId)` uses the current user; overload `Record(action, entityType, entityId, Guid? actingUserId)` for login events. Only **adds** the row — the caller's single `SaveChangesAsync` commits it with the change. `AuditActions` constants (`auth.login_succeeded` … `user.roles_changed`) in the same file |
 | `Common/ValidationExtensions.cs` | `ValidateOrThrow<T>(this IValidator<T>, T)`: synchronous `Validate`; on failure throws the existing domain `ValidationException` with failures grouped by camelCase top-level property (`Roles[1]` → `roles`) — response shape unchanged (ADR-0013) |
 | `Common/IAppDbContext.cs` | + `DbSet<AuditRecord> AuditRecords` |
 | `Auth/Roles.cs` | `Admin`, `Receptionist`, `Doctor`, `All` — used by validators, policies, seeding |

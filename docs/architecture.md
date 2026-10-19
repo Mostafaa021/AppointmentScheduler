@@ -17,8 +17,8 @@ flowchart LR
 ## Layers
 ```mermaid
 flowchart BT
-  D[Domain<br/>entities, rules, events] --> AP[Application<br/>services, DTOs, ports]
-  AP --> I[Infrastructure<br/>EF Core, Identity, Wolverine, SMTP]
+  D[Domain<br/>entities, rules, events,<br/>repository + unit-of-work contracts] --> AP[Application<br/>services, DTOs, validators<br/>no EF Core]
+  AP --> I[Infrastructure<br/>EF Core repositories, unit of work,<br/>Identity, Hangfire, Wolverine, SMTP]
   I --> API[Api host]
 ```
 Arrows point from a project to the projects that depend on it. Enforced by `ArchitectureTests`.
@@ -33,7 +33,7 @@ each layer registers its own services:
 |---|---|---|
 | `AddCoreConfiguration()` | `Api/Configuration/CoreConfiguration.cs` | `ClinicOptions` (validated on start), `TimeProvider`, `AddApplication()`, `AddInfrastructure()` |
 | ↳ `AddApplication()` | `Application/DependencyInjection.cs` | services, `AuditLog`, validators |
-| ↳ `AddInfrastructure()` | `Infrastructure/DependencyInjection.cs` | `AddPersistence` (DbContext, seed), `AddIdentityAndJwt`, `AddBackgroundJobs` (Hangfire) |
+| ↳ `AddInfrastructure()` | `Infrastructure/DependencyInjection.cs` | `AddPersistence` (DbContext, seed, repositories + unit of work), `AddIdentityAndJwt`, `AddBackgroundJobs` (Hangfire) |
 | `AddApiConfiguration()` | `Api/Configuration/ApiConfiguration.cs` | controllers, JSON, model-state 400, `GlobalExceptionHandler` |
 | `AddSecurityConfiguration()` | `Api/Configuration/SecurityConfiguration.cs` | role policies + JWT 401/403 bodies (`AddApiAuth`), HSTS, CORS from `Cors:AllowedOrigins` |
 | `AddOpenApiConfiguration()` | `Api/Configuration/OpenApiConfiguration.cs` | OpenAPI document (+ `MapOpenApiDocs()` → `/openapi/v1.json`, `/scalar`) |
@@ -45,7 +45,7 @@ The middleware order stays written out in `Program.cs` on purpose, so you can re
 ## API request pipeline (M2)
 `SecurityHeaders` → `ExceptionHandler` (`SchedulerException` → `ApiResponse` error with `errorCode`, ADR-0015) → `StatusCodePages` (bodiless 404/405 → `ApiResponse`) → `Hsts` (non-Development)
 → `Cors` → `Authentication` (JWT, 401 `UNAUTHORIZED`) → `Authorization` (role policies, 403 `FORBIDDEN`) → endpoint
-(bind → Application service: validate → lookups → BR-7 check → rules → one `SaveChanges` incl. audit row).
+(bind → Application service: validate → lookups → BR-7 check → rules → one `IUnitOfWork.SaveChangesAsync` incl. audit row).
 
 ## Sign-in, refresh rotation and reuse detection (spec 004, ADR-0005)
 ```mermaid

@@ -145,3 +145,18 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   a dashboard open in every environment, `UseHttpsRedirection` (TLS terminates at the proxy in M6; HSTS already set outside
   Development), commented-out `UseAuthorization`; API versioning, messaging and observability extensions are added when M3/M5/M6
   need them.
+
+### P-15 · Repository and Unit of Work
+> "I found that you don't use repository and unit of work patterns, so please use them, and after each step update the
+> Claude files and all related docs."
+
+- **Accepted:** one specific repository per aggregate (`IAppointmentRepository`, `IDoctorRepository`, `IPatientRepository`,
+  `IAuditRecordRepository`) plus `IUnitOfWork`. Contracts sit in Domain next to their aggregate, `internal sealed` EF Core
+  implementations in `Infrastructure/Persistence/Repositories`. One commit per use case keeps the change and its audit row atomic.
+  Application dropped the EF Core package, and new architecture tests keep it out of Application and Api (ADR-0016).
+- **Changed:** removing EF from Application also removed the transitive `Microsoft.Extensions.Options` /
+  `DependencyInjection.Abstractions`, so they are referenced explicitly now. Added the first service-level unit tests with fakes
+  (validation before lookups, pre-check conflict commits nothing). That was not possible with `DbSet`s.
+- **Rejected:** a generic `IRepository<T>` exposing `IQueryable` (leaks EF include/tracking semantics back into Application).
+  Wrapping Identity's `UserManager` in another repository was also rejected: it already is one. The Identity adapters keep
+  their explicit transactions.

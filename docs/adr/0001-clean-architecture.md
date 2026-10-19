@@ -1,6 +1,7 @@
 # ADR-0001 — Clean Architecture with feature folders, no mediator
 
-- Status: Accepted · Date: 2026-10-19
+- Status: Accepted · Date: 2026-10-19 · Data-access part superseded by [ADR-0016](0016-repository-unit-of-work.md)
+  (repositories + unit of work replace `IAppDbContext`; Application no longer references EF Core)
 
 ## Context
 The app must be easy to extend (new features, a live change in the interview) and simulate production structure, but a 2-day

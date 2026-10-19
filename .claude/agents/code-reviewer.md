@@ -18,7 +18,9 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
   a new code missing from `ErrorCodes`; `LogDetail` ids only; no `ModelState.IsValid` checks in actions.
 - Simplicity: no speculative abstractions, dead code, duplicate helpers, unnecessary packages; reuse existing types.
 - Tests: meaningful asserts, named after AC IDs, no sleeps/flakiness.
-- EF: no N+1, `AsNoTracking` for reads, indexes exist for new filters.
+- Data access (ADR-0016): no EF Core outside Infrastructure; services use repository interfaces + one
+  `IUnitOfWork.SaveChangesAsync` per use case; repositories return entities (no `IQueryable`), are `internal sealed`, and
+  use `AsNoTracking` for read methods; no N+1; indexes exist for new filters.
 
 ## Produce
 `docs/reviews/NNN-code.md`: **must-fix** / should-fix / nit, each with file:line and suggested change. If none must-fix:

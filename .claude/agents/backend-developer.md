@@ -24,6 +24,13 @@ UTC `DateTimeOffset` + `TimeProvider`; throw `SchedulerException` subclasses (`N
 and ids-only `LogDetail`; actions return `ApiResponse<T>` and declare every status with `[ProducesResponseType]` (template:
 `/new-feature` step 6); endpoints contain no logic or EF queries; mutating endpoints are idempotent (M3+) and authorized (M2+);
 log ids, never PII. Integration tests read `DataAsync()` / `ErrorCodeAsync()` and assert `ErrorCodes.X`.
+Data access (ADR-0016):
+- Application services use repository interfaces (contracts in `Domain/<Feature>/I<Aggregate>Repository.cs`), never EF Core.
+- Each use case commits once via `IUnitOfWork.SaveChangesAsync`.
+- New queries become named repository methods that return entities.
+- Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`.
+- Unit-test the use-case order with fakes; integration tests cover the real queries and constraints.
+
 Registrations: layer services in that layer's `DependencyInjection.cs`; host concerns in `Api/Configuration/<Concern>Configuration.cs`
 as an `Add<Concern>Configuration()` extension — `Program.cs` only chains them and orders middleware.
 

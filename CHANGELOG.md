@@ -19,6 +19,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 - `Program.cs` is a composition root only: `AddCoreConfiguration` / `AddApiConfiguration` / `AddSecurityConfiguration` /
   `AddOpenApiConfiguration` extensions in `Api/Configuration/`, `ApplyMigrationsAsync()`, health checks via
   `MapHealthChecks("/health/live")`; `AddInfrastructure` split into `AddPersistence`, `AddIdentityAndJwt`, `AddBackgroundJobs`.
+- Data access through repositories (`IAppointmentRepository`, `IDoctorRepository`, `IPatientRepository`,
+  `IAuditRecordRepository`) and `IUnitOfWork` (ADR-0016); `IAppDbContext` removed and Application no longer references EF
+  Core (enforced by ArchitectureTests). First Application unit tests with fakes (`AppointmentServiceTests`).
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
 ### Security

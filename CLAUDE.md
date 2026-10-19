@@ -32,6 +32,13 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   - a new host concern gets an `Add<Concern>Configuration()` extension in `Api/Configuration/<Concern>Configuration.cs`;
   - layer services go in that layer's `DependencyInjection.cs` (see docs/architecture.md "Host composition").
 - Business rules live in Domain (`Appointment`, `DaySchedule`); the DB exclusion constraint is the final guard (see SPEC.md).
+- Data access (ADR-0016):
+  - Application uses repository interfaces + `IUnitOfWork`, never EF Core. Application has no EF package; ArchitectureTests enforce it.
+  - Contracts sit next to their aggregate in Domain (`Domain/Appointments/IAppointmentRepository.cs`, …).
+  - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`, registered in `AddPersistence`.
+  - Repositories return entities, never `IQueryable`.
+  - Repository methods only stage changes; the use case calls `unitOfWork.SaveChangesAsync` once (change + audit row together).
+  - A new query is a named repository method, not inline LINQ in a service.
 
 ## Conventions
 - Store time as UTC `DateTimeOffset`/`timestamptz` only. Clinic-local conversion happens server-side via the clinic's IANA zone.
