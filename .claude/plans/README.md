@@ -24,3 +24,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 009 | [Sprint 3 — M3 reliability](009-sprint-3-reliability.md) | Done (S-31 set aside) | S-30, S-32, S-33; spec 009, ADR-0006/0009 |
 | 010 | [Repositories only through the unit of work](010-repositories-through-unit-of-work.md) | Done | ADR-0016 |
 | 011 | [Unit and architecture tests only](011-unit-and-architecture-tests-only.md) | Done — rule for all later plans | — |
+| 012 | [Idempotency-Key on POST only; `[SkipIdempotency]` per action](012-idempotency-post-only.md) | Done | spec 009, ADR-0006 |

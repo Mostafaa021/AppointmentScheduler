@@ -10,8 +10,8 @@ namespace AppointmentScheduler.Api.Idempotency;
 
 /// <summary>
 /// Spec 009 / ADR-0006, as an MVC resource filter (it wraps model binding, the action and the result, so the bytes it stores
-/// are exactly what the client got). Every POST/PUT/PATCH/DELETE needs an <c>Idempotency-Key</c>, except on
-/// <see cref="SkipIdempotencyAttribute"/> controllers:
+/// are exactly what the client got). Every POST needs an <c>Idempotency-Key</c> (PUT/PATCH/DELETE are idempotent by design),
+/// except on <see cref="SkipIdempotencyAttribute"/> controllers or actions (see <see cref="Applies"/>):
 /// <list type="bullet">
 /// <item>first use → the key is claimed, the handler runs, its response is stored (2xx and 4xx) or the key released (5xx);</item>
 /// <item>same key + same request → the stored response, byte-for-byte, with <c>Idempotent-Replayed: true</c>;</item>
@@ -31,7 +31,7 @@ internal sealed class IdempotencyFilter(
     public async Task OnResourceExecutionAsync(ResourceExecutingContext context, ResourceExecutionDelegate next)
     {
         var http = context.HttpContext;
-        if (!IsWrite(http.Request.Method) || context.ActionDescriptor.EndpointMetadata.OfType<SkipIdempotencyAttribute>().Any())
+        if (!Applies(http.Request.Method, context.ActionDescriptor.EndpointMetadata))
         {
             await next();
             return;
@@ -41,13 +41,13 @@ internal sealed class IdempotencyFilter(
         if (key.Length is 0 or > IdempotencyHeaders.MaxKeyLength)
         {
             context.Result = Error(http, StatusCodes.Status400BadRequest, ApiErrorCodes.IdempotencyKeyRequired,
-                $"Send an {IdempotencyHeaders.Key} header (1–{IdempotencyHeaders.MaxKeyLength} characters, a UUID per user action) with every write.");
+                $"Send an {IdempotencyHeaders.Key} header (1–{IdempotencyHeaders.MaxKeyLength} characters, a UUID per user action) with every POST.");
             return;
         }
 
-        // Writes are authorized (ApiControllerBase), so a missing user here is a wiring bug, not a client error.
+        // POSTs are authorized (ApiControllerBase), so a missing user here is a wiring bug, not a client error.
         var userId = currentUser.UserId
-            ?? throw new InvalidOperationException($"{nameof(IdempotencyFilter)} ran for an anonymous write; add [SkipIdempotency] or [Authorize].");
+            ?? throw new InvalidOperationException($"{nameof(IdempotencyFilter)} ran for an anonymous POST; add [SkipIdempotency] or [Authorize].");
 
         var pathAndQuery = http.Request.Path + http.Request.QueryString;
         var hash = RequestFingerprint.Compute(http.Request.Method, pathAndQuery, await ReadBodyAsync(http.Request));
@@ -150,6 +150,11 @@ internal sealed class IdempotencyFilter(
     private static ObjectResult Error(HttpContext http, int status, string code, string message) =>
         new(ApiErrorWriter.Body(http, status, code, message)) { StatusCode = status };
 
-    internal static bool IsWrite(string method) =>
-        HttpMethods.IsPost(method) || HttpMethods.IsPut(method) || HttpMethods.IsPatch(method) || HttpMethods.IsDelete(method);
+    /// <summary>
+    /// Whether a request needs an <c>Idempotency-Key</c>: POST is the only verb that isn't idempotent by design (PUT, PATCH
+    /// and DELETE need none), and <see cref="SkipIdempotencyAttribute"/> exempts a controller or a single action, e.g. a POST
+    /// that only searches.
+    /// </summary>
+    internal static bool Applies(string method, IEnumerable<object> endpointMetadata) =>
+        HttpMethods.IsPost(method) && !endpointMetadata.OfType<SkipIdempotencyAttribute>().Any();
 }

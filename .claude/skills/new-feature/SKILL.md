@@ -54,8 +54,10 @@ description: Single-session, spec-first checklist for adding a feature end to en
    ```
 6. **Api** — action on `Api/Controllers/<Feature>Controller.cs` (inherits `ApiControllerBase`); thin; correct policy,
    The controller class carries `[ApiVersion(1.0)]` + `[Route("api/v{version:apiVersion}/<feature>")]` (ADR-0017).
-   Writes need nothing extra for idempotency: the global filter requires the `Idempotency-Key` and stores/replays responses;
-   just list `409`/`422` in `[ProducesResponseType]` (in-progress / key reused).
+   POSTs need nothing extra for idempotency: the global filter requires the `Idempotency-Key` and stores/replays responses;
+   just list `400`/`409`/`422` in `[ProducesResponseType]` (key missing / in progress / key reused). PUT/PATCH/DELETE need
+   no key, so make them idempotent by design. A POST that only reads (search criteria in the body) gets `[SkipIdempotency]`
+   on the action (plan 012).
    rate-limit and idempotent group. Return `ApiResponse<T>`, declare every status the action can produce (401/500 come from
    the base), no `ModelState.IsValid` check (`[ApiController]` already returns 400 `BAD_REQUEST`):
    ```csharp

@@ -41,7 +41,8 @@ Controllers hold endpoints only (no private helpers or constants): logic goes in
 Api helper class like `Api/Auth/RefreshTokenCookie`.
 Messaging (ADR-0007): Wolverine handlers are plain classes in Application; wiring and topology live in
 `Infrastructure/Messaging/MessagingSetup.cs` (publish rules next to the `// ─── Publishing` marker).
-Writes are idempotent by the global `IdempotencyFilter` (spec 009); don't re-implement it per endpoint.
+POSTs are made idempotent by the global `IdempotencyFilter` (spec 009); don't re-implement it per endpoint. PUT/PATCH/DELETE
+need no key: design them idempotent. A read-only POST (search) gets `[SkipIdempotency]` on the action (plan 012).
 Registrations: layer services in that layer's `DependencyInjection.cs`; host concerns in `Api/Configuration/<Concern>Config.cs`
 as a C# 14 `extension(WebApplicationBuilder builder)` block with `Add<Concern>Configuration()` — `Program.cs` only chains them
 and orders middleware.

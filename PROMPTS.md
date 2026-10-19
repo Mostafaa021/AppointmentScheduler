@@ -325,3 +325,12 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   - Rewrote the testing guidance in CLAUDE.md, the agents, skills and docs: HTTP/DB behaviour is now a live check.
   - **Cleanup in passing:** three empty stray directories (`$S`, `-p`, `Lookups`) left in the repo root by earlier shell
     mishaps.
+- **Plan 012 (Idempotency-Key on POST only):** "made idempotency in header request per each post method … as all other verbs
+  are idempotent by design and add filter for SkipIdempotency … on specific endpoint … that may be POST but retrieve some
+  data based on search criteria". Asked POST only vs POST + PUT; the user chose **POST only**.
+  - `IdempotencyFilter.Applies(method, metadata)` (POST and not `[SkipIdempotency]`) now drives both the filter and the
+    OpenAPI transformer.
+  - `[SkipIdempotency]` already allowed actions. It is now documented for read-only POSTs, and a unit test shows that a POST
+    with the attribute is exempt.
+  - The Angular interceptor keys POSTs only.
+  - `InternalsVisibleTo` lets UnitTests reach the internal helper.

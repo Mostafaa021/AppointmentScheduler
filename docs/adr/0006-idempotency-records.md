@@ -1,6 +1,7 @@
 # ADR-0006 — Idempotency via `Idempotency-Key` header and an `idempotency_records` table
 
-- Status: Accepted · Date: 2026-10-19
+- Status: Accepted · Date: 2026-10-19 · Amended 2026-10-20 (user, plan 012): **POST only**. PUT, PATCH and DELETE are
+  idempotent by design and need no key; `[SkipIdempotency]` also exempts single actions (a POST that only reads, e.g. a search).
 
 ## Context
 Network timeouts make clients retry writes. Without protection a retried booking may hit 409 (confusing) or, for non-conflicting
@@ -23,7 +24,8 @@ The Angular client generates one key per user action and reuses it on automatic 
 ## Status (2026-10-19): implemented, amended for controllers
 - The API moved to controllers (ADR-0015), so the "global `IEndpointFilter`" became a global MVC **resource filter**
   (`Api/Idempotency/IdempotencyFilter`). It wraps model binding, action and result, so the stored response is exactly what the
-  client got. It applies to POST/PUT/PATCH/DELETE except on `[SkipIdempotency]` controllers (auth).
+  client got. It applies to POST only, except on `[SkipIdempotency]` controllers (auth) or actions (read-only POSTs
+  such as a search).
 - Handler exceptions are written into the captured response by the global exception handler, so 4xx rule rejections are
   stored and replayed (spec AC-009-6) through the same single error writer.
 - **Store:**

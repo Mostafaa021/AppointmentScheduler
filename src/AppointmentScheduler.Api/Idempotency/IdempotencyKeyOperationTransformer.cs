@@ -3,14 +3,13 @@ using Microsoft.OpenApi;
 
 namespace AppointmentScheduler.Api.Idempotency;
 
-/// <summary>Documents the required <c>Idempotency-Key</c> header on every write the <see cref="IdempotencyFilter"/> guards.</summary>
+/// <summary>Documents the required <c>Idempotency-Key</c> header on every POST the <see cref="IdempotencyFilter"/> guards.</summary>
 internal sealed class IdempotencyKeyOperationTransformer : IOpenApiOperationTransformer
 {
     public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
         var description = context.Description;
-        if (!IdempotencyFilter.IsWrite(description.HttpMethod ?? "")
-            || description.ActionDescriptor.EndpointMetadata.OfType<SkipIdempotencyAttribute>().Any())
+        if (!IdempotencyFilter.Applies(description.HttpMethod ?? "", description.ActionDescriptor.EndpointMetadata))
             return Task.CompletedTask;
 
         operation.Parameters ??= [];

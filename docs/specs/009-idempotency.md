@@ -8,8 +8,9 @@
 A client (or network retry) can safely resend any write without creating duplicates, and gets the original answer back.
 
 ## Acceptance criteria
-- **AC-009-1** All POST/PUT/PATCH/DELETE endpoints except `/auth/*` require header `Idempotency-Key` (1–100 chars, UUID
-  recommended) → missing: 400 `IDEMPOTENCY_KEY_REQUIRED`.
+- **AC-009-1** All POST endpoints except `[SkipIdempotency]` ones (`/auth/*`, and a POST that only reads, e.g. a search)
+  require header `Idempotency-Key` (1–100 chars, UUID recommended) → missing: 400 `IDEMPOTENCY_KEY_REQUIRED`. PUT, PATCH and
+  DELETE are idempotent by design and need no key (changed 2026-10-20, plan 012; before: POST/PUT/PATCH/DELETE).
 - **AC-009-2** First request with a key: a record `(user_id, key)` is inserted as `InProgress` before the handler runs; after the
   handler, status code, body and `Location`/`ETag` headers are stored and the record becomes `Completed`.
 - **AC-009-3** Same user + key + same request hash (method + path + body SHA-256) after completion → the stored response is
@@ -30,7 +31,8 @@ ADR-0006 (amended). Plan: `.claude/plans/009-sprint-3-reliability.md`.
 
 - **Filter:** `Api/Idempotency/IdempotencyFilter`, a global MVC **resource filter** (the API moved to controllers). It wraps model
   binding, the action and the result, so the stored bytes are what the client received.
-  - Scope: POST/PUT/PATCH/DELETE, except on `[SkipIdempotency]` controllers (`AuthController`).
+  - Scope: POST only (`IdempotencyFilter.Applies`, unit-tested), except on `[SkipIdempotency]` controllers (`AuthController`)
+    or actions (a read-only POST such as a search). Plan 012.
   - Exceptions from the handler are written into the captured response by the global `IExceptionHandler`, so rule
     rejections (409/422) are stored and replayed like any other 4xx.
   - Kept headers: `Location`, `ETag`, `Content-Type`. Replays add `Idempotent-Replayed: true`.

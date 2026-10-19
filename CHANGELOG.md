@@ -9,6 +9,10 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   Planned Playwright e2e and the in-repo k6 suite are dropped (`/load-test` skill removed); load testing happens outside
   the repo (scripts + k6 Studio). Claude agents, skills and docs now forbid planning them.
 ### Changed
+- `Idempotency-Key` is required on **POST only** (spec 009 AC-009-1, ADR-0006 amended): PUT, PATCH and DELETE are idempotent
+  by design and need none (today this frees `PUT /users/{id}/roles`). `[SkipIdempotency]` is documented for single actions
+  too: a POST that only reads, such as a search. One scope check (`IdempotencyFilter.Applies`) drives the filter and the
+  OpenAPI header, and is unit-tested. The Angular interceptor keys POSTs only.
 - Repositories are reached only through the unit of work (plan 010, ADR-0016 amended): `IUnitOfWork` exposes `Appointments`,
   `Doctors`, `Patients`, `AuditRecords`; services inject `IUnitOfWork` alone, repositories are no longer registered in DI, and
   ArchitectureTests reject a repository in any constructor. No behaviour change.

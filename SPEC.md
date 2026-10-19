@@ -53,7 +53,7 @@ Response envelope ([ADR-0015](docs/adr/0015-api-response-envelope.md)); members 
 Reads without a specific message say "Request completed successfully".
 `POST /auth/logout` is the one exception: **204** with no body.
 
-**Idempotency** ([spec 009](docs/specs/009-idempotency.md)): every POST/PUT/PATCH/DELETE except `/auth/*` needs an
+**Idempotency** ([spec 009](docs/specs/009-idempotency.md)): every POST except `/auth/*` (and read-only POSTs such as a search) needs an
 `Idempotency-Key` header (1–100 chars, a UUID per user action):
 - a repeat with the same key and request replays the stored response with `Idempotent-Replayed: true`;
 - the same key with a different request → 422;

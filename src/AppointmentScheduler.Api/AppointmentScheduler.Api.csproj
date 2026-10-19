@@ -3,6 +3,10 @@
     <ProjectReference Include="..\AppointmentScheduler.Infrastructure\AppointmentScheduler.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Pure internal helpers (e.g. IdempotencyFilter.Applies) are unit-tested without a host. -->
+    <InternalsVisibleTo Include="AppointmentScheduler.UnitTests" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />

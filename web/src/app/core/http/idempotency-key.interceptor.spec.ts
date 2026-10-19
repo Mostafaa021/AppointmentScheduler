@@ -17,7 +17,7 @@ describe('idempotencyKeyInterceptor (spec 009)', () => {
 
   afterEach(() => backend.verify());
 
-  it('adds a UUID key to API writes', () => {
+  it('adds a UUID key to API POSTs', () => {
     http.post('/api/v1/appointments', {}).subscribe();
     http.post('/api/v1/appointments/a/cancel', {}).subscribe();
 
@@ -35,6 +35,17 @@ describe('idempotencyKeyInterceptor (spec 009)', () => {
     const req = backend.expectOne('/api/v1/appointments');
     expect(req.request.headers.get(IDEMPOTENCY_KEY_HEADER)).toBe('mine');
     req.flush({});
+  });
+
+  it('leaves PUT, PATCH and DELETE alone: they are idempotent by design (plan 012)', () => {
+    http.put('/api/v1/users/u/roles', {}).subscribe();
+    http.patch('/api/v1/appointments/a', {}).subscribe();
+    http.delete('/api/v1/appointments/a').subscribe();
+
+    for (const req of backend.match(() => true)) {
+      expect(req.request.headers.has(IDEMPOTENCY_KEY_HEADER)).toBe(false);
+      req.flush({});
+    }
   });
 
   it('leaves reads, auth calls and non-API URLs alone', () => {

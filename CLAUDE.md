@@ -73,9 +73,11 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   tests keep the two classes disjoint). Use a message safe to show users, and put diagnostics in `LogDetail` (ids only,
   never PII). `GlobalExceptionHandler` turns them into `ApiResponse` errors via `ApplicationError`; a transient database failure becomes 503
   `SERVICE_UNAVAILABLE`; anything else becomes a logged, generic 500 `INTERNAL_ERROR`. Never catch-and-return errors in controllers.
-- Every write (POST/PUT/PATCH/DELETE) requires an `Idempotency-Key` header, enforced by the global `IdempotencyFilter`
-  (spec 009). New write endpoints get it for free. Only `[SkipIdempotency]` (auth) is exempt. Don't add idempotency logic
-  in a service.
+- Every **POST** requires an `Idempotency-Key` header, enforced by the global `IdempotencyFilter` (spec 009, plan 012); new POST
+  endpoints get it for free. PUT/PATCH/DELETE are idempotent by design and need none, so design them that way (a PUT sets
+  the full state, a DELETE of a deleted thing is still a success). `[SkipIdempotency]` exempts auth (controller) and any POST
+  that only reads, e.g. a search with criteria in the body (put it on the action); never on a POST that changes data. Don't
+  add idempotency logic in a service.
 - Resilience (ADR-0008):
   - **Polly v8** only for calls to other services (SMTP, outbound HTTP) and for inbound rate limits: each is a named pipeline
     (`AddResiliencePipeline("<name>", …)`, resolved from `ResiliencePipelineProvider<string>`). No hand-written retry loops, no
