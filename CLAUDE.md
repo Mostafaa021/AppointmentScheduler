@@ -73,4 +73,9 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 3. Default: implement directly in the session (use `/new-feature` as a checklist). The role-agent ceremony (`/sdlc`, docs/sdlc.md)
    is opt-in — only when the user asks for it.
 4. Record meaningful prompts with `/log-prompt` (feeds PROMPTS.md).
+0. Plans: every approved plan is saved as `.claude/plans/NNN-<slug>.md` (next number, status header) and listed in
+   `.claude/plans/README.md` before any code. Plan mode writes there directly (`plansDirectory` in `.claude/settings.json`);
+   from another root, copy it in. When the plan changes during the work, edit that same file (dated "Changes" note) and tick
+   its Progress line as steps are verified. Link the plan from the backlog story or spec it implements.
+0b. Commits: never commit unasked. After each step, show what changed and ask whether to commit it or leave it in the working tree.
 5. Definition of Done: AC covered by passing tests · `/verify` green · SPEC.md / spec / README / CHANGELOG updated.

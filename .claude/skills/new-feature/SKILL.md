@@ -4,6 +4,8 @@ description: Single-session, spec-first checklist for adding a feature end to en
 ---
 # /new-feature — spec-first in one session
 
+0. **Plan** — once the approach is approved, save it as `.claude/plans/NNN-<slug>.md` and add it to `.claude/plans/README.md`
+   (CLAUDE.md, Workflow 0). Amend that file if the plan changes; tick its Progress line per step.
 1. **Spec** — copy `docs/specs/_template.md` to `docs/specs/NNN-<name>.md`; write AC `AC-NNN-x` (Given/When/Then, incl. status
    and `errorCode`). Fill the API contract table with **every** status per route. Show the AC list to the user before coding.
 2. **Tests first** — one failing test per AC, named `AC_NNN_x_<Behavior>`:

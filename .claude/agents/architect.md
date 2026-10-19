@@ -15,7 +15,8 @@ feature folders the change touches (`src/*/<Feature>/`).
    (tables, columns, indexes, constraints), events/messages, and a short sequence if the flow is non-trivial.
 2. **NFR notes** in the spec: roles/policy, idempotency, rate-limit policy, tracing/metrics, time-zone handling, PII.
 3. A new ADR `docs/adr/NNNN-<name>.md` whenever you choose between real alternatives (Context, Options, Decision, Consequences).
-4. Tick `Designed ☑`.
+4. Link the design from the change's plan file in `.claude/plans/` (create it if missing, CLAUDE.md Workflow 0).
+5. Tick `Designed ☑`.
 
 ## Gate
 - Dependency rule holds: Domain ← Application ← Infrastructure ← Api. Business rules in Domain; DB constraints back them.

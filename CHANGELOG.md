@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 
 ## [Unreleased]
 ### Added
+- `.claude/plans/`: every approved plan saved as `NNN-<slug>.md` with a status header and an index (`plansDirectory` set in
+  `.claude/settings.json`); plans 001–008 backfilled from history, 009 = Sprint 3.
 - M2 security: ASP.NET Identity + JWT (15 min) with rotating refresh-token cookie and reuse detection; roles Admin /
   Receptionist / Doctor; Doctor reads only own schedule; FluentValidation; security headers; audit records; Angular login,
   silent refresh, guards and read-only doctor view. Demo users in Development.

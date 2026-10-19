@@ -244,3 +244,17 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   It was recreated with `--renew-anon-volumes`. That dropped only the exchange and the dead-letter queue, which the API declares
   again on startup.
 - **Note:** guest/guest is documented as local-Docker only. Postgres credentials are unchanged.
+
+### P-20 · Sprint 3 plan, plans kept in the repo, no automatic commits
+> "Let's do Sprint 3 from the backlog (skip Sprint 4). Each step should ask me to commit or leave it in the working tree. The
+> API layer must reference only Application/Infrastructure, never Domain. Add a directory to keep every plan in a separate file."
+
+- **Accepted:**
+  - plan 009 (Step P → Step 0 → S-30 → S-32 → S-33);
+  - `.claude/plans/NNN-<slug>.md` with an index;
+  - `plansDirectory` in `.claude/settings.json` — the setting exists in this Claude Code version ("relative to project root");
+  - a CLAUDE.md Workflow rule and steps in `/new-feature`, `/sdlc` and the architect agent.
+- **Changed:**
+  - S-31 (ETag / If-Match) set aside at the user's request;
+  - output caching skipped, because nothing is safely cacheable yet.
+- **Rule recorded:** never commit unasked; stop after each step (CLAUDE.md Workflow 0b, and assistant memory).

@@ -43,6 +43,8 @@ security / code-review gates are **pending** — run them before calling M2 Done
 | S-29b | Repository per aggregate + unit of work; Application drops EF Core | ADR-0016 | Done |
 
 ## Sprint 3 — M3 Reliability
+Plan: [`.claude/plans/009-sprint-3-reliability.md`](../.claude/plans/009-sprint-3-reliability.md) (S-31 set aside; output caching won't do).
+
 | ID | Story | Spec | Status |
 |---|---|---|---|
 | S-30 | Idempotency filter + records table + purge job + Angular key interceptor | 009 | Refined |

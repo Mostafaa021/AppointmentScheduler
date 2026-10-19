@@ -8,6 +8,9 @@ Arguments: `<feature description>` and optional `--fast` (small change: no archi
 Process definition: `docs/sdlc.md`. Agents: `.claude/agents/`.
 
 ## Steps (main session dispatches; agents hand off through repo files)
+0## Steps (main session dispatches; agents hand off through repo files)
+0. **Plan** — the change gets a plan file `.claude/plans/NNN-<slug>.md` (index in `.claude/plans/README.md`); the architect's
+   design is linked from it, and each gate updates its Progress line.
 1. **Open** — run `scrum-master` (mode `open`) with the request. It returns the backlog row and the product-owner brief.
 2. **Refine** — run `product-owner` with that brief → spec with AC IDs, DoR checklist.
    If the agent reports open questions: ask the user, then re-run. Do not guess.
