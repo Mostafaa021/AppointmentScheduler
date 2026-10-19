@@ -65,7 +65,7 @@ appointments **today and tomorrow**, so the schedule isn't empty.
 | API health | http://localhost:5080/health/live |
 | Traces (Jaeger, service `appointment-scheduler-api`) | http://localhost:16686 |
 | RabbitMQ management (`guest` / `guest`) | http://localhost:15672 |
-| PostgreSQL (`scheduler` / `scheduler_dev_pw`, db `scheduler`) | localhost:5432 |
+| PostgreSQL (`scheduler` / `P@ssword!`, db `scheduler`) — e.g. pgAdmin, see below | localhost:5432 |
 
 The Docker stack is a **local demo**: the API runs in the Development environment (migrates on start, seeds demo users,
 uses a dev-only JWT key). Never deploy it as is.
@@ -78,6 +78,27 @@ uses a dev-only JWT key). Never deploy it as is.
 | Start again | `docker compose up -d` |
 | Rebuild after changing code | `docker compose up --build -d api web` |
 | Reset all data (fresh seed) | `docker compose down -v` then `docker compose up -d` |
+
+### Browse the database with pgAdmin
+In pgAdmin (desktop), open the Query Tool workspace's ad-hoc connection, or *Register → Server*, and enter:
+
+| Field | Value |
+|---|---|
+| Server name | any label, e.g. `AppointmentScheduler (local)` |
+| Host name/address | `localhost`. If pgAdmin itself runs in Docker, use `host.docker.internal` |
+| Port | `5432` (or your `POSTGRES_PORT`) |
+| Database | `scheduler` |
+| User / Password | `scheduler` / `P@ssword!` |
+| Role, Service | leave empty |
+| SSL mode | `prefer` or `disable` (the local container has no TLS) |
+
+The tables are in four schemas:
+- `public`: `appointments`, `doctors`, `patients`, `audit_records`, `idempotency_records`;
+- `identity`: `users`, `roles`, `refresh_tokens`;
+- `hangfire`;
+- `wolverine`.
+
+Look, don't change: the app owns this data (use the API or the UI).
 
 ## Using it
 1. Pick a doctor and a date (times are shown in the clinic zone, Europe/London).
@@ -123,6 +144,7 @@ cd web && npm run build
 | `port is already allocated` | Another process uses 8080 / 5080 / 5432 / 5672 / 15672 / 16686. Stop it, or set `WEB_PORT`, `API_PORT`, `POSTGRES_PORT` in `.env`. |
 | Signed in, but every page bounces back to login | Use Chrome, Edge or Firefox: the refresh cookie is `Secure`, which Safari rejects on `http://localhost`. |
 | `api` keeps restarting | `docker compose logs api`. Usually PostgreSQL isn't healthy yet, or its volume holds an older schema: `docker compose down -v`. |
+| `password authentication failed for user "scheduler"` | `POSTGRES_PASSWORD` applies only when the data volume is created. For an older volume, keep the data and set the password: `docker compose exec postgres psql -U scheduler -d scheduler -c "ALTER USER scheduler WITH PASSWORD 'P@ssword!';"` (or reset with `docker compose down -v`). |
 | Log says RabbitMQ is unavailable / degraded mode | The app still works (messages stay in PostgreSQL). Start the broker: `docker compose up -d rabbitmq`. |
 | `429 RATE_LIMITED` on login | Five logins per minute per IP. Behind the Docker nginx all browsers share one IP (no `ForwardedHeaders` yet, S-61); wait a minute. |
 | `/hangfire` returns 401 in Docker | The dashboard accepts local requests only; use local development (option B). |

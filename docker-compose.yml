@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-scheduler}
       POSTGRES_USER: ${POSTGRES_USER:-scheduler}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scheduler_dev_pw}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-P@ssword!}
     ports: ["${POSTGRES_PORT:-5432}:5432"]
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
@@ -42,7 +42,7 @@ services:
       dockerfile: src/AppointmentScheduler.Api/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Scheduler: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-scheduler};Username=${POSTGRES_USER:-scheduler};Password=${POSTGRES_PASSWORD:-scheduler_dev_pw}"
+      ConnectionStrings__Scheduler: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-scheduler};Username=${POSTGRES_USER:-scheduler};Password=${POSTGRES_PASSWORD:-P@ssword!}"
       Observability__OtlpEndpoint: http://jaeger:4317
       Messaging__RabbitMq__Host: rabbitmq
       Messaging__RabbitMq__UserName: ${RABBITMQ_USER:-guest}

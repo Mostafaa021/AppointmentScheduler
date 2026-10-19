@@ -12,6 +12,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   Planned Playwright e2e and the in-repo k6 suite are dropped (`/load-test` skill removed); load testing happens outside
   the repo (scripts + k6 Studio). Claude agents, skills and docs now forbid planning them.
 ### Changed
+- Local PostgreSQL password is now `P@ssword!` (`appsettings.json`, compose defaults, `.env.example`, README). An existing
+  data volume keeps its old password until changed with `ALTER USER` (README troubleshooting). README gains a pgAdmin guide.
 - Concurrent bookings of one slot no longer deadlock (plan 015, SPEC §5, ADR-0002 amended). Measured before: 1×201 and
   7×503 after up to 7 s (PostgreSQL 40P01 on the exclusion constraint). Book and reschedule now lock the doctor, then the
   patient (`pg_advisory_xact_lock`), then pre-check, inside `IUnitOfWork.ExecuteInTransactionAsync`. Measured after:
