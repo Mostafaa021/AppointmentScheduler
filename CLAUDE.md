@@ -108,4 +108,6 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 3. Default: implement directly in the session (use `/new-feature` as a checklist). The role-agent ceremony (`/sdlc`, docs/sdlc.md)
    is opt-in — only when the user asks for it.
 4. Record meaningful prompts with `/log-prompt` (feeds PROMPTS.md).
-5. Definition of Done: AC covered by passing tests · `/verify` green · SPEC.md / spec / README / CHANGELOG updated.
+5. Definition of Done: AC covered by passing tests · `/verify` green · SPEC.md / spec / README / CHANGELOG updated ·
+   `docs/requirements/functional.md` (+ `non-functional.md` if a quality changed) rows added or updated · the feature's
+   `docs/architecture/<feature>.md` diagrams match the code (new feature → new page, linked from `docs/architecture.md`).

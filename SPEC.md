@@ -1,6 +1,8 @@
 # SPEC — Clinic Appointment Scheduler
 
 Short graded specification. Detail lives in [`docs/specs`](docs/specs) (acceptance criteria) and [`docs/adr`](docs/adr) (decisions).
+Every requirement with its status, code and verification: [functional](docs/requirements/functional.md) ·
+[non-functional](docs/requirements/non-functional.md). Diagrams per feature: [docs/architecture.md](docs/architecture.md).
 
 ## 1. Requirement
 A receptionist books patients with doctors and manages the day's schedule **without ever creating a conflicting appointment**.
@@ -111,9 +113,9 @@ Interactive docs: `http://localhost:5080/scalar` (Development).
 
 ## 5. Concurrent bookings of the same slot
 Both requests pass the pre-check; the first `INSERT` commits; the second violates the exclusion constraint and gets `409`.
-Proven by `BookingEndpointTests.AC_002_8` (10 parallel requests → exactly one 201) and `ExclusionConstraintTests` (writes that
-bypass the service are still rejected). Updates (cancel vs reschedule of the same appointment) use PostgreSQL `xmin` as an
-optimistic concurrency token → `409 CONCURRENCY_CONFLICT` instead of a lost update ([ADR-0004](docs/adr/0004-concurrency-etag.md)).
+Checked live (parallel requests for one slot → exactly one 201, the rest 409) and by `AppointmentServiceTests` for the
+pre-check; there are no integration tests (plan 011). Updates (cancel vs reschedule of the same appointment) use PostgreSQL
+`xmin` as an optimistic concurrency token → `409 CONCURRENCY_CONFLICT` instead of a lost update ([ADR-0004](docs/adr/0004-concurrency-etag.md)).
 
 ## 6. Time zones
 ([ADR-0003](docs/adr/0003-time-zones.md))

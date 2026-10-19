@@ -91,5 +91,7 @@ description: Single-session, spec-first checklist for adding a feature end to en
 7. **Web** — `web/src/app/core/api/` service + model typed with the `data` DTO (the `apiResponseInterceptor` unwraps it),
    `web/src/app/features/<feature>/` component + spec; branch on `error.errorCode`, flush envelope bodies in specs.
 8. **Verify** — `/verify`.
-9. **Docs** — tick the spec Status, update `SPEC.md` §3 (routes and error-code table if API/data changed), `CHANGELOG.md`,
-   `/log-prompt`.
+9. **Docs** — tick the spec Status, update `SPEC.md` §3 (routes and error-code table if API/data changed), the feature's rows
+   in `docs/requirements/functional.md` (status, implemented in, verified by) and its Mermaid page
+   `docs/architecture/<feature>.md` (components, sequence, states; new feature → new page + row in `docs/architecture.md`),
+   `CHANGELOG.md`, `/log-prompt`.

@@ -21,6 +21,10 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `Doctors`, `Patients`, `AuditRecords`; services inject `IUnitOfWork` alone, repositories are no longer registered in DI, and
   ArchitectureTests reject a repository in any constructor. No behaviour change.
 ### Added
+- Requirements and architecture documentation (plan 014 step B): `docs/requirements/functional.md` (business rules + every
+  functional requirement per feature with status, API, code and verification) and `non-functional.md` (NFR-1…17: why, how,
+  verified, status); `docs/architecture.md` refreshed (real containers, Docker deployment, data model ER diagram, pipeline)
+  plus one Mermaid page per feature in `docs/architecture/` (13 pages, 40 diagrams, built and planned features).
 - Run anywhere with Docker (plan 014, S-61 part): `src/AppointmentScheduler.Api/Dockerfile`, `web/Dockerfile` + `web/nginx.conf`
   (serves the Angular build, proxies `/api/` same-origin) and compose services `api` + `web`, so `docker compose up --build -d`
   runs the whole system on http://localhost:8080 with only Docker installed (local demo stack, Development mode). README

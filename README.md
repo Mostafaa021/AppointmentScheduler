@@ -6,7 +6,7 @@ same slot at the same moment. Doctors see their own day; admins manage users.
 
 - **[SPEC.md](SPEC.md)** — requirement, data model, APIs, where conflict checking lives, time zones, concurrency
 - **[PROMPTS.md](PROMPTS.md)** — prompts used with Claude Code and what was accepted / changed / rejected
-- [docs/](docs) — feature specs, ADRs, architecture, SDLC process, backlog
+- **[Documentation map](#documentation-map)** — requirements, architecture with Mermaid diagrams per feature, specs, ADRs
 
 ## How it works
 ```mermaid
@@ -159,6 +159,18 @@ web/                                     Angular app; Dockerfile + nginx.conf
 docs/                                    specs, ADRs, architecture, SDLC, backlog
 .claude/                                 Claude Code rules, agents (SDLC roles), skills and saved plans
 ```
+
+## Documentation map
+| Want to know… | Read |
+|---|---|
+| What the system must do, feature by feature, with status, code and how it's verified | [docs/requirements/functional.md](docs/requirements/functional.md) |
+| How well it must do it (correctness, security, resilience, observability, …) | [docs/requirements/non-functional.md](docs/requirements/non-functional.md) |
+| How it is built: containers, deployment, layers, data model, request pipeline | [docs/architecture.md](docs/architecture.md) |
+| One feature's components and flows (Mermaid diagrams) | [docs/architecture/](docs/architecture) — e.g. [booking](docs/architecture/booking.md), [idempotency](docs/architecture/idempotency.md) |
+| Exact acceptance criteria (Given/When/Then) | [docs/specs/](docs/specs) |
+| Why a technical decision was made | [docs/adr/](docs/adr) |
+| The short graded spec (API table, error codes, conflict checking, time zones) | [SPEC.md](SPEC.md) |
+| What's next | [docs/backlog.md](docs/backlog.md) |
 
 ## Not covered by the Docker stack yet (backlog S-61)
 `ForwardedHeaders` behind nginx (per-client rate limits), a separate migration step instead of migrate-on-start, and a

@@ -10,6 +10,10 @@ You are the **Technical Writer**. Docs are short, accurate and match the code �
 - `SPEC.md` — the concise graded spec (requirement, data model, main APIs, conflict checking, time zones, concurrency). Keep it
   short; link to `docs/specs` and ADRs for detail.
 - `README.md` — setup/run/test commands still work (run them if in doubt), new env vars, new demo users/data.
+- `docs/requirements/functional.md` / `non-functional.md` — every requirement row: status (✅ 🟡 📋), implemented in, verified by
+  (unit test name or "live"), spec ACs. Keep IDs stable.
+- `docs/architecture/<feature>.md` — Mermaid diagrams (components, sequence, states) match the code; a new feature gets a
+  page and a row in `docs/architecture.md`. Check every diagram renders (mermaid@11) before ticking Documented.
 - `CHANGELOG.md` — one line per user-visible change under `[Unreleased]`.
 - `docs/operations.md` if ops changed (with devops-engineer).
 - `PROMPTS.md` — ensure the notable prompts of this change were logged via `/log-prompt` (Accepted / Changed / Rejected + why).

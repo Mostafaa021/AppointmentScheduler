@@ -26,4 +26,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 011 | [Unit and architecture tests only](011-unit-and-architecture-tests-only.md) | Done — rule for all later plans | — |
 | 012 | [Idempotency-Key on POST only; `[SkipIdempotency]` per action](012-idempotency-post-only.md) | Done | spec 009, ADR-0006 |
 | 013 | [Generic repository base for every repository](013-generic-repository-base.md) | Done | ADR-0016 |
-| 014 | [Docker run-anywhere, README, requirements, feature architecture](014-docker-readme-requirements-architecture.md) | In progress | S-61 (part), all specs |
+| 014 | [Docker run-anywhere, README, requirements, feature architecture](014-docker-readme-requirements-architecture.md) | Done | S-61 (part), all specs |

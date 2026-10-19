@@ -1,7 +1,7 @@
 # 014 — Run-anywhere Docker setup, README, requirements docs, per-feature architecture diagrams
 
-- Status: **In progress** · Approved 2026-10-20 · Backlog S-61 (part) · all specs, ADR index
-- Progress: Step A (Docker + README) ☑ · Step B (requirements + architecture) ☐ (commits only when the user says so)
+- Status: **Done** · Approved 2026-10-20 · Backlog S-61 (part) · all specs, ADR index
+- Progress: Step A (Docker + README) ☑ · Step B (requirements + architecture) ☑ (commits only when the user says so)
 
 ## Context
 You asked for three things:

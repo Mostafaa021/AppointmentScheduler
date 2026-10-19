@@ -344,3 +344,24 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
     set so it can't pass vacuously.
   - **Verified live:** EF translates the generic `Equals` (there are no integration tests to prove it). Availability, book
     with names, get, cancel, and unknown doctor / appointment → 404.
+- **Plan 014 (run anywhere, README, requirements, feature architecture):** the user wanted a README so anyone can run the
+  project with Docker Compose, documentation for every functional and non-functional requirement, and architecture docs
+  with Mermaid diagrams per feature. The user's choices:
+  - full Docker;
+  - two requirement catalogues;
+  - built and planned features both covered;
+  - one architecture page per feature.
+  - **Step A:** API and web Dockerfiles, an nginx same-origin proxy, and compose services `api` and `web` (Development as a
+    local demo).
+    - **Fixed on the way:** the container build failed on analyzer errors in the migrations. `.editorconfig`, which marks them
+      as generated code, wasn't copied into the image.
+    - **Fixed on the way:** a standalone Jaeger container on the machine held port 4317, so `api` no longer depends on
+      `jaeger`.
+    - **Verified in the browser at :8080:** sign in, book, cancel.
+  - **Step B:** 2 requirement catalogues and 13 feature pages, 40 Mermaid diagrams.
+    - Every diagram was rendered with `mermaid@11` in the browser pane (one parse error fixed: a `;` inside a sequence
+      message).
+    - 172 relative links and anchors were checked.
+    - SPEC §5 no longer cites the deleted integration tests.
+  - **Observed:** a hook turns `>` inside shell command text into redirects, which left empty files (`DB`, `throw`,
+    `auditRecords`) in the repo. They were removed each time.
