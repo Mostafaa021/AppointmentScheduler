@@ -6,12 +6,9 @@ using AppointmentScheduler.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 builder
-    .AddCoreConfiguration()
     .AddApiConfiguration()
     .AddSecurityConfiguration()
     .AddOpenApiConfiguration();
-
-builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 

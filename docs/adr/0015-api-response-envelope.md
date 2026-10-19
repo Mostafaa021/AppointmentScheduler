@@ -27,7 +27,9 @@ and one constants class for codes.
 - **`ErrorCodes`** (`Domain/Common/ErrorCodes.cs`): every code as a `const`, UPPER_SNAKE, grouped by feature section; never a
   string literal at a throw site. `ErrorCodesTests` enforces format and uniqueness.
 - **One writer** for responses that don't come from an action result — the exception handler, JWT `OnChallenge`/`OnForbidden`
-  and bodiless statuses (`UseStatusCodePages` → `ROUTE_NOT_FOUND`, `METHOD_NOT_ALLOWED`): `Api/Errors/ApiErrorWriter`, using
+  and framework-made errors (`UseStatusCodePages` → `IProblemDetailsService` → `ApiResponseProblemDetailsWriter`; MVC client
+  errors → `ApiResponseClientErrorFactory`; codes `ROUTE_NOT_FOUND`, `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE` from
+  `ErrorStatusMapping`): `Api/Errors/ApiErrorWriter`, using
   MVC's JSON options and `Activity.Current.Id` as `traceId`.
 - **Angular**: `apiResponseInterceptor` (innermost) unwraps `data`, so services keep DTO types; `apiErrorInterceptor` shows
   `errors` → `message`; components branch on `error.errorCode`.

@@ -16,13 +16,13 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
 - Controllers hold endpoints only. Flag any private/protected method or constant:
   - logic goes in the Application service;
   - HTTP plumbing goes in an Api helper class (e.g. `Api/Auth/RefreshTokenCookie`).
-- Controllers: endpoints only — flag any private/protected method or constant (logic → Application service, HTTP plumbing →
-  Api helper class).
 - Contract (ADR-0015): actions return `ApiResponse<T>`; every status the action can produce has a `[ProducesResponseType]`
   (and none it can't); errors thrown as `SchedulerException` with an `ErrorCodes` constant — flag any string-literal code or
   a new code missing from `ErrorCodes`; `LogDetail` ids only; no `ModelState.IsValid` checks in actions.
 - Simplicity: no speculative abstractions, dead code, duplicate helpers, unnecessary packages; reuse existing types.
 - Tests: meaningful asserts, named after AC IDs, no sleeps/flakiness.
+- Host config: new concerns live in `Api/Configuration/<Concern>Config.cs` as C# 14 `extension` blocks; flag any service
+  registration written inline in `Program.cs`.
 - Data access (ADR-0016): no EF Core outside Infrastructure; services use repository interfaces + one
   `IUnitOfWork.SaveChangesAsync` per use case; repositories return entities (no `IQueryable`), are `internal sealed`, and
   use `AsNoTracking` for read methods; no N+1; indexes exist for new filters.

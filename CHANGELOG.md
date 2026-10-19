@@ -16,14 +16,16 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `ErrorCodes` (`doctor_conflict` → `DOCTOR_CONFLICT`). Unknown routes / wrong methods answer `ROUTE_NOT_FOUND` /
   `METHOD_NOT_ALLOWED`. Controllers declare every status with `[ProducesResponseType]`. Exceptions carry their own status
   and a log-only `LogDetail` (ADR-0015).
-- `Program.cs` is a composition root only: `AddCoreConfiguration` / `AddApiConfiguration` / `AddSecurityConfiguration` /
-  `AddOpenApiConfiguration` extensions in `Api/Configuration/`, `ApplyMigrationsAsync()`, health checks via
+- `Program.cs` is a composition root only: `AddApiConfiguration` / `AddSecurityConfiguration` / `AddOpenApiConfiguration`
+  written as C# 14 `extension(WebApplicationBuilder)` blocks in `Api/Configuration/*Config.cs`, `ApplyMigrationsAsync()`, health checks via
   `MapHealthChecks("/health/live")`; `AddInfrastructure` split into `AddPersistence`, `AddIdentityAndJwt`, `AddBackgroundJobs`.
 - Data access through repositories (`IAppointmentRepository`, `IDoctorRepository`, `IPatientRepository`,
   `IAuditRecordRepository`) and `IUnitOfWork` (ADR-0016); `IAppDbContext` removed and Application no longer references EF
   Core (enforced by ArchitectureTests). First Application unit tests with fakes (`AppointmentServiceTests`).
 - Controllers hold endpoints only: refresh-cookie handling moved from `AuthController` to `Api/Auth/RefreshTokenCookie`;
   `ControllerConventionTests` forbid private helpers and constants in controllers.
+- Framework-made errors (404/405 status pages, 415 from MVC, Asp.Versioning) all written as `ApiResponse` through
+  `ApiResponseProblemDetailsWriter` / `ApiResponseClientErrorFactory`; new codes `UNSUPPORTED_MEDIA_TYPE`, `UNSUPPORTED_API_VERSION`.
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
 ### Security

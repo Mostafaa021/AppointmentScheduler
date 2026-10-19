@@ -30,9 +30,11 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   - Logic and mapping go in the Application service, which keeps its own private helpers.
   - HTTP-only plumbing (cookies, headers) goes in an Api helper class next to its feature, e.g. `Api/Auth/RefreshTokenCookie`.
 - Background jobs: Hangfire job classes in Infrastructure, registered in `BackgroundJobs/BackgroundJobsSetup.cs` (ADR-0014).
-- `Program.cs` only composes: `builder.AddCoreConfiguration().AddApiConfiguration().AddSecurityConfiguration()…`, then the
+- `Program.cs` only composes: `builder.AddApiConfiguration().AddSecurityConfiguration().AddOpenApiConfiguration()…`, then the
   middleware order. Never register services inline in `Program.cs`:
-  - a new host concern gets an `Add<Concern>Configuration()` extension in `Api/Configuration/<Concern>Configuration.cs`;
+  - a new host concern gets `Api/Configuration/<Concern>Config.cs`: a `public static class <Concern>Config` with a C# 14
+    `extension(WebApplicationBuilder builder) { public WebApplicationBuilder Add<Concern>Configuration() … }` block
+    (plus `extension(WebApplication app)` for its pipeline helpers);
   - layer services go in that layer's `DependencyInjection.cs` (see docs/architecture.md "Host composition").
 - Business rules live in Domain (`Appointment`, `DaySchedule`); the DB exclusion constraint is the final guard (see SPEC.md).
 - Data access (ADR-0016):

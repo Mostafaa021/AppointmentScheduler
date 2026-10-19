@@ -1,5 +1,4 @@
 using AppointmentScheduler.Domain.Common;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentScheduler.Api.Errors;
@@ -18,21 +17,5 @@ internal static class BadRequestResponse
             .ToDictionary(e => e.Key, e => e.Value!.Errors.Select(x => x.ErrorMessage).ToArray());
         return new BadRequestObjectResult(ApiErrorWriter.Body(context.HttpContext, StatusCodes.Status400BadRequest,
             ErrorCodes.BadRequest, "The request could not be read.", errors));
-    }
-
-    /// <summary>Bodiless error statuses (unknown route, wrong method, …) get the same envelope as every other error.</summary>
-    public static Task FromStatusCode(StatusCodeContext context)
-    {
-        var status = context.HttpContext.Response.StatusCode;
-        var (code, message) = status switch
-        {
-            StatusCodes.Status401Unauthorized => (ErrorCodes.Unauthorized, "Authentication is required."),
-            StatusCodes.Status403Forbidden => (ErrorCodes.Forbidden, "You are not allowed to access this resource."),
-            StatusCodes.Status404NotFound => (ErrorCodes.RouteNotFound, "No endpoint matches this URL."),
-            StatusCodes.Status405MethodNotAllowed => (ErrorCodes.MethodNotAllowed, "This endpoint does not support the HTTP method."),
-            >= 500 => (ErrorCodes.InternalError, "An unexpected error occurred. Quote the traceId when reporting it."),
-            _ => (ErrorCodes.BadRequest, "The request could not be processed."),
-        };
-        return ApiErrorWriter.WriteAsync(context.HttpContext, status, code, message);
     }
 }

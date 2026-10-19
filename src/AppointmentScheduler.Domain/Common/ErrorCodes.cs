@@ -19,6 +19,13 @@ public static class ErrorCodes
     /// <summary>Authenticated, but the role or BR-7 ownership rule denies access.</summary>
     public const string Forbidden = "FORBIDDEN";
 
+    /// <summary>The request asked for an API version this service does not offer (URL segment, <c>X-Api-Version</c> or
+    /// <c>api-version</c>).</summary>
+    public const string UnsupportedApiVersion = "UNSUPPORTED_API_VERSION";
+
+    /// <summary>The body is not JSON (wrong <c>Content-Type</c>).</summary>
+    public const string UnsupportedMediaType = "UNSUPPORTED_MEDIA_TYPE";
+
     /// <summary>No route matches the URL.</summary>
     public const string RouteNotFound = "ROUTE_NOT_FOUND";
 

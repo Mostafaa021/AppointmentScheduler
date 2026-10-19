@@ -170,3 +170,24 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
 - **Changed:** the refresh-cookie code went to `Api/Auth/RefreshTokenCookie`, not to Application. Writing a cookie needs
   `HttpResponse`, and Application may not reference ASP.NET Core (architecture rule). Use-case logic and its private helpers
   were already in the Application services.
+
+### P-17 · Host config as C# 14 extension blocks, plus versioning, observability and messaging
+> "Build extensions for WebApplicationBuilder like these [`public static class ApiConfig { extension(WebApplicationBuilder
+> builder) { public WebApplicationBuilder AddApiConfiguration() … } }`, ApiVersioningConfig, MessagingConfig, ObservabilityConfig,
+> SwaggerConfig]."
+
+- **Accepted:**
+  - `*Config` classes with `extension(WebApplicationBuilder)` / `extension(WebApplication)` blocks.
+  - `ApiConfig` absorbs the old CoreConfiguration, like the template.
+  - `AddProblemDetails()` is back as plumbing, while our own `IProblemDetailsWriter` keeps every body an `ApiResponse`.
+  - API versioning, OpenTelemetry → Jaeger, and Wolverine + RabbitMQ (choices in the plan).
+- **Changed (debugging):**
+  - The .NET analyzers do not understand two extension blocks in one class: CA1708 reports them as members differing only
+    by case. Disabled for `Api/Configuration/*.cs` only, with the reason written next to the setting.
+  - A non-JSON body came back as an empty 415, because MVC sets `Content-Length: 0` and status-code pages skip any response
+    that has a length. Fixed with an `IClientErrorFactory` that returns the envelope.
+  - The status → code mapping is shared (`ErrorStatusMapping`) so the two paths can't drift.
+  - Found and removed two stray lines of plugin hook output that had been committed into `.editorconfig` since M1.
+- **Rejected:**
+  - Swashbuckle: built-in OpenAPI + Scalar is kept (user choice).
+  - FluentValidation MVC auto-validation with joined messages: Application validation is kept (user choice, ADR-0013).

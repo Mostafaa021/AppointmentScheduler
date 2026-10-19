@@ -26,8 +26,25 @@ description: Single-session, spec-first checklist for adding a feature end to en
 5. **Infrastructure** — EF configuration in `Infrastructure/Persistence/Configurations/`; schema change → `/add-migration`.
    Repository implementation `internal sealed` in `Infrastructure/Persistence/Repositories/`, registered in `AddPersistence`
    (`Infrastructure/DependencyInjection.cs`). Never in `Program.cs`. A new host-level
-   concern (e.g. rate limiting, OpenTelemetry) gets `Api/Configuration/<Concern>Configuration.cs` with an
-   `Add<Concern>Configuration()` extension, chained in `Program.cs`.
+   concern (e.g. rate limiting) gets `Api/Configuration/<Concern>Config.cs`, chained in `Program.cs`:
+   ```csharp
+   public static class RateLimitingConfig
+   {
+       extension(WebApplicationBuilder builder)
+       {
+           public WebApplicationBuilder AddRateLimitingConfiguration()
+           {
+               builder.Services.AddRateLimiter(o => { /* policies */ });
+               return builder;
+           }
+       }
+
+       extension(WebApplication app)
+       {
+           public WebApplication UseRateLimitingConfiguration() { app.UseRateLimiter(); return app; }
+       }
+   }
+   ```
 6. **Api** — action on `Api/Controllers/<Feature>Controller.cs` (inherits `ApiControllerBase`); thin; correct policy,
    rate-limit and idempotent group. Return `ApiResponse<T>`, declare every status the action can produce (401/500 come from
    the base), no `ModelState.IsValid` check (`[ApiController]` already returns 400 `BAD_REQUEST`):

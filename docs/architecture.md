@@ -26,17 +26,24 @@ Identity types live in `Microsoft.AspNetCore.Identity`, so Identity stays in Inf
 contracts (`IAuthService`, `IUserAdminService`, `ICurrentUser`, `AuditLog`) — spec 004.
 
 ## Host composition (`Api/Program.cs`)
-`Program.cs` only composes. Each concern has its own `WebApplicationBuilder` extension in `Api/Configuration/`, and
-each layer registers its own services:
+`Program.cs` only composes. Each concern has one `public static class <Concern>Config` in `Api/Configuration/`, written as
+C# 14 extension blocks:
+- `extension(WebApplicationBuilder builder) { public WebApplicationBuilder Add<Concern>Configuration() … }` for services;
+- `extension(WebApplication app) { … }` for that concern's pipeline or mapping helpers.
+
+Each layer registers its own services:
 
 | Call | File | Registers |
 |---|---|---|
-| `AddCoreConfiguration()` | `Api/Configuration/CoreConfiguration.cs` | `ClinicOptions` (validated on start), `TimeProvider`, `AddApplication()`, `AddInfrastructure()` |
+| `AddApiConfiguration()` | `Api/Configuration/ApiConfig.cs` | `ClinicOptions` (validated on start), `TimeProvider`, `AddApplication()`, `AddInfrastructure()`, controllers, JSON, model-state 400, `IClientErrorFactory` + `IProblemDetailsWriter` (both → `ApiResponse`), `GlobalExceptionHandler`, `AddProblemDetails`, health checks; app side `UseApiExceptionHandling()` |
 | ↳ `AddApplication()` | `Application/DependencyInjection.cs` | services, `AuditLog`, validators |
 | ↳ `AddInfrastructure()` | `Infrastructure/DependencyInjection.cs` | `AddPersistence` (DbContext, seed, repositories + unit of work), `AddIdentityAndJwt`, `AddBackgroundJobs` (Hangfire) |
-| `AddApiConfiguration()` | `Api/Configuration/ApiConfiguration.cs` | controllers, JSON, model-state 400, `GlobalExceptionHandler` |
-| `AddSecurityConfiguration()` | `Api/Configuration/SecurityConfiguration.cs` | role policies + JWT 401/403 bodies (`AddApiAuth`), HSTS, CORS from `Cors:AllowedOrigins` |
-| `AddOpenApiConfiguration()` | `Api/Configuration/OpenApiConfiguration.cs` | OpenAPI document (+ `MapOpenApiDocs()` → `/openapi/v1.json`, `/scalar`) |
+| `AddSecurityConfiguration()` | `Api/Configuration/SecurityConfig.cs` | role policies + JWT 401/403 bodies (`AddApiAuth`), HSTS, CORS from `Cors:AllowedOrigins` |
+| `AddOpenApiConfiguration()` | `Api/Configuration/OpenApiConfig.cs` | OpenAPI document; app side `MapOpenApiDocs()` → `/openapi/v1.json`, `/scalar` |
+
+Every framework-made error has the same `ApiResponse` shape. The `errorCode` comes from `Api/Errors/ErrorStatusMapping`:
+- bodiless statuses (404/405) go through `UseStatusCodePages` → `IProblemDetailsService` → `ApiResponseProblemDetailsWriter`;
+- MVC client errors (415) go through `ApiResponseClientErrorFactory`.
 
 On the app side: `ApplyMigrationsAsync()` (Development only), then the middleware below in order, then `MapControllers`,
 `MapHealthChecks("/health/live")`, then `UseBackgroundJobs()` (recurring jobs + Development-only `/hangfire`).

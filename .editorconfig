@@ -392,6 +392,8 @@ dotnet_naming_style.s_camelcase.capitalization = camel_case
 [**/Migrations/*.cs]
 generated_code = true
 dotnet_analyzer_diagnostic.severity = none
-[INFO] Recording command outcome: printf
 
-[OK] Command outcome recorded
+# C# 14 extension blocks: CA1708 treats two `extension(...)` blocks in one class as members that differ only by case
+# (analyzer false positive). Scoped to the host configuration classes that use them.
+[src/AppointmentScheduler.Api/Configuration/*.cs]
+dotnet_diagnostic.CA1708.severity = none

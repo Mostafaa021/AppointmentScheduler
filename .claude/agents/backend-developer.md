@@ -33,8 +33,9 @@ Data access (ADR-0016):
 
 Controllers hold endpoints only (no private helpers or constants): logic goes in the Application service, HTTP-only plumbing in an
 Api helper class like `Api/Auth/RefreshTokenCookie`.
-Registrations: layer services in that layer's `DependencyInjection.cs`; host concerns in `Api/Configuration/<Concern>Configuration.cs`
-as an `Add<Concern>Configuration()` extension — `Program.cs` only chains them and orders middleware.
+Registrations: layer services in that layer's `DependencyInjection.cs`; host concerns in `Api/Configuration/<Concern>Config.cs`
+as a C# 14 `extension(WebApplicationBuilder builder)` block with `Add<Concern>Configuration()` — `Program.cs` only chains them
+and orders middleware.
 
 ## Never
 Touch `web/`. Skip or weaken a test to make it pass. Change a spec's AC (ask the product-owner). Add packages without an ADR.

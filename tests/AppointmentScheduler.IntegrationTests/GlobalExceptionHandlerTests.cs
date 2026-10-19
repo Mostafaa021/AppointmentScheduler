@@ -68,6 +68,15 @@ public class GlobalExceptionHandlerTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task Non_json_body_returns_415_api_response()
+    {
+        var response = await api.CreateClient().PostAsync("/api/v1/auth/login", new StringContent("email=x", System.Text.Encoding.UTF8, "text/plain"));
+
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+        Assert.Equal(ErrorCodes.UnsupportedMediaType, await response.ErrorCodeAsync());
+    }
+
+    [Fact]
     public async Task Wrong_method_returns_405_api_response()
     {
         var response = await api.CreateClient().DeleteAsync("/api/v1/auth/login");
