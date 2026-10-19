@@ -489,3 +489,9 @@ web/dist/
 web/.angular/
 # k6 output
 perf/k6/results/
+
+# Local tool/plugin state (not part of the project)
+.claude-flow/
+.claude/proven-config.json
+.claude/.proven-config-version
+.claude/settings.local.json

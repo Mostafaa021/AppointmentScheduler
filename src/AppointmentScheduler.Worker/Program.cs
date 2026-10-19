@@ -1,7 +1,5 @@
-using AppointmentScheduler.Worker;
-
+// Wolverine message handlers are added in M5 (spec 008).
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
 host.Run();
