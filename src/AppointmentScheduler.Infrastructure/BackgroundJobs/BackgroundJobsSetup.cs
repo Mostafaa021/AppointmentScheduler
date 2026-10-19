@@ -10,7 +10,7 @@ namespace AppointmentScheduler.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Hangfire runs inside the Api process (ADR-0014), storing jobs in the same PostgreSQL database (schema <c>hangfire</c>).
-/// <c>BackgroundJobs:Enabled=false</c> (integration tests) skips the server and recurring registrations; jobs can still be
+/// <c>BackgroundJobs:Enabled=false</c> skips the server and recurring registrations; jobs can still be
 /// resolved and run directly.
 /// </summary>
 public static class BackgroundJobsSetup

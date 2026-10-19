@@ -136,7 +136,7 @@ Material, feature folders `features/schedule` and `features/auth`.
 The repository is set up as a production simulation; these are specified and planned as later milestones
 ([backlog](docs/backlog.md)): authentication/roles (004 — **built in M2**), patient CRUD (005), working hours/breaks/time off/appointment types
 (006), multiple clinics & time zones (007), notifications via Wolverine + RabbitMQ outbox (008), idempotency keys (009),
-rate limiting, resilience, OpenTelemetry → Jaeger, k6 load tests. Non-functional targets: [000-nfr](docs/specs/000-nfr.md).
+rate limiting, resilience, OpenTelemetry → Jaeger. Non-functional targets: [000-nfr](docs/specs/000-nfr.md).
 
 ## 9. Out of scope (for the challenge milestone)
 Authentication, doctor-specific hours, multi-clinic, patient editing, notifications — see §8.

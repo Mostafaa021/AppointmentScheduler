@@ -127,8 +127,7 @@ All routes below are under `/api/v1`. Every body is an `ApiResponse<T>` envelope
   `POST /auth/logout`), Then the in-memory access token and user are cleared and the app navigates to `/login`, even if the
   logout call fails.
 - **AC-004-21** Given a login or refresh succeeds, Then the access token is never written to `localStorage`,
-  `sessionStorage`, IndexedDB or a JavaScript-readable cookie (checked in Vitest via storage spies and in Playwright by
-  inspecting storage after login).
+  `sessionStorage`, IndexedDB or a JavaScript-readable cookie (checked in Vitest via storage spies).
 
 ### Validation, security headers, audit (S-23)
 - **AC-004-22** Given a request body that fails validation, When it reaches any endpoint below, Then 400 with the same shape as
@@ -318,6 +317,8 @@ origin (`localhost:4200`), so the host-only cookie works. Safari (WebKit) does n
 never echo the e-mail; `INVALID_CREDENTIALS` uses one fixed text for both cases (AC-004-2).
 
 ### Tests impact
+> Superseded 2026-10-20 (plan 011): the integration tests (`ApiFactory`, Testcontainers) were removed. Only the unit-test
+> and ArchitectureTests bullets below still apply; the rest is kept as history and is checked live against the running API.
 - **`ApiFactory`**: `UseSetting("JWT_SIGNING_KEY", <random ≥ 32 chars per run>)`; after start, creates test users via
   `UserManager` (`admin@test.local`, `reception@test.local`, one shared `TestPassword` constant that meets the policy) and
   `CreateDoctorUserAsync(int doctorId)` for BR-7 tests. **`Task<HttpClient> ClientForAsync(email)`** logs in through
@@ -364,8 +365,7 @@ Vitest: `auth.service.spec` (storage spies on `localStorage`/`sessionStorage`/`i
 | `Microsoft.AspNetCore.Authentication.JwtBearer` 10.0.13 | Infrastructure (flows to Api) | bearer validation; brings `Microsoft.IdentityModel.JsonWebTokens` used to issue tokens, so no third JWT package |
 | `FluentValidation` 12.x (12.1.1 in the local cache) | Application | request validators (ADR-0013, human decision); `FluentValidation.DependencyInjectionExtensions` deliberately not added — 6 explicit registrations |
 
-No npm package. AC-004-21's Playwright check is **deferred to M7** (human decision); M2 covers AC-004-21 with Vitest
-storage spies only, so `@playwright/test` is not added now.
+No npm package. AC-004-21 is covered by Vitest storage spies only; Playwright was dropped (plan 011).
 
 ### Role matrix check (AC-004-8 vs code today)
 All 8 existing `/api/v1` routes (`GET /doctors`, `GET /doctors/{id}/availability`, `GET /patients`, `GET /appointments`,

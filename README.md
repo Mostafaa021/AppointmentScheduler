@@ -12,7 +12,7 @@ Book patients with doctors in 30-minute slots — **without double-booking**, ev
 |---|---|
 | .NET SDK | 10.0.4xx (`global.json`) |
 | Node.js / npm | 24 / 11 |
-| Docker Desktop | running (PostgreSQL, and Testcontainers for integration tests) |
+| Docker Desktop | running (PostgreSQL, RabbitMQ, Jaeger for the app; not needed for tests) |
 
 ## Run it (3 terminals)
 ```bash
@@ -54,8 +54,9 @@ To reset: `docker compose down -v` and start again.
 ```bash
 dotnet test
 ```
-Runs unit (domain rules, DST), architecture (layer rules) and integration tests (real PostgreSQL via Testcontainers —
-including 10 parallel bookings of one slot → exactly one succeeds). Docker must be running.
+Runs unit tests (domain rules, DST, use cases with fakes) and architecture tests (layer rules). No Docker needed: there are
+no integration tests by design (plan 011). Behaviour that needs a real database or HTTP host (the exclusion constraints,
+idempotency replay, rate limits) is checked live against the running API. Load testing is done outside the repo.
 ```bash
 cd web && npm test -- --watch=false
 ```
@@ -85,7 +86,7 @@ src/AppointmentScheduler.Domain          rules: Appointment, DaySchedule (no dep
 src/AppointmentScheduler.Application     use cases: AppointmentService, AvailabilityService, LookupQueries
 src/AppointmentScheduler.Infrastructure  EF Core + Npgsql, migrations (exclusion constraints), seed
 src/AppointmentScheduler.Api             controllers, global exception handler, auth, Hangfire host, OpenAPI
-tests/                                   Unit, Architecture, Integration
+tests/                                   Unit, Architecture
 web/                                     Angular app (features/schedule)
 docs/                                    specs, ADRs, architecture, SDLC, backlog
 .claude/                                 Claude Code agents (SDLC roles) and project skills
@@ -93,4 +94,4 @@ docs/                                    specs, ADRs, architecture, SDLC, backlo
 
 ## Working on it with Claude Code
 `CLAUDE.md` holds the project rules. Project skills: `/sdlc <feature>` (full role-agent ceremony, `--fast` for small
-changes), `/new-feature`, `/add-migration`, `/verify`, `/load-test`, `/log-prompt`. See [docs/sdlc.md](docs/sdlc.md).
+changes), `/new-feature`, `/add-migration`, `/verify`, `/log-prompt`. See [docs/sdlc.md](docs/sdlc.md).

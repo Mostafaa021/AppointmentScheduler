@@ -12,7 +12,7 @@ idempotency-record cleanup later). A separate Worker project added a second depl
 - Jobs are plain classes in Infrastructure, resolved from DI per run (e.g. `Auth/PurgeExpiredRefreshTokensJob`, hourly).
   Registration lives in `Infrastructure/BackgroundJobs/BackgroundJobsSetup.cs`.
 - Dashboard at `/hangfire` in **Development only**, local requests only (browser navigation can't carry the in-memory JWT).
-- `BackgroundJobs:Enabled=false` turns off the server and recurring registrations (integration tests run jobs directly).
+- `BackgroundJobs:Enabled=false` turns off the server and recurring registrations.
 - **Wolverine + RabbitMQ stay** for domain events (ADR-0007, M5), also hosted in the Api: Wolverine moves *events* between
   components reliably (outbox); Hangfire runs *jobs* — scheduled, recurring, retried, visible in a dashboard.
 - `Newtonsoft.Json` is pinned to 13.0.4 centrally because Hangfire.Core references a vulnerable 11.0.1.

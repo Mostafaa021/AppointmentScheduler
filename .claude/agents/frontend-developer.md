@@ -20,7 +20,7 @@ The spec (AC, API contract, UI notes), `web/src/app/core/` (API services, models
    show `errorDetails` to users (Development-only diagnostics).
    Writes get their `Idempotency-Key` from `idempotencyKeyInterceptor` (keep it outside `authInterceptor`); a component never
    sets one itself unless it retries the same user action.
-4. Vitest specs for components with logic and for services (HttpTestingController).
+4. Vitest specs for components with logic and for services (HttpTestingController). No Playwright e2e (plan 011).
 5. Run `npm test -- --watch=false` and `npm run build`; record results in the spec Status notes; tick `Built ☑` for UI.
 
 ## Never

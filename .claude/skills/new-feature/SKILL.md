@@ -9,8 +9,9 @@ description: Single-session, spec-first checklist for adding a feature end to en
 1. **Spec** — copy `docs/specs/_template.md` to `docs/specs/NNN-<name>.md`; write AC `AC-NNN-x` (Given/When/Then, incl. status
    and `errorCode`). Fill the API contract table with **every** status per route. Show the AC list to the user before coding.
 2. **Tests first** — one failing test per AC, named `AC_NNN_x_<Behavior>`:
-   rules → `tests/AppointmentScheduler.UnitTests/<Feature>/`; HTTP/DB → `tests/AppointmentScheduler.IntegrationTests/<Feature>/`.
-   Read success bodies with `DataAsync()`, errors with `ErrorCodeAsync()`, and assert against `ErrorCodes.X`.
+   rules and use cases → `tests/AppointmentScheduler.UnitTests/<Feature>/` (fake `IUnitOfWork`, `FakeTimeProvider`); layer
+   rules → `tests/AppointmentScheduler.ArchitectureTests`. Assert the exception type and `ErrorCodes.X`. No integration tests,
+   Testcontainers or `WebApplicationFactory` (plan 011): check HTTP/DB behaviour live with `curl` and note it in the spec.
 3. **Domain** — `src/AppointmentScheduler.Domain/<Feature>/`: entity methods/policies enforce rules and throw a
    `SchedulerException` subclass (`BusinessRuleException` 422, `ConflictException` 409, `NotFoundException` 404, …).
    New business codes go in `Domain/Common/ErrorCodes.cs` under a `// ── <Feature> ──` section, UPPER_SNAKE — never a string

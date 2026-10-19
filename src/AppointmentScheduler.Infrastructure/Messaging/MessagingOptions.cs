@@ -21,7 +21,7 @@ public sealed class MessagingOptions
 
 public sealed class RabbitMqOptions
 {
-    /// <summary>False runs Wolverine with its PostgreSQL store only (integration tests, machines without a broker).</summary>
+    /// <summary>False runs Wolverine with its PostgreSQL store only (machines without a broker).</summary>
     public bool Enabled { get; set; } = true;
 
     public string Host { get; set; } = "localhost";

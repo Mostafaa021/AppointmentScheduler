@@ -42,5 +42,3 @@ app.MapHealthChecks("/health/live");
 app.UseBackgroundJobs(app.Configuration, app.Environment.IsDevelopment());
 
 await app.RunAsync();
-
-public partial class Program; // for WebApplicationFactory in integration tests

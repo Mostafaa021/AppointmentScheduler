@@ -30,4 +30,6 @@ Use all three layers, each with a different job:
 
 ## Consequences
 + Correct under any concurrency and any duration; every future write path is protected automatically.
-− Ties us to PostgreSQL (accepted; chosen DB). Integration tests must run on real Postgres (Testcontainers), not SQLite/in-memory.
+− Ties us to PostgreSQL (accepted; chosen DB). The constraint has no automated test since integration tests were dropped
+  (plan 011): the Domain pre-checks are unit-tested, and the constraint itself is checked live (two parallel bookings of one
+  slot → exactly one 201, the other 409).

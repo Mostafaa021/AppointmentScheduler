@@ -15,7 +15,6 @@ jobs:
           global-json-file: global.json
       - run: dotnet restore
       - run: dotnet build --no-restore -warnaserror
-      # Integration tests use Testcontainers; Docker is available on ubuntu runners.
       - run: dotnet test --no-build --logger "trx" --results-directory TestResults
       - uses: actions/upload-artifact@v4
         if: always()
@@ -38,5 +37,3 @@ jobs:
       - run: npm ci
       - run: npm test -- --watch=false
       - run: npm run build
-
-  # k6 smoke job is added in M6/M7 once the full stack runs in docker compose (spec 000, NFR-2).

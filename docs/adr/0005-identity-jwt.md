@@ -18,7 +18,7 @@ Keycloak/OIDC (more realistic, more moving parts — rejected for scope); cookie
 clients/k6).
 
 ## Consequences
-+ Self-contained, testable with WebApplicationFactory, k6 can log in via API.
++ Self-contained; any HTTP client (curl, k6) can log in via the API.
 − We own token security code → covered by tests and the security-engineer review.
 
 ## Amendments

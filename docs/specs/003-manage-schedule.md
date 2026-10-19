@@ -35,7 +35,7 @@ View a doctor's appointments for a day, cancel one, or move it to another free s
 | AC | Test |
 |---|---|
 | AC-003-3, 6 | UnitTests › AppointmentTests |
-| AC-003-1..8 | IntegrationTests › ManageScheduleEndpointTests |
+| AC-003-1..8 | Manual check against the running API (integration tests removed 2026-10-20, plan 011) |
 
 ## Out of scope
 Moving an appointment to a different doctor (book new + cancel old instead).

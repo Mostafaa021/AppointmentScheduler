@@ -27,7 +27,7 @@ Rows are only ever inserted — no code path updates or deletes them.
 ## Consequences
 + Atomic: the audit row and the business change commit or fail together, so "no record on rejection" holds by construction
   (a 409 from the exclusion constraint rolls back both).
-+ Testable with a plain SQL query in integration tests.
++ Checkable with a plain SQL query against the running database.
 − Same database as the data it audits (a DB admin could edit it). Acceptable for the simulation; tamper evidence (hash chain
   or WORM store) is a later concern.
 − Table grows unbounded; retention/export is explicitly out of scope (spec 004).

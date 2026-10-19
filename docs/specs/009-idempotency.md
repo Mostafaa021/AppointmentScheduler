@@ -50,7 +50,7 @@ ADR-0006 (amended). Plan: `.claude/plans/009-sprint-3-reliability.md`.
 ## Test plan
 | AC | Test |
 |---|---|
-| AC-009-1…8 | IntegrationTests › IdempotencyTests (11 tests, incl. stale takeover and expired-key restart) |
+| AC-009-1…8 | Manual check against the running API (integration tests removed 2026-10-20, plan 011) |
 | interceptor | web › idempotency-key.interceptor.spec.ts |
 
 ## Out of scope

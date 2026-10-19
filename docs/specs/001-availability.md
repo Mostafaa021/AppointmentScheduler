@@ -48,7 +48,7 @@ Slot grid: Free = primary button, Booked = patient chip + actions, Past/Unavaila
 | AC | Test |
 |---|---|
 | AC-001-1, 4, 6 | UnitTests › DayScheduleTests |
-| AC-001-2, 3, 5, 7 | IntegrationTests › AvailabilityEndpointTests |
+| AC-001-2, 3, 5, 7 | Manual check against the running API (integration tests removed 2026-10-20, plan 011) |
 
 ## Out of scope
 Multi-day views, waitlists.

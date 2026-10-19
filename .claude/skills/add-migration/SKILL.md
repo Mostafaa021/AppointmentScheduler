@@ -18,5 +18,6 @@ description: Create and review an EF Core migration for the scheduler database (
    `Up` **and** reversed in `Down`.
 4. Apply locally: `dotnet ef database update -p src/AppointmentScheduler.Infrastructure -s src/AppointmentScheduler.Api`
    (or just run the API in Development — it migrates on startup).
-5. Run integration tests (they build the schema from migrations).
+5. Run the API in Development (it migrates on startup) and check the changed tables or constraints with a live request or
+   `psql`; there are no integration tests (plan 011).
 6. Update the data-model section of `SPEC.md` and the spec's "Data changes".

@@ -6,6 +6,8 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 - **Header**: `Status: Draft | Approved | In progress | Done | Superseded by NNN`, the date, and the backlog stories, specs and
   ADRs the plan implements.
 - **Changes during the work**: edit the same file (append a dated "Changes" note). Don't open a new plan for an amendment.
+- **Tests in a plan** (plan 011): unit + architecture tests (and Vitest) only. Never plan integration tests, Testcontainers,
+  `WebApplicationFactory`, Playwright or an in-repo k6 suite; behaviour that needs a real host or database is a live check.
 - **Claude Code** writes plan-mode plans here directly (`plansDirectory` in `.claude/settings.json`). When it runs from another
   root, copy the approved plan here before coding.
 
@@ -21,3 +23,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 008 | [RabbitMQ local credentials guest/guest](008-rabbitmq-guest-credentials.md) | Done | ADR-0007 |
 | 009 | [Sprint 3 — M3 reliability](009-sprint-3-reliability.md) | Done (S-31 set aside) | S-30, S-32, S-33; spec 009, ADR-0006/0009 |
 | 010 | [Repositories only through the unit of work](010-repositories-through-unit-of-work.md) | Done | ADR-0016 |
+| 011 | [Unit and architecture tests only](011-unit-and-architecture-tests-only.md) | Done — rule for all later plans | — |

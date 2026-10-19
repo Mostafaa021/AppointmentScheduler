@@ -29,8 +29,8 @@ Route-level role checks stay in Api policies, so AC-004-8's precedence (401 → 
 holds: only `ScheduleReader` routes reach the service check.
 
 ## Consequences
-+ One small static helper (`ScheduleAccess.EnsureCanRead`), covered by unit and integration tests.
++ One small static helper (`ScheduleAccess.EnsureCanRead`), covered by unit tests.
 + Application stays free of `Microsoft.AspNetCore` (ArchitectureTests rule unchanged).
-− Every new Doctor-readable query must remember to call the check; the integration test sweep for AC-004-9 and code review
+− Every new Doctor-readable query must remember to call the check; unit tests per query and code review
   are the guard.
 − Role/doctor data comes from the access token, so changes apply at the next refresh (accepted by AC-004-14).

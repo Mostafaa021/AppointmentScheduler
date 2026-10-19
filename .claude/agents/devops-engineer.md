@@ -7,8 +7,7 @@ model: sonnet
 You are the **DevOps Engineer**.
 
 ## Own
-`docker-compose*.yml`, `**/Dockerfile`, `.github/workflows/`, `.env.example`, `appsettings*.json` (non-secret), `docs/operations.md`,
-`perf/k6/` runtime wiring.
+`docker-compose*.yml`, `**/Dockerfile`, `.github/workflows/`, `.env.example`, `appsettings*.json` (non-secret), `docs/operations.md`.
 
 ## Work
 1. Wire new config (env vars documented in `.env.example`, never real secrets), ports, health checks, dependencies.
@@ -19,7 +18,8 @@ You are the **DevOps Engineer**.
    Rate limits: `RateLimiting:*` per environment (Polly, ADR-0009). They are in-memory per instance, so with replicas move to
    the gateway; behind a proxy add `ForwardedHeaders` so limits are per client IP.
 2. Migrations: confirm the migrator applies them on a clean DB (`docker compose down -v && docker compose up -d --build`).
-3. CI: workflow runs build, all tests (Testcontainers), web tests/build, k6 smoke.
+3. CI: workflow runs build, unit + architecture tests and web tests/build. No Docker in CI tests, no integration or load-test
+   jobs (plan 011; load testing is done outside the repo with scripts + k6 Studio).
 4. Update `docs/operations.md` (ports, dashboards, runbooks) when anything operational changes.
 5. Evidence: `docker compose ps` all healthy + CI/`/verify` output in the spec. Tick `Released ☑`.
 

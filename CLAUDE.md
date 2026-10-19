@@ -1,26 +1,27 @@
 # Appointment Scheduler — Claude project memory
 
 Clinic appointment scheduler: receptionists book patients with doctors in fixed slots **without double-booking**.
-Simulates a production system (auth, idempotency, rate limiting, messaging, observability, load tests).
+Simulates a production system (auth, idempotency, rate limiting, messaging, observability).
 
 ## Stack
 - Backend: .NET 10, ASP.NET Core Web API (controllers), EF Core 10 + Npgsql, Clean Architecture (`src/`)
 - Frontend: Angular 22 (standalone, signals, Angular Material) in `web/`
 - Infra (Docker): PostgreSQL 17, RabbitMQ 4 (Wolverine; the API runs in degraded mode when the broker is down), Jaeger
   (OTLP :4317, UI :16686 — `ObservabilityConfig`). Background jobs: Hangfire inside the Api process
-- Tests: xUnit, Testcontainers, NetArchTest, Vitest, Playwright, k6 (`perf/k6`)
+- Tests: **unit + architecture only** — xUnit (fakes, `FakeTimeProvider`), NetArchTest, and Vitest for Angular (plan 011).
+  No integration tests, Testcontainers, `WebApplicationFactory`, Playwright or in-repo k6: never add or plan them. HTTP/DB
+  behaviour is checked live (`curl` against the running API). Load testing happens outside the repo (scripts + k6 Studio).
 
 ## Commands
 | Task | Command |
 |---|---|
 | Start infra | `docker compose up -d postgres rabbitmq jaeger` |
 | Run API (http://localhost:5080, docs at `/scalar`) | `dotnet run --project src/AppointmentScheduler.Api` |
-| All .NET tests (needs Docker) | `dotnet test` |
+| All .NET tests (unit + architecture, no Docker) | `dotnet test` |
 | Unit tests only | `dotnet test tests/AppointmentScheduler.UnitTests` |
 | Add migration | `dotnet ef migrations add <Name> -p src/AppointmentScheduler.Infrastructure -s src/AppointmentScheduler.Api -o Persistence/Migrations` |
 | Web dev server (http://localhost:4200, proxies `/api`) | `cd web && npm start` |
 | Web tests / build | `cd web && npm test` / `npm run build` |
-| Load test | `docker compose --profile perf run --rm k6 run /scripts/<script>.js` |
 
 ## Architecture rules (enforced by `tests/AppointmentScheduler.ArchitectureTests`)
 - Dependency direction: **Domain ← Application ← Infrastructure ← Api** (the Api is the only host; background jobs and message handlers run in it). Domain references nothing.
@@ -94,7 +95,8 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
    its Progress line as steps are verified. Link the plan from the backlog story or spec it implements.
 0b. Commits: never commit unasked. After each step, show what changed and ask whether to commit it or leave it in the working tree.
 1. Spec first: `docs/specs/NNN-*.md` from `_template.md`, acceptance criteria `AC-NNN-x`.
-2. Tests named after AC/BR IDs, written before or with the code.
+2. Tests named after AC/BR IDs, written before or with the code: unit or architecture tests (Vitest for Angular). Behaviour
+   only a real host or database shows is a live check recorded in the spec, never an integration test.
 3. Default: implement directly in the session (use `/new-feature` as a checklist). The role-agent ceremony (`/sdlc`, docs/sdlc.md)
    is opt-in — only when the user asks for it.
 4. Record meaningful prompts with `/log-prompt` (feeds PROMPTS.md).

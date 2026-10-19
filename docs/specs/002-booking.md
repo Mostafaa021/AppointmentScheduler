@@ -36,7 +36,7 @@ Domain `Appointment.Schedule(...)` enforces BR-3/4 → `AppointmentService.BookA
 | AC | Test |
 |---|---|
 | AC-002-4, 5 | UnitTests › AppointmentTests |
-| AC-002-1..3, 6..8 | IntegrationTests › BookingEndpointTests, ExclusionConstraintTests |
+| AC-002-1..3, 6..8 | UnitTests › AppointmentServiceTests (pre-checks, 404s, commit order); the exclusion constraint and HTTP statuses: Manual check against the running API (integration tests removed 2026-10-20, plan 011) |
 
 ## Out of scope
 Recurring appointments, overbooking overrides.

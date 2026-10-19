@@ -7,7 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AppointmentScheduler.ArchitectureTests/AppointmentScheduler.ArchitectureTests.csproj" />
-    <Project Path="tests/AppointmentScheduler.IntegrationTests/AppointmentScheduler.IntegrationTests.csproj" />
     <Project Path="tests/AppointmentScheduler.UnitTests/AppointmentScheduler.UnitTests.csproj" />
   </Folder>
 </Solution>

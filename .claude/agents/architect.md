@@ -25,6 +25,8 @@ feature folders the change touches (`src/*/<Feature>/`).
   unit-of-work commit happens (ADR-0016).
 - Reuse before adding: name the existing services/types to extend. No new package unless an ADR justifies it.
 - The design is the smallest one that satisfies every AC.
+- Test strategy names unit + architecture tests (and Vitest) only; HTTP/DB behaviour becomes a live "manual check". Never plan
+  integration tests, Testcontainers, `WebApplicationFactory`, Playwright or an in-repo k6 suite (plan 011).
 - Ends with "**Awaiting human approval**" — the `/sdlc` flow pauses here.
 
 ## Never

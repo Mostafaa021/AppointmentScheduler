@@ -11,7 +11,7 @@ namespace AppointmentScheduler.UnitTests.Appointments;
 
 /// <summary>
 /// ADR-0016: with repositories + unit of work behind interfaces, the use-case order (validate → lookups → pre-check →
-/// one commit) is testable without a database. Real DB behaviour stays covered by the integration tests.
+/// one commit) is testable without a database. Real DB behaviour is checked live (no integration tests, plan 011).
 /// </summary>
 public class AppointmentServiceTests
 {

@@ -3,6 +3,11 @@
 Format: [Keep a Changelog](https://keepachangelog.com). Versions follow milestones.
 
 ## [Unreleased]
+### Removed
+- Integration tests, Testcontainers and `WebApplicationFactory` (plan 011, user decision): only unit and architecture tests
+  (plus Vitest) remain, and `dotnet test` no longer needs Docker. The pure `RateLimitPartitionKeyTests` moved to UnitTests.
+  Planned Playwright e2e and the in-repo k6 suite are dropped (`/load-test` skill removed); load testing happens outside
+  the repo (scripts + k6 Studio). Claude agents, skills and docs now forbid planning them.
 ### Changed
 - Repositories are reached only through the unit of work (plan 010, ADR-0016 amended): `IUnitOfWork` exposes `Appointments`,
   `Doctors`, `Patients`, `AuditRecords`; services inject `IUnitOfWork` alone, repositories are no longer registered in DI, and

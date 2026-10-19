@@ -316,3 +316,12 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
     constructor parameters) first failed, naming exactly the four classes, then passed after the switch.
   - **Seen once:** `ObservabilityTests.Request_span_is_tagged_with_the_user_id_only` failed in one full parallel run and
     passed alone and on the re-run. The cause is a pre-existing flake: a process-wide `ActivityListener` plus `Assert.Single`.
+- **Plan 011 (unit + architecture tests only):** the user asked to "remove test containers and integration test … just keep
+  unit testing and architecture testing", and to stop them in coming plans. Asked about Playwright and k6 (planned, never
+  built): "remove both … I will use scripts and K6 studio for load testing later".
+  - Deleted the integration test project (123 tests). The two host-free `RateLimitPartitionKeyTests` moved to UnitTests.
+  - Removed the packages, the solution entry, `public partial class Program`, the `/load-test` skill and the Playwright
+    permission.
+  - Rewrote the testing guidance in CLAUDE.md, the agents, skills and docs: HTTP/DB behaviour is now a live check.
+  - **Cleanup in passing:** three empty stray directories (`$S`, `-p`, `Lookups`) left in the repo root by earlier shell
+    mishaps.

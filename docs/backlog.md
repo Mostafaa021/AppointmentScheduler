@@ -75,5 +75,5 @@ Plan: [`.claude/plans/009-sprint-3-reliability.md`](../.claude/plans/009-sprint-
 ## Sprint 7 — M7 Performance & hardening
 | ID | Story | Spec | Status |
 |---|---|---|---|
-| S-70 | k6 suite with thresholds | 000 | Refined |
-| S-71 | Playwright e2e, CI green, security + code review passes | 000 | Todo |
+| S-70 | k6 suite with thresholds | 000 | Won't do in repo — load testing outside the repo (scripts + k6 Studio), plan 011 |
+| S-71 | CI green, security + code review passes (Playwright e2e dropped, plan 011) | 000 | Todo |
