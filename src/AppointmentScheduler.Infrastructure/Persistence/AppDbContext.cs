@@ -58,5 +58,24 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             throw IdentityUserAdminService.EmailTaken(); // race backstop for AC-004-13
         }
+        catch (Exception ex) when (IsDeadlock(ex))
+        {
+            // Safety net for a write path that skipped LockScheduleAsync: conflicting inserts on an exclusion constraint can
+            // deadlock; PostgreSQL aborts one (40P01). That is a concurrency conflict (409), not an outage (503) — SPEC §5.
+            throw new ConflictException(ErrorCodes.ConcurrencyConflict,
+                "Someone else changed this schedule at the same moment. Reload and try again.") { LogDetail = "deadlock 40P01" };
+        }
+    }
+
+    // EF wraps the provider error (DbUpdateException, or InvalidOperationException for "transient" errors), so walk the chain.
+    private static bool IsDeadlock(Exception? ex)
+    {
+        for (; ex is not null; ex = ex.InnerException)
+        {
+            if (ex is PostgresException { SqlState: PostgresErrorCodes.DeadlockDetected })
+                return true;
+        }
+
+        return false;
     }
 }

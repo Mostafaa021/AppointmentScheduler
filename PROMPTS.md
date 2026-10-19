@@ -365,3 +365,18 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
     - SPEC §5 no longer cites the deleted integration tests.
   - **Observed:** a hook turns `>` inside shell command text into redirects, which left empty files (`DB`, `throw`,
     `auditRecords`) in the repo. They were removed each time.
+- **Plan 015 (judgment test 07: conflict checking, time zones, concurrent bookings):** the user asked whether the second half
+  ("how are time zones and concurrent bookings of the same slot handled?") was finished.
+  - **Gap 1, time zones:** the UI opened on the *browser's* date. Added `GET /clinic` (`ClinicQueries`: clinic-local today
+    via `DaySchedule.LocalDateOf`). The pages start there, and **Today** re-asks the API. Unit tests cover BST and GMT
+    across UTC midnight; Vitest proves the page uses the API date.
+  - **Gap 2, found by running SPEC's own race script:**
+    - 8 parallel bookings gave 1×201 and **7×503 after up to 7 s**;
+    - the PostgreSQL log showed `deadlock detected`: concurrent conflicting inserts on an exclusion constraint wait on each
+      other;
+    - asked how to fix it; the user chose **"Lock + map deadlocks"**;
+    - `IUnitOfWork.ExecuteInTransactionAsync` + `AppointmentRepository.LockScheduleAsync` (ordered `pg_advisory_xact_lock`,
+      doctor then patient) before the pre-check, and `AppDbContext` maps 40P01 → 409 `CONCURRENCY_CONFLICT`;
+    - re-measured: 1×201, 7×409 `DOCTOR_CONFLICT`, about 0.4 s for all eight, 0 deadlocks.
+  - SPEC §4–§6 rewritten: per-layer table, rejected alternatives for each choice, a DST worked example, and a copy-paste
+    "See it yourself" race check (run verbatim to verify).

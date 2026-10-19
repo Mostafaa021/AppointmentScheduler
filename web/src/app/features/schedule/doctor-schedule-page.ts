@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Appointment } from '../../core/api/models';
-import { SchedulerApi, toIsoDate } from '../../core/api/scheduler-api';
+import { SchedulerApi, fromIsoDate, toIsoDate } from '../../core/api/scheduler-api';
 import { AuthService } from '../../core/auth/auth.service';
 
 /**
@@ -39,7 +39,7 @@ import { AuthService } from '../../core/auth/auth.service';
         <button mat-icon-button (click)="shiftDay(1)" aria-label="Next day" matTooltip="Next day">
           <mat-icon>chevron_right</mat-icon>
         </button>
-        <button mat-button (click)="selectDate(today())">Today</button>
+        <button mat-button (click)="goToday()">Today</button>
       </div>
     </section>
 
@@ -87,10 +87,17 @@ export class DoctorSchedulePage {
   protected readonly date = signal(new Date());
   protected readonly appointments = signal<Appointment[]>([]);
   protected readonly loading = signal(false);
-  protected readonly today = () => new Date();
 
   constructor() {
-    this.load();
+    this.goToday();
+  }
+
+  /** The clinic's today, not the browser's (ADR-0003); if the clinic call fails, load the browser's date. */
+  protected goToday(): void {
+    this.api.clinic().subscribe({
+      next: (clinic) => this.selectDate(fromIsoDate(clinic.today)),
+      error: () => this.load(),
+    });
   }
 
   protected selectDate(date: Date | null): void {

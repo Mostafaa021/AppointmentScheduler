@@ -5,6 +5,19 @@ namespace AppointmentScheduler.Infrastructure.Persistence.Repositories;
 
 internal sealed class AppointmentRepository(AppDbContext db) : Repository<Appointment, Guid>(db), IAppointmentRepository
 {
+    // Advisory-lock key spaces (pg_advisory_xact_lock(int, int)): doctors are always locked before patients.
+    private const int DoctorLockSpace = 1;
+    private const int PatientLockSpace = 2;
+
+    public async Task LockScheduleAsync(int doctorId, int patientId, CancellationToken ct)
+    {
+        // A transaction-scoped lock outside a transaction is released at once, so a missing transaction is a wiring bug.
+        if (Db.Database.CurrentTransaction is null)
+            throw new InvalidOperationException($"{nameof(LockScheduleAsync)} must run inside IUnitOfWork.ExecuteInTransactionAsync.");
+        await Db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({DoctorLockSpace}, {doctorId})", ct);
+        await Db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({PatientLockSpace}, {patientId})", ct);
+    }
+
     public async Task<IReadOnlyList<Appointment>> ListDayScheduleAsync(
         int doctorId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct) =>
         await WithDetails(Set.AsNoTracking())

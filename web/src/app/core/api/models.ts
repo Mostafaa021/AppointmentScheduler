@@ -21,6 +21,15 @@ export interface PagedResult<T> {
   total: number;
 }
 
+/** GET /clinic — `today` is the clinic's local date (`yyyy-MM-dd`), which may differ from the browser's (ADR-0003). */
+export interface Clinic {
+  timeZone: string;
+  today: string;
+  opens: string;
+  closes: string;
+  slotMinutes: number;
+}
+
 export type SlotStatus = 'Free' | 'Booked' | 'Past' | 'PatientBusy';
 
 export interface Slot {

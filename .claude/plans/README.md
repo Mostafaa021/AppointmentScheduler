@@ -27,3 +27,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 012 | [Idempotency-Key on POST only; `[SkipIdempotency]` per action](012-idempotency-post-only.md) | Done | spec 009, ADR-0006 |
 | 013 | [Generic repository base for every repository](013-generic-repository-base.md) | Done | ADR-0016 |
 | 014 | [Docker run-anywhere, README, requirements, feature architecture](014-docker-readme-requirements-architecture.md) | Done | S-61 (part), all specs |
+| 015 | [Judgment test 07: clinic-local today, SPEC §4–§6 choices](015-judgment-test-time-zones-concurrency.md) | Done | SPEC §4–§6, ADR-0002/0003/0004 |

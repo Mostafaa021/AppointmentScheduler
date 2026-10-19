@@ -14,7 +14,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin } from 'rxjs';
 import { Appointment, Slot } from '../../core/api/models';
-import { SchedulerApi, toIsoDate } from '../../core/api/scheduler-api';
+import { SchedulerApi, fromIsoDate, toIsoDate } from '../../core/api/scheduler-api';
 import { BookDialog, BookDialogData } from './book-dialog';
 import { CancelDialog } from './cancel-dialog';
 import { RescheduleDialog, RescheduleDialogData } from './reschedule-dialog';
@@ -44,7 +44,18 @@ export class SchedulePage {
   protected readonly timeZone = signal('');
   protected readonly loading = signal(false);
   protected readonly freeCount = computed(() => this.slots().filter((s) => s.status === 'Free').length);
-  protected readonly today = () => new Date();
+
+  constructor() {
+    this.goToday();
+  }
+
+  /** The clinic's today, not the browser's (ADR-0003): a browser in another zone can already be on another date. */
+  protected goToday(): void {
+    this.api.clinic().subscribe((clinic) => {
+      this.timeZone.set(clinic.timeZone);
+      this.selectDate(fromIsoDate(clinic.today));
+    });
+  }
 
   protected selectDoctor(id: number): void {
     this.doctorId.set(id);

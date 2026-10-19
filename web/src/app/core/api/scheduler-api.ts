@@ -5,6 +5,7 @@ import {
   Appointment,
   Availability,
   BookAppointmentRequest,
+  Clinic,
   Doctor,
   PagedResult,
   Patient,
@@ -15,6 +16,11 @@ import {
 export class SchedulerApi {
   private readonly http = inject(HttpClient);
   private readonly base = '/api/v1';
+
+  /** The clinic's zone, hours and today's clinic-local date — where the schedule pages start. */
+  clinic(): Observable<Clinic> {
+    return this.http.get<Clinic>(`${this.base}/clinic`);
+  }
 
   doctors(): Observable<Doctor[]> {
     return this.http.get<Doctor[]>(`${this.base}/doctors`);
@@ -53,4 +59,10 @@ export class SchedulerApi {
 export function toIsoDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Parses a clinic-local `yyyy-MM-dd` as that calendar date for the datepicker (no UTC shift, unlike `new Date(iso)`). */
+export function fromIsoDate(iso: string): Date {
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }

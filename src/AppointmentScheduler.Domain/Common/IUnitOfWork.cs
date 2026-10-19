@@ -25,4 +25,11 @@ public interface IUnitOfWork
     /// <c>CONCURRENCY_CONFLICT</c> (ADR-0002, ADR-0004).
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs <paramref name="work"/> in one database transaction: committed if it completes, rolled back if it throws. For
+    /// use cases that must lock before they check and save (booking, rescheduling — SPEC §5); everything else just calls
+    /// <see cref="SaveChangesAsync"/>, which is already atomic.
+    /// </summary>
+    Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default);
 }

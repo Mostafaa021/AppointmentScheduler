@@ -32,13 +32,16 @@ sequenceDiagram
   S->>S: validate (400 VALIDATION_FAILED)
   S->>UoW: Doctors.ExistsAsync, Patients.ExistsAsync (404)
   S->>A: Schedule(…, DaySchedule, now) — BR-3 past (422), BR-4 grid/hours (422)
+  S->>UoW: ExecuteInTransactionAsync — BEGIN
+  S->>UoW: Appointments.LockScheduleAsync(doctor, patient)
+  UoW->>DB: pg_advisory_xact_lock(doctor), then (patient) — a competing booking waits here
   S->>UoW: Appointments.DoctorHasOverlapAsync / PatientHasOverlapAsync
   alt overlap found
-    S-->>C: 409 DOCTOR_CONFLICT / PATIENT_CONFLICT (nothing staged)
+    S-->>C: 409 DOCTOR_CONFLICT / PATIENT_CONFLICT (ROLLBACK, nothing staged)
   end
   S->>UoW: Appointments.Add + AuditLog.Record(appointment.booked)
-  S->>UoW: SaveChangesAsync — appointment + audit row, one transaction
-  UoW->>DB: INSERT appointments, INSERT audit_records
+  S->>UoW: SaveChangesAsync, then COMMIT — appointment + audit row together, locks released
+  UoW->>DB: INSERT appointments, INSERT audit_records, COMMIT
   S->>UoW: Appointments.GetByIdReadOnlyAsync (with doctor + patient)
   S-->>C: AppointmentDto
   C-->>F: 201 + Location
@@ -55,17 +58,31 @@ sequenceDiagram
   participant DB as PostgreSQL
   R1->>API: POST /appointments (Dr 1, 09:30)
   R2->>API: POST /appointments (Dr 1, 09:30)
-  API->>DB: pre-check for A — no overlap
-  API->>DB: pre-check for B — no overlap (A not committed yet)
-  API->>DB: INSERT A
-  DB-->>API: ok
+  API->>DB: A: BEGIN, lock doctor 1 (+ patient)
+  API->>DB: B: BEGIN, lock doctor 1 — waits
+  API->>DB: A: pre-check (no overlap), INSERT, COMMIT
   API-->>R1: 201 Created
-  API->>DB: INSERT B
-  DB-->>API: 23P01 exclusion violation (ex_appointments_doctor_overlap)
+  DB-->>API: B gets the lock
+  API->>DB: B: pre-check sees A, ROLLBACK
   API-->>R2: 409 DOCTOR_CONFLICT
 ```
-The pre-check gives a precise error in the common case. Only the constraint is safe under concurrency, and its violation
-is translated to the same code, so clients see one behaviour.
+Without the lock, both pre-checks pass and both INSERTs wait on each other inside the exclusion constraint. PostgreSQL
+then aborts victims as deadlocks (40P01), one per second: measured 7 of 8 losers as 503 after up to 7 s. With the lock,
+the losers queue for milliseconds and get a precise 409 (SPEC §5). The constraint still guarantees correctness for any
+write that skips the lock, and if such a write deadlocks, `AppDbContext` maps the 40P01 to 409 `CONCURRENCY_CONFLICT`.
+
+```mermaid
+flowchart TD
+  W[booking or reschedule] --> T[BEGIN]
+  T --> L1[lock doctor key 1:doctorId]
+  L1 --> L2[lock patient key 2:patientId<br/>always this order → locks never deadlock]
+  L2 --> P{pre-check overlap?}
+  P -- yes --> R[ROLLBACK → 409 DOCTOR_ / PATIENT_CONFLICT]
+  P -- no --> I[INSERT / UPDATE + audit row]
+  I --> X{exclusion constraint}
+  X -- ok --> C[COMMIT → 201 / 200, locks released]
+  X -- 23P01 --> R
+```
 
 ## Where each rule is enforced
 ```mermaid

@@ -7,7 +7,8 @@ requirements FR-001-x in [functional.md](../requirements/functional.md#001--avai
 ## Components
 | Layer | Piece | Job |
 |---|---|---|
-| Web | `features/schedule/schedule-page.ts`, `slot-grid.ts` | doctor + date pickers; colours slots; only Free is clickable |
+| Web | `features/schedule/schedule-page.ts`, `slot-grid.ts` | starts on the clinic's today (`GET /clinic`); doctor + date pickers; colours slots; only Free is clickable |
+| Api / Application | `Controllers/ClinicController.cs` → `Clinics/ClinicQueries.cs` | clinic zone, hours and clinic-local today |
 | Api | `Controllers/DoctorsController.cs` → `GET /api/v1/doctors/{id}/availability?date=&patientId=` | bind, call the service, wrap in `ApiResponse` |
 | Application | `Availability/AvailabilityService.cs` | doctor exists → slots → two queries → classify |
 | Domain | `Scheduling/DaySchedule.cs` | clinic-local slots for a date, converted to UTC (DST-safe); `UtcWindowOf(date)` |
@@ -60,9 +61,11 @@ Overlap is half-open, like the exclusion constraints: `a.start < slot.end && a.e
 ## Time zones
 ```mermaid
 flowchart LR
+  C[GET /clinic<br/>today = clinic-local date<br/>of TimeProvider now] -->|UI starts here, and Today<br/>returns here| D
   D[date 2026-03-29<br/>clinic-local] --> L[09:00, 09:30 … 16:30<br/>local wall clock]
   L -->|TimeZoneInfo<br/>Europe/London| U[UTC instants<br/>offset changes on DST days]
   U --> R[response: startUtc, endUtc,<br/>localStart 'HH:mm', timeZone]
   R --> UI[UI shows localStart,<br/>posts back startUtc]
 ```
-The browser's own time zone never matters ([ADR-0003](../adr/0003-time-zones.md)).
+The browser's own time zone never matters, not even for "today": the schedule pages ask `GET /clinic` for the clinic's
+date, because at 20:00 in New York it is already tomorrow in London ([ADR-0003](../adr/0003-time-zones.md), FR-001-8).

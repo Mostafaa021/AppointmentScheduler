@@ -10,7 +10,8 @@ namespace AppointmentScheduler.Application.Appointments;
 /// <summary>
 /// Book / cancel / reschedule / read. Overlap pre-checks give specific error codes (BR-1, BR-2);
 /// the PostgreSQL exclusion constraints remain the guarantee under concurrency (ADR-0002).
-/// Order per use case: validate (ADR-0013) → lookups → BR-7 read check (ADR-0012) → rules → one unit-of-work commit incl.
+/// Order per use case: validate (ADR-0013) → lookups → BR-7 read check (ADR-0012) → rules → (book/reschedule: lock the
+/// doctor + patient, pre-check overlaps) → one unit-of-work commit incl.
 /// audit (ADR-0011, ADR-0016). Data access only through the unit of work's repositories (ADR-0016).
 /// </summary>
 public sealed class AppointmentService(
@@ -32,11 +33,7 @@ public sealed class AppointmentService(
 
         var appointment = Appointment.Schedule(
             request.DoctorId, request.PatientId, request.StartUtc!.Value, request.Reason, _schedule, clock.GetUtcNow());
-        await EnsureNoOverlapAsync(appointment, ct);
-
-        unitOfWork.Appointments.Add(appointment);
-        audit.Record(AuditActions.AppointmentBooked, nameof(Appointment), appointment.Id.ToString());
-        await unitOfWork.SaveChangesAsync(ct);
+        await SaveWithoutOverlapAsync(appointment, isNew: true, AuditActions.AppointmentBooked, ct);
         return await GetAsync(appointment.Id, ct);
     }
 
@@ -55,9 +52,7 @@ public sealed class AppointmentService(
         rescheduleValidator.ValidateOrThrow(request);
         var appointment = await FindAsync(id, ct);
         appointment.Reschedule(request.StartUtc!.Value, _schedule, clock.GetUtcNow());
-        await EnsureNoOverlapAsync(appointment, ct);
-        audit.Record(AuditActions.AppointmentRescheduled, nameof(Appointment), id.ToString());
-        await unitOfWork.SaveChangesAsync(ct);
+        await SaveWithoutOverlapAsync(appointment, isNew: false, AuditActions.AppointmentRescheduled, ct);
         return AppointmentDto.From(appointment, _schedule);
     }
 
@@ -90,6 +85,20 @@ public sealed class AppointmentService(
         if (!await unitOfWork.Patients.ExistsAsync(patientId, ct))
             throw new NotFoundException(ErrorCodes.PatientNotFound, $"Patient {patientId} was not found.");
     }
+
+    // Lock → pre-check → stage → commit in one transaction (SPEC §5). A competing booking for the same doctor or patient
+    // waits on the lock until this one commits, then its pre-check sees it and answers a precise 409 — instead of both
+    // inserting and PostgreSQL deadlocking on the exclusion constraints, which stay the guarantee.
+    private Task SaveWithoutOverlapAsync(Appointment appointment, bool isNew, string auditAction, CancellationToken ct) =>
+        unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            await unitOfWork.Appointments.LockScheduleAsync(appointment.DoctorId, appointment.PatientId, ct);
+            await EnsureNoOverlapAsync(appointment, ct);
+            if (isNew)
+                unitOfWork.Appointments.Add(appointment);
+            audit.Record(auditAction, nameof(Appointment), appointment.Id.ToString());
+            await unitOfWork.SaveChangesAsync(ct);
+        }, ct);
 
     private async Task EnsureNoOverlapAsync(Appointment a, CancellationToken ct)
     {

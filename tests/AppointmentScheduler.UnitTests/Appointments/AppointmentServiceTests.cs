@@ -48,6 +48,18 @@ public class AppointmentServiceTests
     }
 
     [Fact]
+    public async Task AC_002_8_Book_locks_doctor_and_patient_inside_the_transaction_before_the_pre_check()
+    {
+        // SPEC §5: the lock makes a competing booking wait, so its pre-check sees the winner (precise 409, no deadlock).
+        _appointments.DoctorOverlap = true;
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            Service().BookAsync(new BookAppointmentRequest(1, 2, TomorrowNine, "Check-up"), CancellationToken.None));
+
+        Assert.Equal(["transaction", "lock doctor 1, patient 2", "doctor pre-check", "rollback"], _appointments.Log);
+    }
+
+    [Fact]
     public async Task AC_002_7_Unknown_doctor_is_404_and_commits_nothing()
     {
         var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
@@ -101,9 +113,18 @@ public class AppointmentServiceTests
         public List<Appointment> Added { get; } = [];
         public int Calls { get; private set; }
 
+        /// <summary>Order of transaction, lock and pre-check steps (shared with <see cref="FakeUnitOfWork"/>).</summary>
+        public List<string> Log { get; } = [];
+
         public void Add(Appointment appointment) => Added.Add(appointment);
-        public Task<bool> DoctorHasOverlapAsync(Appointment appointment, CancellationToken ct) => Count(DoctorOverlap);
-        public Task<bool> PatientHasOverlapAsync(Appointment appointment, CancellationToken ct) => Count(false);
+        public Task LockScheduleAsync(int doctorId, int patientId, CancellationToken ct)
+        {
+            Log.Add($"lock doctor {doctorId}, patient {patientId}");
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> DoctorHasOverlapAsync(Appointment appointment, CancellationToken ct) => Count(DoctorOverlap, "doctor pre-check");
+        public Task<bool> PatientHasOverlapAsync(Appointment appointment, CancellationToken ct) => Count(false, "patient pre-check");
         public Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
         public Task<Appointment?> GetByIdReadOnlyAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> ExistsAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
@@ -114,9 +135,10 @@ public class AppointmentServiceTests
         public Task<IReadOnlyList<Appointment>> ListScheduledForPatientAsync(int patientId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct) =>
             throw new NotSupportedException();
 
-        private Task<bool> Count(bool result)
+        private Task<bool> Count(bool result, string step)
         {
             Calls++;
+            Log.Add(step);
             return Task.FromResult(result);
         }
     }
@@ -136,6 +158,22 @@ public class AppointmentServiceTests
         {
             Commits++;
             return Task.FromResult(1);
+        }
+
+        public async Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default)
+        {
+            var log = ((FakeAppointments)appointments).Log;
+            log.Add("transaction");
+            try
+            {
+                await work();
+                log.Add("commit");
+            }
+            catch
+            {
+                log.Add("rollback");
+                throw;
+            }
         }
     }
 

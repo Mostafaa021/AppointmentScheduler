@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { SchedulerApi, toIsoDate } from './scheduler-api';
+import { SchedulerApi, fromIsoDate, toIsoDate } from './scheduler-api';
 
 describe('SchedulerApi', () => {
   let api: SchedulerApi;
@@ -44,5 +44,18 @@ describe('SchedulerApi', () => {
   it('toIsoDate keeps the picked calendar day regardless of time zone', () => {
     expect(toIsoDate(new Date(2026, 10, 2, 23, 59))).toBe('2026-11-02');
     expect(toIsoDate(new Date(2026, 0, 5, 0, 0))).toBe('2026-01-05');
+  });
+
+  it('fromIsoDate turns the clinic date into that calendar day, with no UTC shift', () => {
+    const date = fromIsoDate('2026-03-29'); // London's DST day; new Date('2026-03-29') would be UTC midnight
+    expect([date.getFullYear(), date.getMonth(), date.getDate()]).toEqual([2026, 2, 29]);
+    expect(toIsoDate(fromIsoDate('2026-11-02'))).toBe('2026-11-02');
+  });
+
+  it('reads the clinic (zone + clinic-local today)', () => {
+    api.clinic().subscribe((c) => expect(c.today).toBe('2026-10-21'));
+
+    http.expectOne('/api/v1/clinic')
+      .flush({ timeZone: 'Europe/London', today: '2026-10-21', opens: '09:00', closes: '17:00', slotMinutes: 30 });
   });
 });

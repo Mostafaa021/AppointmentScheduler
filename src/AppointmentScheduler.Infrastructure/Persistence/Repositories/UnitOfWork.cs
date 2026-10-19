@@ -21,4 +21,11 @@ internal sealed class UnitOfWork(AppDbContext db) : IUnitOfWork
     public IAuditRecordRepository AuditRecords => field ??= new AuditRecordRepository(db);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => db.SaveChangesAsync(cancellationToken);
+
+    public async Task ExecuteInTransactionAsync(Func<Task> work, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await work();
+        await transaction.CommitAsync(cancellationToken); // an exception above disposes the transaction → rollback
+    }
 }

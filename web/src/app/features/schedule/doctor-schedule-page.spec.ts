@@ -4,7 +4,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideRouter } from '@angular/router';
 import { Appointment } from '../../core/api/models';
-import { toIsoDate } from '../../core/api/scheduler-api';
 import { AuthService } from '../../core/auth/auth.service';
 import { DoctorSchedulePage } from './doctor-schedule-page';
 
@@ -31,17 +30,23 @@ describe('DoctorSchedulePage (AC-004-17, BR-7)', () => {
 
   afterEach(() => http.verify());
 
+  // A clinic day the browser can't be on (2099), so the tests prove the page starts on the server's clinic date (ADR-0003).
+  const clinicToday = '2099-11-02';
+  const answerClinic = () =>
+    http.expectOne('/api/v1/clinic').flush({ timeZone: 'Europe/London', today: clinicToday, opens: '09:00', closes: '17:00', slotMinutes: 30 });
+
   const forbidden = (url: string) =>
     url.startsWith('/api/v1/doctors') || url.startsWith('/api/v1/patients') || /\/appointments\/.+\/(cancel|reschedule)$/.test(url);
 
-  it('loads only the own doctor day schedule and renders no booking controls', async () => {
+  it('loads only the own doctor day schedule, for the clinic date, and renders no booking controls', async () => {
     const fixture = TestBed.createComponent(DoctorSchedulePage);
+    answerClinic();
     await fixture.whenStable();
 
     const req = http.expectOne((r) => r.url === '/api/v1/appointments');
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('doctorId')).toBe('4');
-    expect(req.request.params.get('date')).toBe(toIsoDate(new Date()));
+    expect(req.request.params.get('date')).toBe(clinicToday); // the clinic's date, not the browser's
     req.flush([appointment]);
     await fixture.whenStable();
 
@@ -55,17 +60,15 @@ describe('DoctorSchedulePage (AC-004-17, BR-7)', () => {
 
   it('next day reloads the schedule for that date only', async () => {
     const fixture = TestBed.createComponent(DoctorSchedulePage);
+    answerClinic();
     await fixture.whenStable();
     http.expectOne((r) => r.url === '/api/v1/appointments').flush([]);
     await fixture.whenStable();
     expect(fixture.nativeElement.textContent).toContain('No appointments.');
 
     fixture.nativeElement.querySelector('button[aria-label="Next day"]').click();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
     const req = http.expectOne((r) => r.url === '/api/v1/appointments');
-    expect(req.request.params.get('date')).toBe(toIsoDate(tomorrow));
+    expect(req.request.params.get('date')).toBe('2099-11-03');
     req.flush([]);
     http.expectNone((r) => forbidden(r.url) || r.method !== 'GET');
   });

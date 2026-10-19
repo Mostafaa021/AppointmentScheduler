@@ -17,4 +17,5 @@
 
 ## Consequences
 + DST-safe, multi-clinic ready, unambiguous API.
-− Day boundaries must be computed per clinic zone (helper on `ClinicTime`), not with `DateTime.Date`.
+− Day boundaries must be computed per clinic zone (`DaySchedule.LocalDateOf` / `UtcWindowOf`), not with `DateTime.Date`.
++ The UI opens on the clinic's today from `GET /clinic` (`ClinicQueries`), never the browser's date (plan 015).

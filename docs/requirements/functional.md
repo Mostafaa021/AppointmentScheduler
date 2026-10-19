@@ -43,6 +43,7 @@ Paths are relative to `src/AppointmentScheduler.*` (e.g. `Domain/…`) or the re
 | FR-001-5 | Return each slot as UTC start/end plus the clinic-local `HH:mm`, so the browser never converts zones (correct across DST) | all | ✅ | same | `DaySchedule.SlotsFor`, `ClinicOptions` | `DayScheduleTests.AC_001_6…` | AC-001-6 |
 | FR-001-6 | Unknown doctor → 404 `DOCTOR_NOT_FOUND`; a malformed date → 400 | all | ✅ | same | `IRepository.ExistsAsync`, MVC binding → `BadRequestResponse` | live | AC-001-7 |
 | FR-001-7 | Slots follow the doctor's working hours, breaks, time off, holidays and appointment type length | — | 📋 | `…&appointmentTypeId=` | spec 006/007 | — | AC-001-8 |
+| FR-001-8 | The schedule opens on the **clinic's** today (and **Today** returns to it), not the browser's date: the clinic zone decides the day | all | ✅ | `GET /clinic` | `Application/Clinics/ClinicQueries.cs`, `Api/Controllers/ClinicController.cs`, `web/…/schedule-page.ts`, `doctor-schedule-page.ts` | `ClinicQueriesTests`, `doctor-schedule-page.spec.ts`, `scheduler-api.spec.ts` (`fromIsoDate`) | AC-001-6, ADR-0003 |
 | UI | Pick doctor and date; a slot grid colours Free/Booked/Past/PatientBusy; only Free slots are clickable | R | ✅ | — | `web/src/app/features/schedule/schedule-page.ts`, `slot-grid.ts` | `slot-grid.spec.ts` | — |
 
 ## 002 — Booking ✅ ([spec](../specs/002-booking.md) · [architecture](../architecture/booking.md))
@@ -54,7 +55,7 @@ Paths are relative to `src/AppointmentScheduler.*` (e.g. `Domain/…`) or the re
 | FR-002-4 | Reject past starts (422 `APPOINTMENT_IN_PAST`) and starts off the grid or outside hours (422 `INVALID_SLOT`) | R, A | ✅ | same | `Appointment`, `DaySchedule` | `AppointmentTests.AC_002_4…`, `AC_002_5…` | AC-002-4, AC-002-5 |
 | FR-002-5 | Require a reason, trimmed, 1–500 characters → else 400 `VALIDATION_FAILED` with field errors | R, A | ✅ | same | `Application/Appointments/AppointmentValidators.cs` | `AppointmentValidatorTests.AC_002_6…` | AC-002-6 |
 | FR-002-6 | Unknown doctor or patient → 404, and nothing is saved | R, A | ✅ | same | `AppointmentService.EnsureExistsAsync` | `AppointmentServiceTests.AC_002_7…` | AC-002-7 |
-| FR-002-7 | N parallel requests for one slot → exactly one 201, the rest 409 | R, A | ✅ | same | exclusion constraint (ADR-0002) | live (parallel `curl`) | AC-002-8 |
+| FR-002-7 | N parallel requests for one slot → exactly one 201, the rest a fast, precise 409 (no deadlock) | R, A | ✅ | same | ordered advisory locks + pre-check in one transaction (`AppointmentRepository.LockScheduleAsync`, `IUnitOfWork.ExecuteInTransactionAsync`); exclusion constraint as the guarantee (ADR-0002) | `AppointmentServiceTests.AC_002_8…` (lock before pre-check); live: SPEC §5 "See it yourself" → 1×201, 7×409 | AC-002-8 |
 | FR-002-8 | The booking and its audit row commit together, or neither does | — | ✅ | — | one `IUnitOfWork.SaveChangesAsync` (ADR-0011, ADR-0016) | `AppointmentServiceTests` (no commit on rejection) | AC-004-24 |
 | UI | Free slot → patient search → reason → **Review** → **Confirm**; the confirm button is disabled while sending | R | ✅ | — | `web/src/app/features/schedule/book-dialog.ts` | — | — |
 
@@ -118,7 +119,7 @@ Today every doctor works the clinic hours from `Clinic:Open`/`Close`/`SlotMinute
 | FR-007-2 | Slots stay 09:00–16:30 local on DST-change dates | ✅ for the single configured clinic (`DayScheduleTests.AC_001_6…`) | AC-007-3 |
 | FR-007-3 | Clinic holidays offer no slots (`Unavailable`) | 📋 | AC-007-4 |
 | FR-007-4 | Appointments in different clinics interact only through BR-2, compared in UTC | ✅ by design (UTC ranges) | AC-007-5 |
-| FR-007-5 | Responses carry `timeZone` so the UI can label times | ✅ (availability) | AC-007-6 |
+| FR-007-5 | Responses carry `timeZone` so the UI can label times | ✅ (availability, `GET /clinic`) | AC-007-6 |
 
 Today there is one clinic, configured by `Clinic:TimeZone` (default `Europe/London`).
 

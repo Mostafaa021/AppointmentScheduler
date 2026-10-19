@@ -34,6 +34,10 @@ a database. The team's house style uses repositories and a unit of work.
   They return domain entities, and Application maps them to DTOs. No `IQueryable` leaves Infrastructure.
 - **Repositories stage, the unit of work commits.** `Add` / tracked changes are staged, and `IUnitOfWork.SaveChangesAsync`
   commits once per use case. The appointment and its audit row therefore succeed or fail together (ADR-0011).
+- **Explicit transactions only where a use case must lock before it checks** (plan 015):
+  `IUnitOfWork.ExecuteInTransactionAsync(work)` commits if `work` completes and rolls back if it throws. Book and reschedule
+  use it around `LockScheduleAsync` → pre-check → `SaveChangesAsync`; everything else relies on the single atomic
+  `SaveChangesAsync`.
 - **The unit of work owns the repositories.** Services inject `IUnitOfWork` only and call `unitOfWork.Appointments.Add(...)`,
   `unitOfWork.Doctors.ExistsAsync(...)`, then `unitOfWork.SaveChangesAsync(ct)`. Repositories and commit visibly share one
   context, and no service can obtain a repository any other way.

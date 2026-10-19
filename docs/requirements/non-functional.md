@@ -40,7 +40,8 @@ outside the repository.
 - **Why:** a double-booked doctor or patient is the one failure the product exists to prevent.
 - **How:** three layers ([ADR-0002](../adr/0002-postgres-exclusion-constraints.md)).
   - The UI offers only Free slots.
-  - `AppointmentService` pre-checks overlaps and returns a precise 409.
+  - `AppointmentService` locks the doctor and patient (ordered advisory locks), then pre-checks overlaps and returns a
+    precise 409. Concurrent bookings queue instead of deadlocking (SPEC §5).
   - PostgreSQL `EXCLUDE USING gist` constraints over `tstzrange(start, end, '[)')` (`ex_appointments_doctor_overlap`,
     `ex_appointments_patient_overlap`) are the guarantee. The violation (23P01) maps to the same 409 codes in `AppDbContext`.
   - Updates use the `xmin` concurrency token → 409 `CONCURRENCY_CONFLICT` ([ADR-0004](../adr/0004-concurrency-etag.md)).

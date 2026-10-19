@@ -70,6 +70,7 @@ Reads without a specific message say "Request completed successfully".
 |---|---|---|
 | POST | `/auth/login`, `/auth/refresh`, `/auth/logout` · GET `/me` | 15-min access token + rotating refresh cookie; login/refresh anonymous |
 | POST / PUT | `/users`, `/users/{id}/roles` | Admin only |
+| GET | `/clinic` | `{timeZone, today, opens, closes, slotMinutes}` — `today` is the clinic-local date the app opens on (§6) |
 | GET | `/doctors` | list |
 | GET | `/patients?search=&page=&pageSize=` | name contains / exact MRN, paged (≤100) |
 | GET | `/doctors/{id}/availability?date=YYYY-MM-DD[&patientId=]` | `{timeZone, slots:[{startUtc,endUtc,localStart,status,appointmentId}]}` |
@@ -103,28 +104,143 @@ Interactive docs: `http://localhost:5080/scalar` (Development).
 ## 4. Where conflict checking lives — and why (judgment test)
 **All three layers, each with a different job** ([ADR-0002](docs/adr/0002-postgres-exclusion-constraints.md)):
 
-1. **UI** shows only Free slots and disables the rest. Pure UX — it is stale the moment it renders and is never trusted.
-2. **API (Application service)** runs an overlap query before saving so the user gets a precise `409 DOCTOR_CONFLICT` or
-   `PATIENT_CONFLICT`. It cannot be the guarantee: two requests can both pass the check before either commits.
-3. **Database** is the source of truth: two `EXCLUDE USING gist` constraints over `tstzrange(start, end, '[)')`. PostgreSQL
-   rejects any overlapping Scheduled row atomically; the violation (SQLSTATE `23P01`) is translated to the same 409 codes.
-   Range-based (not a unique index on start time), so it stays correct if durations vary; half-open `[)` lets 09:00–09:30
-   and 09:30–10:00 coexist.
+| Layer | What it does | Why it is there | Why it is not enough alone |
+|---|---|---|---|
+| **UI** | shows only Free slots as clickable; marks Booked / Past / PatientBusy | fast feedback, fewer failed requests | stale the moment it renders; any client can bypass it |
+| **API** (`AppointmentService`) | validates, locks the doctor and patient (§5), then runs an overlap query before saving (BR-1 doctor, BR-2 patient) | a precise `409 DOCTOR_CONFLICT` / `PATIENT_CONFLICT` within milliseconds, nothing staged on rejection | protects only the code paths that take the lock; an import job or manual SQL would bypass it |
+| **Database** | two `EXCLUDE USING gist` constraints over `tstzrange(start_utc, end_utc, '[)')` for `status = 'Scheduled'` (doctor, patient) | **the guarantee**: PostgreSQL rejects any overlapping row atomically, for every write path (service, migration, manual SQL) | — (its error, SQLSTATE `23P01`, is translated to the same 409 codes, so clients see one behaviour) |
+
+The constraint is **range-based**, so it stays correct when durations vary (appointment types, spec 006). The half-open
+`[)` range lets 09:00–09:30 and 09:30–10:00 coexist. Cancelled rows are excluded, so a cancelled slot is free again.
+
+**Rejected alternatives**
+| Option | Why not |
+|---|---|
+| UI check only | trusts the client; stale data; bypassed by any second tab or API client |
+| API check only | without a lock, two requests both pass the check before either commits; with a lock (§5) it's correct only for paths that take it |
+| `UNIQUE (doctor_id, start_utc)` | catches only identical starts, not partial overlaps (09:00–10:00 vs 09:30–10:00); needs a partial index to ignore cancelled rows; breaks once durations vary |
+| Trigger that checks overlaps | procedural re-implementation of what `EXCLUDE` does declaratively; easy to get wrong under concurrency without locks |
 
 ## 5. Concurrent bookings of the same slot
-Both requests pass the pre-check; the first `INSERT` commits; the second violates the exclusion constraint and gets `409`.
-Checked live (parallel requests for one slot → exactly one 201, the rest 409) and by `AppointmentServiceTests` for the
-pre-check; there are no integration tests (plan 011). Updates (cancel vs reschedule of the same appointment) use PostgreSQL
-`xmin` as an optimistic concurrency token → `409 CONCURRENCY_CONFLICT` instead of a lost update ([ADR-0004](docs/adr/0004-concurrency-etag.md)).
+**Finding that shaped the design.** With only the pre-check and the constraint, 8 parallel bookings of one slot gave
+exactly one booking, so the guarantee held, but the other 7 got **503 after up to 7 s**. PostgreSQL logged
+`deadlock detected`: with an exclusion constraint, each concurrent INSERT writes its row first and then waits for the other
+in-progress conflicting rows. The waits form a cycle, and PostgreSQL aborts one victim per `deadlock_timeout` (1 s).
+Correct, but a bad answer.
+
+**Decision: lock → pre-check → insert, in one transaction; the constraint stays the guarantee.** Book and reschedule run
+in `IUnitOfWork.ExecuteInTransactionAsync`:
+1. Take `pg_advisory_xact_lock` on the **doctor**, then the **patient**. The order is always the same, so these locks
+   can't deadlock (`AppointmentRepository.LockScheduleAsync`).
+2. Run the pre-check (BR-1, BR-2).
+3. Stage the appointment and its audit row, then commit. Commit or rollback releases the locks.
+
+```mermaid
+sequenceDiagram
+  participant A as Receptionist A
+  participant B as Receptionist B
+  participant API
+  participant DB as PostgreSQL
+  A->>API: POST /appointments (Dr 2, 10:00, patient 1) + key K1
+  B->>API: POST /appointments (Dr 2, 10:00, patient 2) + key K2
+  API->>DB: A: BEGIN, lock doctor 2, lock patient 1
+  API->>DB: B: BEGIN, lock doctor 2 — waits for A
+  API->>DB: A: pre-check (no overlap), INSERT + audit row, COMMIT
+  DB-->>API: A committed, lock released
+  API-->>A: 201 Created
+  DB-->>API: B gets the lock
+  API->>DB: B: pre-check sees A's committed row
+  API->>DB: B: ROLLBACK (nothing inserted)
+  API-->>B: 409 DOCTOR_CONFLICT
+```
+Measured with the "See it yourself" block below: **1×201 and 7×409 `DOCTOR_CONFLICT` in about 0.4 s for all eight, with no
+deadlock logged**. Before the fix it was 503s after up to 7 s.
+
+- **What each user sees:**
+  - the winner gets `201`;
+  - the loser gets `409 DOCTOR_CONFLICT` ("The doctor already has an appointment at this time."), or `PATIENT_CONFLICT`
+    when the patient is the overlap. The booking dialog closes, the message shows, and the slot grid reloads with the
+    slot now Booked;
+  - nothing is half-saved: a rejected booking inserts no appointment and no audit row.
+- **Why the constraint still matters:** any write that skips the lock (a future import job, manual SQL) is still rejected
+  by `EXCLUDE` (23P01 → the same 409).
+- **If such a write deadlocks:**
+  - PostgreSQL aborts it with 40P01;
+  - `AppDbContext` maps that to `409 CONCURRENCY_CONFLICT` ("Someone else changed this schedule at the same moment"),
+    because it is a concurrency conflict, not a database outage (503);
+  - the UI reloads the grid on it.
+- **A retry is not a conflict.** The same receptionist double-clicking, or a network retry, resends the **same**
+  `Idempotency-Key`, and the API replays the first `201` instead of answering `409` ([spec 009](docs/specs/009-idempotency.md)).
+  Only *different* user actions compete for a slot.
+- **Concurrent changes to one appointment** (cancel vs reschedule) use PostgreSQL `xmin` as an optimistic concurrency token.
+  The second writer gets `409 CONCURRENCY_CONFLICT` instead of overwriting the first ([ADR-0004](docs/adr/0004-concurrency-etag.md)).
+  `ETag` / `If-Match` on these endpoints (S-31) is set aside; `xmin` already prevents the lost update.
+- **Cost:** bookings for the *same doctor or the same patient* queue behind each other for the few milliseconds of one
+  transaction. Other doctors and patients are unaffected. The default *Read Committed* isolation is enough: after the
+  lock, each statement sees everything committed.
+
+**Rejected alternatives**
+| Option | Why not |
+|---|---|
+| Constraint only (no lock) | correct, but concurrent conflicting inserts deadlock: losers wait about 1 s each and get an error instead of a clear 409 (measured above) |
+| `SERIALIZABLE` transactions | correct, but conflicting transactions abort with serialization failures that must be retried everywhere; costlier, and the error is less precise |
+| `SELECT … FOR UPDATE` on the doctor row | the same idea as the advisory lock, but it needs a row to lock for the patient too, and it holds real row locks that block other updates of the doctor |
+| In-process lock (`SemaphoreSlim` per doctor) | breaks as soon as there are two API instances, and protects nothing written outside the API |
+| Retry on deadlock | a retry loop for the database was ruled out (ADR-0008: atomic unit of work, no DB retry), and it would only hide the cause |
+
+**See it yourself.** This is the live check that replaces the removed integration test (plan 011). With the app running
+(Docker or local), it fires 8 parallel bookings of one free slot, each from a different patient with its own key:
+```bash
+API=http://localhost:5080/api/v1
+TOKEN=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"reception@clinic.test","password":"DemoClinic2026"}' | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+SLOT=$(curl -s "$API/doctors/2/availability?date=2030-01-07" -H "Authorization: Bearer $TOKEN" \
+  | grep -o '"startUtc":"[^"]*","endUtc":"[^"]*","localStart":"[^"]*","status":"Free"' | head -1 \
+  | sed -E 's/"startUtc":"([^"]+)".*/\1/')
+for i in $(seq 8); do
+  curl -s -o /dev/null -w '%{http_code}\n' -X POST $API/appointments -H "Authorization: Bearer $TOKEN" \
+    -H 'Content-Type: application/json' -H "Idempotency-Key: race-$RANDOM-$i" \
+    -d "{\"doctorId\":2,\"patientId\":$i,\"startUtc\":\"$SLOT\",\"reason\":\"race check\"}" &
+done | sort | uniq -c
+```
+Expected output: `1 201` and `7 409`. The winning booking is real, so cancel it in the app afterwards, or run it again: the
+next free slot is used. Eight stays inside the per-user write burst of 10 (§3 rate limits).
 
 ## 6. Time zones
 ([ADR-0003](docs/adr/0003-time-zones.md))
-- Instants are stored as UTC `timestamptz` only.
-- "09:00–17:00" is clinic wall-clock time in a configured IANA zone (`Clinic:TimeZone`, default `Europe/London`, which has DST).
-  Slots are generated in local time and converted to UTC on the server; DST gap times are skipped.
-- The API returns `startUtc` plus `localStart` and `timeZone`; the UI displays `localStart` and posts back `startUtc`, so the
-  receptionist's browser zone never matters. Day boundaries (`?date=`) are clinic-local days.
+
+**The rules**
+- Instants are stored as UTC `timestamptz` only (`start_utc`, `end_utc`).
+- "09:00–17:00" is clinic wall-clock time in a configured IANA zone (`Clinic:TimeZone`, default `Europe/London`, which has
+  DST).
+- Slots are generated in local time for the requested *clinic-local* date and converted to UTC on the server.
+- The API returns `startUtc` plus `localStart` and `timeZone`. The UI displays `localStart` and posts back `startUtc`, so it
+  never converts zones itself.
+- Day boundaries (`?date=`) are clinic-local days.
+- The app opens on the clinic's **today**, from `GET /clinic`, not the browser's date. At 20:00 in New York it is already
+  tomorrow in London, and the receptionist must see London's day (FR-001-8).
 - "Now" comes from an injected `TimeProvider`, so past/future rules are deterministic in tests (`FakeTimeProvider`).
+
+**DST, worked example (London)**
+| Clinic date | 09:00 local is | First slot `startUtc` |
+|---|---|---|
+| Sat 2026-03-28 (GMT, UTC+0) | 09:00 GMT | `2026-03-28T09:00:00Z` |
+| Sun 2026-03-29 (BST starts at 01:00, UTC+1) | 09:00 BST | `2026-03-29T08:00:00Z` |
+| Sun 2026-10-25 (BST ends at 02:00, back to UTC+0) | 09:00 GMT | `2026-10-25T09:00:00Z` |
+
+The receptionist always sees 09:00–16:30; only the UTC instants move (`DayScheduleTests.AC_001_6…`). London's switches
+happen at 01:00/02:00, outside opening hours. `DaySchedule` still skips wall-clock times that don't exist (spring gap) and
+maps ambiguous ones (autumn overlap) to the standard offset, so other zones or early opening hours stay correct.
+
+**Rejected alternatives**
+| Option | Why not |
+|---|---|
+| Store local time (+ zone) | ambiguous in the autumn overlap hour; rows from different zones can't be compared or ordered; the patient rule (BR-2) needs instants |
+| Convert in the browser | depends on the receptionist's zone and the client's time-zone data, so two browsers could show different days |
+| Store fixed UTC offsets (e.g. `+00:00`) | correct for half the year only; DST changes the offset |
+
+Multiple clinics in different zones (spec 007) keep the same rules: each clinic has its own IANA zone, and BR-2 compares
+UTC ranges across clinics.
 
 ## 7. Architecture
 Clean Architecture ([ADR-0001](docs/adr/0001-clean-architecture.md)): `Domain` (rules + repository / unit-of-work

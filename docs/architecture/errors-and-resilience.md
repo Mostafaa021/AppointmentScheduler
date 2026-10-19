@@ -38,6 +38,12 @@ Errors the framework makes itself take the same shape:
 
 `ErrorStatusMapping` picks their codes.
 
+Database constraint errors are translated before they reach this handler, in `AppDbContext.SaveChangesAsync`:
+- exclusion violation 23P01 → 409 `DOCTOR_CONFLICT` / `PATIENT_CONFLICT`;
+- a stale `xmin` → 409 `CONCURRENCY_CONFLICT`;
+- a deadlock 40P01 → 409 `CONCURRENCY_CONFLICT`. It counts as "transient", but it is a conflict, not an outage, so it
+  must not become a 503 (SPEC §5).
+
 ## Database outage: atomic, no retry
 ```mermaid
 sequenceDiagram

@@ -60,6 +60,9 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
     add Remove or list-everything to the base (append-only audit, unbounded tables).
   - Repositories return entities, never `IQueryable`.
   - Repository methods only stage changes; the use case calls `unitOfWork.SaveChangesAsync` once (change + audit row together).
+  - A write that can conflict on the exclusion constraints (book, reschedule, any future one) runs in
+    `unitOfWork.ExecuteInTransactionAsync` and calls `Appointments.LockScheduleAsync(doctorId, patientId)` before its
+    pre-check (SPEC §5: otherwise concurrent inserts deadlock). Everything else just calls `SaveChangesAsync`.
   - A new query is a named repository method, not inline LINQ in a service.
 
 ## Conventions

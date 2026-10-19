@@ -9,6 +9,11 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   Planned Playwright e2e and the in-repo k6 suite are dropped (`/load-test` skill removed); load testing happens outside
   the repo (scripts + k6 Studio). Claude agents, skills and docs now forbid planning them.
 ### Changed
+- Concurrent bookings of one slot no longer deadlock (plan 015, SPEC §5, ADR-0002 amended). Measured before: 1×201 and
+  7×503 after up to 7 s (PostgreSQL 40P01 on the exclusion constraint). Book and reschedule now lock the doctor, then the
+  patient (`pg_advisory_xact_lock`), then pre-check, inside `IUnitOfWork.ExecuteInTransactionAsync`. Measured after:
+  1×201 and 7×409 `DOCTOR_CONFLICT` in about 0.4 s. A remaining 40P01 maps to 409 `CONCURRENCY_CONFLICT`, not 503.
+  SPEC §4–§6 rewritten as the task-07 answer, with rejected alternatives and a copy-paste race check.
 - Every repository inherits a generic base (plan 013, ADR-0016 amended): `IRepository<TEntity, TKey>` (Domain) with `Add`,
   `GetByIdAsync`, `GetByIdReadOnlyAsync`, `ExistsAsync`, implemented once by `Repository<TEntity, TKey>` (Infrastructure);
   entities implement `IEntity<TKey>`. No Remove or list-everything; no `IQueryable`. ArchitectureTests enforce that
@@ -21,6 +26,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `Doctors`, `Patients`, `AuditRecords`; services inject `IUnitOfWork` alone, repositories are no longer registered in DI, and
   ArchitectureTests reject a repository in any constructor. No behaviour change.
 ### Added
+- `GET /api/v1/clinic` (plan 015): the clinic's zone, hours and **clinic-local today**. The schedule pages open on it and
+  **Today** returns to it, instead of the browser's date (a browser in New York at 20:00 is already on London's tomorrow).
 - Requirements and architecture documentation (plan 014 step B): `docs/requirements/functional.md` (business rules + every
   functional requirement per feature with status, API, code and verification) and `non-functional.md` (NFR-1…17: why, how,
   verified, status); `docs/architecture.md` refreshed (real containers, Docker deployment, data model ER diagram, pipeline)
