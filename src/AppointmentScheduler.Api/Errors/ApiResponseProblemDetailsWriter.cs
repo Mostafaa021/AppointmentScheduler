@@ -1,7 +1,5 @@
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
-using AppointmentScheduler.Domain.Common;
-
 namespace AppointmentScheduler.Api.Errors;
 
 /// <summary>
@@ -27,7 +25,7 @@ internal sealed class ApiResponseProblemDetailsWriter(IApiVersionDescriptionProv
         // Asp.Versioning answers an unknown URL-segment version with a plain 404; say why (ADR-0017).
         if (status == StatusCodes.Status404NotFound && UnsupportedUrlVersion(http.Request.Path) is { } requested)
         {
-            code = ErrorCodes.UnsupportedApiVersion;
+            code = ApiErrorCodes.UnsupportedApiVersion;
             message = $"API version '{requested}' is not supported. Supported versions: {Supported()}.";
         }
 

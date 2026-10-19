@@ -65,8 +65,8 @@ public class ValidationAndHeadersTests(ApiFactory api) : IAsyncLifetime
             new StringContent("""{"doctorId":"one","patientId":1,"startUtc":"2026-11-02T10:00:00Z","reason":"x"}""", Encoding.UTF8, "application/json"));
 
         Assert.Equal(HttpStatusCode.BadRequest, json.StatusCode);
-        Assert.Equal(ErrorCodes.BadRequest, await json.ErrorCodeAsync());
-        Assert.Equal(ErrorCodes.BadRequest, await types.ErrorCodeAsync());
+        Assert.Equal(ApiErrorCodes.BadRequest, await json.ErrorCodeAsync());
+        Assert.Equal(ApiErrorCodes.BadRequest, await types.ErrorCodeAsync());
     }
 
     private static void AssertBaseHeaders(HttpResponseMessage response)

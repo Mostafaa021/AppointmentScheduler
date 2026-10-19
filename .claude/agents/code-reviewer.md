@@ -18,7 +18,8 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
   - HTTP plumbing goes in an Api helper class (e.g. `Api/Auth/RefreshTokenCookie`).
 - Contract (ADR-0015): actions return `ApiResponse<T>`; every status the action can produce has a `[ProducesResponseType]`
   (and none it can't); errors thrown as `SchedulerException` with an `ErrorCodes` constant — flag any string-literal code or
-  a new code missing from `ErrorCodes`; `LogDetail` ids only; no `ModelState.IsValid` checks in actions.
+  a new code missing from `ErrorCodes` / `ApiErrorCodes`; `LogDetail` ids only; no `ModelState.IsValid` checks in actions.
+- Layering: flag any `AppointmentScheduler.Domain` usage in `src/AppointmentScheduler.Api` and any Domain type exposed by a DTO.
 - Simplicity: no speculative abstractions, dead code, duplicate helpers, unnecessary packages; reuse existing types.
 - Tests: meaningful asserts, named after AC IDs, no sleeps/flakiness.
 - Host config: new concerns live in `Api/Configuration/<Concern>Config.cs` as C# 14 `extension` blocks; flag any service

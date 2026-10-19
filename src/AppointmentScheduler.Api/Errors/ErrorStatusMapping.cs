@@ -1,5 +1,3 @@
-using AppointmentScheduler.Domain.Common;
-
 namespace AppointmentScheduler.Api.Errors;
 
 /// <summary>
@@ -15,13 +13,13 @@ internal static class ErrorStatusMapping
     {
         // Asp.Versioning identifies its errors by problem type (…/unsupported-api-version, …/invalid-api-version, …).
         _ when problemType?.Contains("api-version", StringComparison.OrdinalIgnoreCase) == true =>
-            (ErrorCodes.UnsupportedApiVersion, "The requested API version is not supported."),
-        StatusCodes.Status401Unauthorized => (ErrorCodes.Unauthorized, "Authentication is required."),
-        StatusCodes.Status403Forbidden => (ErrorCodes.Forbidden, "You are not allowed to access this resource."),
-        StatusCodes.Status404NotFound => (ErrorCodes.RouteNotFound, "No endpoint matches this URL."),
-        StatusCodes.Status405MethodNotAllowed => (ErrorCodes.MethodNotAllowed, "This endpoint does not support the HTTP method."),
-        StatusCodes.Status415UnsupportedMediaType => (ErrorCodes.UnsupportedMediaType, "Send the request body as application/json."),
-        >= 500 => (ErrorCodes.InternalError, ServerErrorMessage),
-        _ => (ErrorCodes.BadRequest, "The request could not be processed."),
+            (ApiErrorCodes.UnsupportedApiVersion, "The requested API version is not supported."),
+        StatusCodes.Status401Unauthorized => (ApiErrorCodes.Unauthorized, "Authentication is required."),
+        StatusCodes.Status403Forbidden => (ApiErrorCodes.Forbidden, "You are not allowed to access this resource."),
+        StatusCodes.Status404NotFound => (ApiErrorCodes.RouteNotFound, "No endpoint matches this URL."),
+        StatusCodes.Status405MethodNotAllowed => (ApiErrorCodes.MethodNotAllowed, "This endpoint does not support the HTTP method."),
+        StatusCodes.Status415UnsupportedMediaType => (ApiErrorCodes.UnsupportedMediaType, "Send the request body as application/json."),
+        >= 500 => (ApiErrorCodes.InternalError, ServerErrorMessage),
+        _ => (ApiErrorCodes.BadRequest, "The request could not be processed."),
     };
 }

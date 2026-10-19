@@ -1,8 +1,10 @@
 namespace AppointmentScheduler.Domain.Common;
 
 /// <summary>
-/// Every machine-readable error code the API can return (ADR-0015). Clients branch on these, so a value never changes once
-/// shipped. Never throw with a string literal — add the code here, under its feature section.
+/// Business error codes thrown by Domain, Application and Infrastructure (ADR-0015). Clients branch on these, so a value never
+/// changes once shipped. Never throw with a string literal — add the code here, under its feature section. Transport-level
+/// codes the HTTP pipeline produces itself (BAD_REQUEST, ROUTE_NOT_FOUND, INTERNAL_ERROR, …) live in the Api's
+/// <c>ApiErrorCodes</c>.
 /// </summary>
 public static class ErrorCodes
 {
@@ -10,30 +12,11 @@ public static class ErrorCodes
     /// <summary>FluentValidation or domain input rejection. Field messages are in <c>errors</c>.</summary>
     public const string ValidationFailed = "VALIDATION_FAILED";
 
-    /// <summary>The request could not be read: malformed JSON, wrong types, unparsable query values.</summary>
-    public const string BadRequest = "BAD_REQUEST";
-
-    /// <summary>No valid access token.</summary>
+    /// <summary>No valid access token. Also in <c>ApiErrorCodes</c> (same value) for the JWT challenge.</summary>
     public const string Unauthorized = "UNAUTHORIZED";
 
-    /// <summary>Authenticated, but the role or BR-7 ownership rule denies access.</summary>
+    /// <summary>The role or BR-7 ownership rule denies access. Also in <c>ApiErrorCodes</c> (same value) for the JWT forbid.</summary>
     public const string Forbidden = "FORBIDDEN";
-
-    /// <summary>The request asked for an API version this service does not offer (URL segment, <c>X-Api-Version</c> or
-    /// <c>api-version</c>).</summary>
-    public const string UnsupportedApiVersion = "UNSUPPORTED_API_VERSION";
-
-    /// <summary>The body is not JSON (wrong <c>Content-Type</c>).</summary>
-    public const string UnsupportedMediaType = "UNSUPPORTED_MEDIA_TYPE";
-
-    /// <summary>No route matches the URL.</summary>
-    public const string RouteNotFound = "ROUTE_NOT_FOUND";
-
-    /// <summary>The route exists but not for this HTTP method.</summary>
-    public const string MethodNotAllowed = "METHOD_NOT_ALLOWED";
-
-    /// <summary>The catch-all for an unhandled fault. Accompanied by a trace id, never by internals.</summary>
-    public const string InternalError = "INTERNAL_ERROR";
 
     // ── Appointments ─────────────────────────────────────────────────────────────────────────────────
     public const string AppointmentNotFound      = "APPOINTMENT_NOT_FOUND";

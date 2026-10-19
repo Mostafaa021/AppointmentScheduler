@@ -34,8 +34,14 @@ and one constants class for codes.
   `BusinessRuleException` 422, `LockedException` 423. The status is a plain `int`, so Domain still references nothing.
 - **`LogDetail`** is log-only diagnostics (constraint names, token family ids, BR-7 doctor ids) — never serialised, ids only
   (NFR-9). `Message` stays safe to show users. `GlobalExceptionHandler` logs code + `LogDetail` at Information.
-- **`ErrorCodes`** (`Domain/Common/ErrorCodes.cs`): every code as a `const`, UPPER_SNAKE, grouped by feature section; never a
-  string literal at a throw site. `ErrorCodesTests` enforces format and uniqueness.
+- **Two code classes, one catalogue**: business codes in `ErrorCodes` (`Domain/Common/ErrorCodes.cs`); transport codes the
+  HTTP pipeline produces itself in `ApiErrorCodes` (`Api/Errors/ApiErrorCodes.cs`). That keeps the Api free of Domain
+  references.
+  - Both are `const`, UPPER_SNAKE, grouped by section; never a string literal at a throw site.
+  - `UNAUTHORIZED` / `FORBIDDEN` exist in both with identical values.
+  - `ErrorCodesTests` and `ErrorCodeCatalogTests` enforce format, uniqueness and no other overlap.
+- **Exceptions reach the Api only as `ApplicationError`** (`Application/Common/ApplicationError.cs`): status, code, message,
+  field errors, log detail. `GlobalExceptionHandler` never sees a Domain type.
 - **One writer** for responses that don't come from an action result — the exception handler, JWT `OnChallenge`/`OnForbidden`
   and framework-made errors (`UseStatusCodePages` → `IProblemDetailsService` → `ApiResponseProblemDetailsWriter`; MVC client
   errors → `ApiResponseClientErrorFactory`; codes `ROUTE_NOT_FOUND`, `METHOD_NOT_ALLOWED`, `UNSUPPORTED_MEDIA_TYPE` from

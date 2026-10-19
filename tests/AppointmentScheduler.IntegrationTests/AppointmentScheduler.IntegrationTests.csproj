@@ -14,6 +14,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="AppointmentScheduler.Domain.Common" />
+    <Using Include="AppointmentScheduler.Api.Errors" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\AppointmentScheduler.Api\AppointmentScheduler.Api.csproj" />

@@ -48,7 +48,7 @@ public class GlobalExceptionHandlerTests(ApiFactory api)
         var body = await response.JsonAsync();
         Assert.False(body.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(500, body.GetProperty("statusCode").GetInt32());
-        Assert.Equal(ErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
+        Assert.Equal(ApiErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
         Assert.DoesNotContain("hunter2", body.GetProperty("message").GetString()); // the message itself stays generic
         Assert.StartsWith("InvalidOperationException: ", body.GetProperty("errorDetails").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
@@ -64,7 +64,7 @@ public class GlobalExceptionHandlerTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var body = await response.JsonAsync();
         Assert.False(body.GetProperty("isSuccess").GetBoolean());
-        Assert.Equal(ErrorCodes.RouteNotFound, body.GetProperty("errorCode").GetString());
+        Assert.Equal(ApiErrorCodes.RouteNotFound, body.GetProperty("errorCode").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
     }
 
@@ -74,7 +74,7 @@ public class GlobalExceptionHandlerTests(ApiFactory api)
         var response = await api.CreateClient().PostAsync("/api/v1/auth/login", new StringContent("email=x", System.Text.Encoding.UTF8, "text/plain"));
 
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
-        Assert.Equal(ErrorCodes.UnsupportedMediaType, await response.ErrorCodeAsync());
+        Assert.Equal(ApiErrorCodes.UnsupportedMediaType, await response.ErrorCodeAsync());
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class GlobalExceptionHandlerTests(ApiFactory api)
         var response = await api.CreateClient().DeleteAsync("/api/v1/auth/login");
 
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
-        Assert.Equal(ErrorCodes.MethodNotAllowed, await response.ErrorCodeAsync());
+        Assert.Equal(ApiErrorCodes.MethodNotAllowed, await response.ErrorCodeAsync());
     }
 
     [Fact]

@@ -21,7 +21,8 @@ flowchart BT
   AP --> I[Infrastructure<br/>EF Core repositories, unit of work,<br/>Identity, Hangfire, Wolverine, SMTP]
   I --> API[Api host]
 ```
-Arrows point from a project to the projects that depend on it. Enforced by `ArchitectureTests`.
+Arrows point from a project to the projects that depend on it. Enforced by `ArchitectureTests`. The Api uses Application and
+Infrastructure only, never Domain types (`ApplicationError`, Application DTOs/enums).
 Identity types live in `Microsoft.AspNetCore.Identity`, so Identity stays in Infrastructure; Application owns the auth
 contracts (`IAuthService`, `IUserAdminService`, `ICurrentUser`, `AuditLog`) — spec 004.
 

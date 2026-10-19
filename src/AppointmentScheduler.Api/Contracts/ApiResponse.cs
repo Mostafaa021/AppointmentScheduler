@@ -5,7 +5,7 @@ namespace AppointmentScheduler.Api.Contracts;
 /// <summary>
 /// Generic API response wrapper for all endpoints (ADR-0015). Same shape as the house template (<c>isSuccess</c>,
 /// <c>statusCode</c>, <c>message</c>, <c>data</c>, <c>errorDetails</c>, <c>timestamp</c>), plus three members clients and
-/// operators rely on: <c>errorCode</c> (stable, from <see cref="Domain.Common.ErrorCodes"/>), per-field <c>errors</c> for 400s
+/// operators rely on: <c>errorCode</c> (stable: Domain <c>ErrorCodes</c> or <see cref="Errors.ApiErrorCodes"/>), per-field <c>errors</c> for 400s
 /// and the <c>traceId</c> to quote. Members that don't apply to a response are not serialised; nulls inside <c>data</c> are.
 /// </summary>
 /// <typeparam name="T">Type of data being returned</typeparam>
@@ -102,6 +102,5 @@ public class ApiResponse<T>
         Message = message ?? "Operation completed successfully",
         Data = default,
     };
-
-#pragma warning restore CA1000
+    
 }

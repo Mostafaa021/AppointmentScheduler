@@ -30,7 +30,7 @@ public class ApiVersioningTests(ApiFactory api) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var body = await response.JsonAsync();
         Assert.False(body.GetProperty("isSuccess").GetBoolean());
-        Assert.Equal(ErrorCodes.UnsupportedApiVersion, body.GetProperty("errorCode").GetString());
+        Assert.Equal(ApiErrorCodes.UnsupportedApiVersion, body.GetProperty("errorCode").GetString());
         Assert.Contains("1.0", body.GetProperty("message").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
     }
@@ -53,6 +53,6 @@ public class ApiVersioningTests(ApiFactory api) : IAsyncLifetime
         var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(ErrorCodes.UnsupportedApiVersion, await response.ErrorCodeAsync());
+        Assert.Equal(ApiErrorCodes.UnsupportedApiVersion, await response.ErrorCodeAsync());
     }
 }

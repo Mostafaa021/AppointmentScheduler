@@ -68,7 +68,7 @@ public class StagingEnvironmentTests(StagingFactory api) : IClassFixture<Staging
         Assert.Equal(System.Net.HttpStatusCode.InternalServerError, response.StatusCode);
         var raw = await response.Content.ReadAsStringAsync();
         var body = await response.JsonAsync();
-        Assert.Equal(ErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
+        Assert.Equal(ApiErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
         Assert.False(body.TryGetProperty("errorDetails", out _));
         Assert.DoesNotContain("hunter2", raw);
         Assert.DoesNotContain("InvalidOperationException", raw);

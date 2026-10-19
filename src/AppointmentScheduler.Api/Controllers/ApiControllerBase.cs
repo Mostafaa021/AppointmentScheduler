@@ -7,7 +7,7 @@ namespace AppointmentScheduler.Api.Controllers;
 /// <summary>
 /// Base for every API controller: authenticated by default (AC-004-4); actions opt out with <c>[AllowAnonymous]</c>
 /// and narrow access with role policies (AC-004-8). Every body is an <see cref="ApiResponse{T}"/> (ADR-0015).
-/// Errors are thrown as <c>SchedulerException</c>s and shaped by GlobalExceptionHandler, so actions never build error
+/// Errors are thrown by the Application layer and shaped by GlobalExceptionHandler, so actions never build error
 /// results. 401 and 500 can happen on any action and are declared here; each action declares the rest.
 /// </summary>
 [ApiController]

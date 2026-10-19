@@ -12,6 +12,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 - Hangfire background jobs inside the API (PostgreSQL storage, dev dashboard) with an hourly expired-refresh-token purge.
 - Global exception handler: unexpected errors return a generic 500 `internal_error` and are logged with the trace id.
 ### Changed
+- The Api references Application and Infrastructure only, never Domain (architecture test). Expected failures reach it as
+  `ApplicationError`. Transport error codes moved to `Api/Errors/ApiErrorCodes` (values unchanged).
+  `AppointmentDto.Status` is the Application enum `AppointmentStatusDto` (same JSON).
 - API moved from Minimal APIs to controllers (routes, status codes and error codes unchanged).
 - **Breaking:** every response body is now an `ApiResponse<T>` envelope (`isSuccess`, `statusCode`, `message`, `data`,
   `errorDetails` (Development only), `timestamp` + `errorCode`, `errors`, `traceId`; template factories `Success` / `Error` /

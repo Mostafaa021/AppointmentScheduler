@@ -2,6 +2,8 @@
 
 - Status: Accepted · Date: 2026-10-19 · Data-access part superseded by [ADR-0016](0016-repository-unit-of-work.md)
   (repositories + unit of work replace `IAppDbContext`; Application no longer references EF Core)
+- Amended 2026-10-19: the Api references Application and Infrastructure only, never Domain (architecture test). Expected
+  failures reach it as `ApplicationError`, and DTOs expose Application enums.
 
 ## Context
 The app must be easy to extend (new features, a live change in the interview) and simulate production structure, but a 2-day

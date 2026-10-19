@@ -258,3 +258,13 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   - S-31 (ETag / If-Match) set aside at the user's request;
   - output caching skipped, because nothing is safely cacheable yet.
 - **Rule recorded:** never commit unasked; stop after each step (CLAUDE.md Workflow 0b, and assistant memory).
+- **Step 0 (Api never references Domain):**
+  - `ApplicationError.From(exception)` lets `GlobalExceptionHandler` drop the Domain exception types.
+  - Transport codes moved to `ApiErrorCodes`; `UNAUTHORIZED` and `FORBIDDEN` are shared, with identical values enforced by a
+    test.
+  - `AppointmentStatusDto` replaces the Domain enum in the DTO.
+  - The new architecture test `Api_does_not_depend_on_domain` keeps it that way. The project references stay
+    Api → Application + Infrastructure; Domain only arrives transitively.
+  - **Debugging:** cleaning the blank lines left by the removed `using`s also swallowed two neighbouring lines
+    (`using Microsoft.AspNetCore.Mvc;`, a `namespace`). The build caught both, and the git diff was checked line by line to
+    confirm only the Domain usings went.

@@ -20,7 +20,8 @@ The spec (AC + Design), `CLAUDE.md` conventions, the feature folder you extend, 
 
 ## Conventions you must follow
 UTC `DateTimeOffset` + `TimeProvider`; throw `SchedulerException` subclasses (`NotFoundException`, `ConflictException`,
-`BusinessRuleException`, …) with an `ErrorCodes` constant — add new codes to `Domain/Common/ErrorCodes.cs`, never a literal —
+`BusinessRuleException`, …) with an `ErrorCodes` constant — business codes in `Domain/Common/ErrorCodes.cs`, transport codes in
+`Api/Errors/ApiErrorCodes.cs`, never a literal —
 and ids-only `LogDetail`; actions return `ApiResponse<T>` and declare every status with `[ProducesResponseType]` (template:
 `/new-feature` step 6); endpoints contain no logic or EF queries; mutating endpoints are idempotent (M3+) and authorized (M2+);
 log ids, never PII. Integration tests read `DataAsync()` / `ErrorCodeAsync()` and assert `ErrorCodes.X`.
@@ -31,6 +32,10 @@ Data access (ADR-0016):
 - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`.
 - Unit-test the use-case order with fakes; integration tests cover the real queries and constraints.
 
+The Api never references Domain: use Application DTOs (Application enums, not Domain ones) and `ApplicationError` (architecture
+test).
+The Api never references Domain: use Application DTOs (Application enums, not Domain ones) and `ApplicationError` (architecture
+test).
 Controllers hold endpoints only (no private helpers or constants): logic goes in the Application service, HTTP-only plumbing in an
 Api helper class like `Api/Auth/RefreshTokenCookie`.
 Messaging (ADR-0007): Wolverine handlers are plain classes in Application; wiring and topology live in

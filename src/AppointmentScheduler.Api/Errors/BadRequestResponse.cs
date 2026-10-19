@@ -1,4 +1,3 @@
-using AppointmentScheduler.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentScheduler.Api.Errors;
@@ -16,6 +15,6 @@ internal static class BadRequestResponse
             .Where(e => e.Value is { Errors.Count: > 0 })
             .ToDictionary(e => e.Key, e => e.Value!.Errors.Select(x => x.ErrorMessage).ToArray());
         return new BadRequestObjectResult(ApiErrorWriter.Body(context.HttpContext, StatusCodes.Status400BadRequest,
-            ErrorCodes.BadRequest, "The request could not be read.", errors));
+            ApiErrorCodes.BadRequest, "The request could not be read.", errors));
     }
 }

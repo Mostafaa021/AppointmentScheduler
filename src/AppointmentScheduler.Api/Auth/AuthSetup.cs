@@ -1,7 +1,6 @@
 using AppointmentScheduler.Api.Errors;
 using AppointmentScheduler.Application.Auth;
 using AppointmentScheduler.Application.Common;
-using AppointmentScheduler.Domain.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace AppointmentScheduler.Api.Auth;
@@ -22,10 +21,10 @@ internal static class AuthSetup
             {
                 ctx.HandleResponse(); // replace the default empty 401
                 ctx.Response.Headers.WWWAuthenticate = "Bearer";
-                return ApiErrorWriter.WriteAsync(ctx.HttpContext, StatusCodes.Status401Unauthorized, ErrorCodes.Unauthorized,
+                return ApiErrorWriter.WriteAsync(ctx.HttpContext, StatusCodes.Status401Unauthorized, ApiErrorCodes.Unauthorized,
                     "Authentication is required.");
             },
-            OnForbidden = ctx => ApiErrorWriter.WriteAsync(ctx.HttpContext, StatusCodes.Status403Forbidden, ErrorCodes.Forbidden,
+            OnForbidden = ctx => ApiErrorWriter.WriteAsync(ctx.HttpContext, StatusCodes.Status403Forbidden, ApiErrorCodes.Forbidden,
                 "You are not allowed to access this resource."),
         });
 

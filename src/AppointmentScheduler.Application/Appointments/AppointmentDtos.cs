@@ -9,6 +9,12 @@ public sealed record RescheduleAppointmentRequest(DateTimeOffset? StartUtc);
 
 public sealed record CancelAppointmentRequest(string? Reason);
 
+/// <summary>
+/// Appointment status as the API contract exposes it. Mirrors the Domain <c>AppointmentStatus</c> by name, so the JSON
+/// (<c>"Scheduled"</c> / <c>"Cancelled"</c>) is unchanged while the Api stays free of Domain types.
+/// </summary>
+public enum AppointmentStatusDto { Scheduled, Cancelled }
+
 public sealed record AppointmentDto(
     Guid Id,
     int DoctorId,
@@ -21,7 +27,7 @@ public sealed record AppointmentDto(
     string LocalStart,
     string LocalEnd,
     string Reason,
-    AppointmentStatus Status,
+    AppointmentStatusDto Status,
     string? CancellationReason,
     uint Version)
 {
@@ -30,5 +36,12 @@ public sealed record AppointmentDto(
         a.Id, a.DoctorId, a.Doctor!.FullName, a.PatientId, a.Patient!.FullName, a.Patient.Mrn,
         a.StartUtc, a.EndUtc,
         schedule.LocalTimeOf(a.StartUtc).ToString("HH:mm"), schedule.LocalTimeOf(a.EndUtc).ToString("HH:mm"),
-        a.Reason, a.Status, a.CancellationReason, a.Version);
+        a.Reason, ToDto(a.Status), a.CancellationReason, a.Version);
+
+    private static AppointmentStatusDto ToDto(AppointmentStatus status) => status switch
+    {
+        AppointmentStatus.Scheduled => AppointmentStatusDto.Scheduled,
+        AppointmentStatus.Cancelled => AppointmentStatusDto.Cancelled,
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unmapped appointment status."),
+    };
 }

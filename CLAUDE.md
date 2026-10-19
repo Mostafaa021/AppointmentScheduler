@@ -24,6 +24,9 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 
 ## Architecture rules (enforced by `tests/AppointmentScheduler.ArchitectureTests`)
 - Dependency direction: **Domain ← Application ← Infrastructure ← Api** (the Api is the only host; background jobs and message handlers run in it). Domain references nothing.
+- The Api references **Application and Infrastructure only, never Domain** (ArchitectureTests `Api_does_not_depend_on_domain`).
+  Application hands the Api everything it needs: services, DTOs with Application enums (e.g. `AppointmentStatusDto`), and
+  `ApplicationError.From(exception)` for expected failures. No Domain type appears in Api code or in a DTO.
 - Feature folders in every layer: `Appointments/`, `Patients/`, `Doctors/`, `Clinics/`, `Auth/`. New feature = new folder + spec.
 - Controllers (`Api/Controllers`, inherit `ApiControllerBase` → authenticated by default) are thin: bind → call an Application
   service → return. No business logic or EF queries in `Api`. Template in `.claude/skills/new-feature/SKILL.md` step 6.
@@ -59,23 +62,25 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   `[ApiController]` already answers 400 `BAD_REQUEST` through `BadRequestResponse`.
 - Errors: throw a `SchedulerException` subclass — `ValidationException` 400, `UnauthorizedException` 401,
   `ForbiddenException` 403, `NotFoundException` 404, `ConflictException` 409, `BusinessRuleException` 422, `LockedException`
-  423 — with an `ErrorCodes.X` constant (never a string literal; new codes go in `Domain/Common/ErrorCodes.cs` under their
-  feature section, UPPER_SNAKE) and a message safe to show users. Put diagnostics in `LogDetail` (ids only, never PII).
-  `GlobalExceptionHandler` turns them into `ApiResponse` errors; anything else becomes a logged, generic 500
+  423 — with an `ErrorCodes.X` constant (never a string literal). Business codes go in `Domain/Common/ErrorCodes.cs`;
+  transport codes that only the HTTP pipeline produces (BAD_REQUEST, ROUTE_NOT_FOUND, INTERNAL_ERROR, idempotency, rate
+  limits) go in `Api/Errors/ApiErrorCodes.cs`. Either way the code goes under its feature section, UPPER_SNAKE (catalogue
+  tests keep the two classes disjoint). Use a message safe to show users, and put diagnostics in `LogDetail` (ids only,
+  never PII). `GlobalExceptionHandler` turns them into `ApiResponse` errors via `ApplicationError`; anything else becomes a logged, generic 500
   `INTERNAL_ERROR`. Never catch-and-return errors in controllers.
 - Every mutating endpoint requires an `Idempotency-Key` header (M3+).
 - Never log patient names, phone numbers or emails — log ids only.
 - Fictional data only (seed in `Infrastructure/Persistence/Seed`).
 
 ## Workflow (spec-driven)
-1. Spec first: `docs/specs/NNN-*.md` from `_template.md`, acceptance criteria `AC-NNN-x`.
-2. Tests named after AC/BR IDs, written before or with the code.
-3. Default: implement directly in the session (use `/new-feature` as a checklist). The role-agent ceremony (`/sdlc`, docs/sdlc.md)
-   is opt-in — only when the user asks for it.
-4. Record meaningful prompts with `/log-prompt` (feeds PROMPTS.md).
 0. Plans: every approved plan is saved as `.claude/plans/NNN-<slug>.md` (next number, status header) and listed in
    `.claude/plans/README.md` before any code. Plan mode writes there directly (`plansDirectory` in `.claude/settings.json`);
    from another root, copy it in. When the plan changes during the work, edit that same file (dated "Changes" note) and tick
    its Progress line as steps are verified. Link the plan from the backlog story or spec it implements.
 0b. Commits: never commit unasked. After each step, show what changed and ask whether to commit it or leave it in the working tree.
+1. Spec first: `docs/specs/NNN-*.md` from `_template.md`, acceptance criteria `AC-NNN-x`.
+2. Tests named after AC/BR IDs, written before or with the code.
+3. Default: implement directly in the session (use `/new-feature` as a checklist). The role-agent ceremony (`/sdlc`, docs/sdlc.md)
+   is opt-in — only when the user asks for it.
+4. Record meaningful prompts with `/log-prompt` (feeds PROMPTS.md).
 5. Definition of Done: AC covered by passing tests · `/verify` green · SPEC.md / spec / README / CHANGELOG updated.

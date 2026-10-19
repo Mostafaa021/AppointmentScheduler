@@ -59,6 +59,16 @@ public class LayerDependencyTests
     }
 
     [Fact]
+    public void Api_does_not_depend_on_domain()
+    {
+        // The Api talks to Application (services, DTOs, ApplicationError) and Infrastructure (composition) only. Domain
+        // arrives transitively through those project references, so this test is what keeps it out of Api code.
+        var result = Types.InAssembly(ApiAssembly).ShouldNot().HaveDependencyOn(Domain).GetResult();
+
+        Assert.True(result.IsSuccessful, Describe(result));
+    }
+
+    [Fact]
     public void Repository_implementations_are_internal_to_infrastructure()
     {
         var result = Types.InAssembly(InfrastructureAssembly).That().HaveNameEndingWith("Repository").Or().HaveName("UnitOfWork")

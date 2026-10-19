@@ -13,7 +13,8 @@ description: Single-session, spec-first checklist for adding a feature end to en
    Read success bodies with `DataAsync()`, errors with `ErrorCodeAsync()`, and assert against `ErrorCodes.X`.
 3. **Domain** — `src/AppointmentScheduler.Domain/<Feature>/`: entity methods/policies enforce rules and throw a
    `SchedulerException` subclass (`BusinessRuleException` 422, `ConflictException` 409, `NotFoundException` 404, …).
-   New codes go in `Domain/Common/ErrorCodes.cs` under a `// ── <Feature> ──` section, UPPER_SNAKE — never a string literal.
+   New business codes go in `Domain/Common/ErrorCodes.cs` under a `// ── <Feature> ──` section, UPPER_SNAKE — never a string
+   literal. Codes only the HTTP pipeline produces go in `Api/Errors/ApiErrorCodes.cs`.
    Diagnostics for operators go in `LogDetail` (ids only):
    ```csharp
    throw new ConflictException(ErrorCodes.ClinicClosed, "The clinic is closed on this day.") { LogDetail = $"clinic {clinicId} {date}" };
@@ -22,6 +23,7 @@ description: Single-session, spec-first checklist for adding a feature end to en
    (`Domain/<Feature>/I<Aggregate>Repository.cs`, ADR-0016). It returns entities, never `IQueryable`; tracked only when the
    caller will change the entity.
 4. **Application** — `src/AppointmentScheduler.Application/<Feature>/`: service method + request/response records +
+   (DTOs expose Application types only — an Application enum, never a Domain one: the Api must not reference Domain) +
    FluentValidation validator (`ValidateOrThrow`); register in `Application/DependencyInjection.cs`. Data access only via
    repositories; stage changes, then **one** `await unitOfWork.SaveChangesAsync(ct)` per use case (after `audit.Record(...)`).
    No EF Core here (architecture test). Use-case order can be unit-tested with fakes (see `AppointmentServiceTests`).

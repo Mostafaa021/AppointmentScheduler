@@ -1,11 +1,11 @@
-using AppointmentScheduler.Domain.Common;
+using AppointmentScheduler.Application.Common;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace AppointmentScheduler.Api.Errors;
 
 /// <summary>
 /// The single place where exceptions become HTTP responses (<see cref="Contracts.ApiResponse{T}"/>, ADR-0015).
-/// Expected failures (<see cref="SchedulerException"/>, unreadable requests) carry their own status and code; anything else
+/// Expected failures (described by <see cref="ApplicationError"/>, plus unreadable requests) carry their own status and code; anything else
 /// is logged and returned as a generic 500 that never exposes the exception message or stack trace. Client aborts never
 /// reach this handler: ExceptionHandlerMiddleware already answers them with 499 and a Debug log.
 /// </summary>
@@ -14,15 +14,18 @@ internal sealed partial class GlobalExceptionHandler(ILogger<GlobalExceptionHand
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext http, Exception exception, CancellationToken ct)
     {
+        // Application describes its own failures, so the Api never needs the Domain exception types.
+        if (ApplicationError.From(exception) is { } error)
+        {
+            LogRejected(logger, http.Request.Method, http.Request.Path, error.StatusCode, error.ErrorCode, error.LogDetail);
+            await ApiErrorWriter.WriteAsync(http, error.StatusCode, error.ErrorCode, error.Message, error.FieldErrors, ct: ct);
+            return true;
+        }
+
         switch (exception)
         {
-            case SchedulerException e:
-                LogRejected(logger, http.Request.Method, http.Request.Path, e.StatusCode, e.ErrorCode, e.LogDetail);
-                await ApiErrorWriter.WriteAsync(http, e.StatusCode, e.ErrorCode, e.Message, (e as ValidationException)?.Errors, ct: ct);
-                break;
-
             case BadHttpRequestException e:
-                await ApiErrorWriter.WriteAsync(http, e.StatusCode, ErrorCodes.BadRequest, e.Message, ct: ct);
+                await ApiErrorWriter.WriteAsync(http, e.StatusCode, ApiErrorCodes.BadRequest, e.Message, ct: ct);
                 break;
 
             default:
@@ -30,7 +33,7 @@ internal sealed partial class GlobalExceptionHandler(ILogger<GlobalExceptionHand
                 // own machine (Development only; exception text can carry connection strings, SQL or patient data).
                 LogUnhandled(logger, exception, http.Request.Method, http.Request.Path, http.TraceIdentifier);
                 var details = environment.IsDevelopment() ? $"{exception.GetType().Name}: {exception.Message}" : null;
-                await ApiErrorWriter.WriteAsync(http, StatusCodes.Status500InternalServerError, ErrorCodes.InternalError,
+                await ApiErrorWriter.WriteAsync(http, StatusCodes.Status500InternalServerError, ApiErrorCodes.InternalError,
                     "An unexpected error occurred. Quote the traceId when reporting it.", errorDetails: details, ct: ct);
                 break;
         }
