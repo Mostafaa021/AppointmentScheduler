@@ -21,6 +21,10 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `Doctors`, `Patients`, `AuditRecords`; services inject `IUnitOfWork` alone, repositories are no longer registered in DI, and
   ArchitectureTests reject a repository in any constructor. No behaviour change.
 ### Added
+- Run anywhere with Docker (plan 014, S-61 part): `src/AppointmentScheduler.Api/Dockerfile`, `web/Dockerfile` + `web/nginx.conf`
+  (serves the Angular build, proxies `/api/` same-origin) and compose services `api` + `web`, so `docker compose up --build -d`
+  runs the whole system on http://localhost:8080 with only Docker installed (local demo stack, Development mode). README
+  rewritten for newcomers: how it works, quick start, URLs, everyday commands, local development, troubleshooting.
 - 503 `SERVICE_UNAVAILABLE` + `Retry-After: 5` when the database fails transiently (S-33, ADR-0008 revised): no server-side
   retry and no Polly for the database. The atomic unit of work guarantees nothing is half-saved, and the client retries with
   the same `Idempotency-Key`. Polly stays for other services (SMTP, outbound HTTP) and the rate limits.

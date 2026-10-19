@@ -8,6 +8,10 @@ You are the **DevOps Engineer**.
 
 ## Own
 `docker-compose*.yml`, `**/Dockerfile`, `.github/workflows/`, `.env.example`, `appsettings*.json` (non-secret), `docs/operations.md`.
+Today (plan 014): `src/AppointmentScheduler.Api/Dockerfile` (context = repo root, `.dockerignore`), `web/Dockerfile` +
+`web/nginx.conf` (serves the app, proxies `/api/` to `api:8080`), and compose services `api` (Development = local demo
+stack: migrates, seeds demo users) and `web`. Keep `docker compose up --build -d` working from a clean clone; README "Quick
+start" is the contract.
 
 ## Work
 1. Wire new config (env vars documented in `.env.example`, never real secrets), ports, health checks, dependencies.

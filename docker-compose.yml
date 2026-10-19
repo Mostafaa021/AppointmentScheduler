@@ -33,5 +33,32 @@ services:
       COLLECTOR_OTLP_ENABLED: "true"
     ports: ["16686:16686", "4317:4317", "4318:4318"]
 
+  # ── Application (plan 014): `docker compose up --build -d` runs everything; for local development start only the three
+  # services above and run the API/web with dotnet/npm (README). Local demo stack only: Development migrates on start,
+  # seeds demo users, uses the dev-only JWT key and serves /scalar. Never deploy this configuration.
+  api:
+    build:
+      context: .
+      dockerfile: src/AppointmentScheduler.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Scheduler: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-scheduler};Username=${POSTGRES_USER:-scheduler};Password=${POSTGRES_PASSWORD:-scheduler_dev_pw}"
+      Observability__OtlpEndpoint: http://jaeger:4317
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: ${RABBITMQ_USER:-guest}
+      Messaging__RabbitMq__Password: ${RABBITMQ_PASSWORD:-guest}
+    ports: ["${API_PORT:-5080}:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      # No dependency on jaeger: tracing is optional, so a Jaeger problem (e.g. port 4317 taken) never blocks the app.
+    restart: unless-stopped # comes back after a crash; RabbitMQ down at start only means degraded mode (ADR-0007)
+
+  web:
+    build: ./web
+    ports: ["${WEB_PORT:-8080}:80"]
+    depends_on: [api]
+    restart: unless-stopped
+
 volumes:
   pgdata:

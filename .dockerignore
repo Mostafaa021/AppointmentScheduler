@@ -1,0 +1,16 @@
+# Build context for src/AppointmentScheduler.Api/Dockerfile (repository root). Only global.json, Directory.*.props and src/
+# are needed; keep everything else out so the context stays small and local builds don't leak in.
+**/bin/
+**/obj/
+**/TestResults/
+.git/
+.github/
+.claude/
+.vs/
+.idea/
+docs/
+tests/
+web/
+*.md
+.env
+.env.*

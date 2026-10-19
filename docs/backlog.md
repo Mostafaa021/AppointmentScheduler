@@ -70,7 +70,7 @@ Plan: [`.claude/plans/009-sprint-3-reliability.md`](../.claude/plans/009-sprint-
 | ID | Story | Spec | Status |
 |---|---|---|---|
 | S-60 | OTel → Jaeger, Serilog, /metrics, health checks | 000 | OTel traces + optional metrics done (ADR-0010 status); Serilog, /metrics, /health/ready Todo |
-| S-61 | Dockerfiles, full compose, migrator, operations.md | 000 | Todo |
+| S-61 | Dockerfiles, full compose, migrator, operations.md | 000 | Dockerfiles + full compose done (plan 014); migrator, operations.md, ForwardedHeaders Todo |
 
 ## Sprint 7 — M7 Performance & hardening
 | ID | Story | Spec | Status |

@@ -15,7 +15,8 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 ## Commands
 | Task | Command |
 |---|---|
-| Start infra | `docker compose up -d postgres rabbitmq jaeger` |
+| Full stack in Docker (app :8080, API :5080) | `docker compose up --build -d` |
+| Start infra only (local dev) | `docker compose up -d postgres rabbitmq jaeger` (stop `api`/`web` containers first) |
 | Run API (http://localhost:5080, docs at `/scalar`) | `dotnet run --project src/AppointmentScheduler.Api` |
 | All .NET tests (unit + architecture, no Docker) | `dotnet test` |
 | Unit tests only | `dotnet test tests/AppointmentScheduler.UnitTests` |
