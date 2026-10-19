@@ -17,5 +17,5 @@ export const apiResponseInterceptor: HttpInterceptorFn = (req, next) =>
   );
 
 function isApiResponse(body: unknown): body is ApiResponse<unknown> {
-  return typeof body === 'object' && body !== null && 'success' in body && 'statusCode' in body;
+  return typeof body === 'object' && body !== null && 'isSuccess' in body && 'statusCode' in body;
 }

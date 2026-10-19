@@ -69,13 +69,17 @@ export interface BookAppointmentRequest {
  * reach callers as HttpErrorResponse.error, where `errorCode` is stable (e.g. DOCTOR_CONFLICT).
  */
 export interface ApiResponse<T> {
-  success: boolean;
+  isSuccess: boolean;
   statusCode: number;
   message?: string;
   data?: T;
+  /** Exception type + message for unexpected 500s, Development only. Never show it to end users. */
+  errorDetails?: string;
   errorCode?: string;
   errors?: Record<string, string[]>;
   traceId?: string;
+  /** ISO 8601 UTC time the server built the response. */
+  timestamp: string;
 }
 
 export type Role = 'Admin' | 'Receptionist' | 'Doctor';

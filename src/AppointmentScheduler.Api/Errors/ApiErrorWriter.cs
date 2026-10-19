@@ -11,16 +11,16 @@ namespace AppointmentScheduler.Api.Errors;
 internal static class ApiErrorWriter
 {
     public static ApiResponse<object> Body(HttpContext http, int statusCode, string errorCode, string message,
-        IReadOnlyDictionary<string, string[]>? errors = null) =>
-        ApiResponse<object>.Fail(statusCode, errorCode, message, errors, TraceId(http));
+        IReadOnlyDictionary<string, string[]>? errors = null, string? errorDetails = null) =>
+        ApiResponse<object>.Error(statusCode, errorCode, message, errors, TraceId(http), errorDetails);
 
     public static Task WriteAsync(HttpContext http, int statusCode, string errorCode, string message,
-        IReadOnlyDictionary<string, string[]>? errors = null, CancellationToken ct = default)
+        IReadOnlyDictionary<string, string[]>? errors = null, string? errorDetails = null, CancellationToken ct = default)
     {
         http.Response.StatusCode = statusCode;
         // MVC's options, so these bodies serialise exactly like controller results (camelCase, enums as strings, no nulls).
         var json = http.RequestServices.GetRequiredService<IOptions<Microsoft.AspNetCore.Mvc.JsonOptions>>().Value.JsonSerializerOptions;
-        return http.Response.WriteAsJsonAsync(Body(http, statusCode, errorCode, message, errors), json, ct);
+        return http.Response.WriteAsJsonAsync(Body(http, statusCode, errorCode, message, errors, errorDetails), json, ct);
     }
 
     public static string TraceId(HttpContext http) => Activity.Current?.Id ?? http.TraceIdentifier;

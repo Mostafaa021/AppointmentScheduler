@@ -96,13 +96,14 @@ public class AuthEndpointTests(ApiFactory api)
         Assert.Equal(HttpStatusCode.Unauthorized, unknown.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
         Assert.Equal(ErrorCodes.InvalidCredentials, await unknown.ErrorCodeAsync());
-        Assert.Equal(await WithoutTraceIdAsync(unknown), await WithoutTraceIdAsync(wrong));
+        Assert.Equal(await WithoutPerRequestFieldsAsync(unknown), await WithoutPerRequestFieldsAsync(wrong));
     }
 
-    private static async Task<string> WithoutTraceIdAsync(HttpResponseMessage response)
+    private static async Task<string> WithoutPerRequestFieldsAsync(HttpResponseMessage response)
     {
         var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
-        json.Remove("traceId"); // per-request correlation id, not response content
+        json.Remove("traceId");   // per-request correlation id, not response content
+        json.Remove("timestamp"); // when the body was built, not what it says
         return json.ToJsonString();
     }
 

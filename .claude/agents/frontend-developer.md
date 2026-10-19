@@ -16,7 +16,8 @@ The spec (AC, API contract, UI notes), `web/src/app/core/` (API services, models
 2. Feature UI in `web/src/app/features/<feature>/`, lazy-loaded route, signals for state, Material controls with labels.
 3. Handle every state: loading, empty, error (`apiErrorInterceptor` shows the envelope's `errors`/`message` in a snackbar),
    conflict (branch on `error.errorCode`, e.g. `'DOCTOR_CONFLICT'` → refresh data and say the slot was just taken). Specs flush
-   envelope bodies (`{ success, statusCode, data }` / `{ success: false, errorCode, message }`).
+   envelope bodies (`{ isSuccess, statusCode, data, timestamp }` / `{ isSuccess: false, errorCode, message }`). Never
+   show `errorDetails` to users (Development-only diagnostics).
 4. Vitest specs for components with logic and for services (HttpTestingController).
 5. Run `npm test -- --watch=false` and `npm run build`; record results in the spec Status notes; tick `Built ☑` for UI.
 

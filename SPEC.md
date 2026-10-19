@@ -43,12 +43,14 @@ Each action declares every status it can return with `[ProducesResponseType]`, s
 Response envelope ([ADR-0015](docs/adr/0015-api-response-envelope.md)); members that don't apply are omitted:
 ```jsonc
 // 201 POST /appointments
-{ "success": true, "statusCode": 201, "message": "Appointment booked.", "data": { "id": "…", "localStart": "10:00", … } }
+{ "isSuccess": true, "statusCode": 201, "message": "Appointment booked.",
+  "data": { "id": "…", "localStart": "10:00", … }, "timestamp": "2026-10-19T14:46:27.99+00:00" }
 // 409
-{ "success": false, "statusCode": 409, "errorCode": "DOCTOR_CONFLICT",
-  "message": "The doctor already has an appointment at this time.", "traceId": "00-…" }
-// 400 adds "errors": { "reason": ["…"] }
+{ "isSuccess": false, "statusCode": 409, "message": "The doctor already has an appointment at this time.",
+  "errorCode": "DOCTOR_CONFLICT", "traceId": "00-…", "timestamp": "…" }
+// 400 adds "errors": { "reason": ["…"] }; an unexpected 500 adds "errorDetails" in Development only
 ```
+Reads without a specific message say "Request completed successfully".
 `POST /auth/logout` is the one exception: **204** with no body.
 
 **Versioning** ([ADR-0017](docs/adr/0017-api-versioning.md)): the version is in the URL (`/api/v1/…`); responses carry

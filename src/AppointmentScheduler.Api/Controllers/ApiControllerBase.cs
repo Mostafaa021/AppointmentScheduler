@@ -18,5 +18,5 @@ namespace AppointmentScheduler.Api.Controllers;
 public abstract class ApiControllerBase : ControllerBase
 {
     /// <summary>200 with <paramref name="data"/> wrapped in <see cref="ApiResponse{T}"/>.</summary>
-    protected OkObjectResult OkResponse<T>(T data, string? message = null) => Ok(ApiResponse<T>.Ok(data, message));
+    protected OkObjectResult OkResponse<T>(T data, string? message = null) => Ok(ApiResponse<T>.Success(data, message));
 }

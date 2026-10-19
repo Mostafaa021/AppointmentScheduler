@@ -20,21 +20,21 @@ describe('apiResponseInterceptor', () => {
 
   it('returns the envelope data to the caller', async () => {
     const result = firstValueFrom(http.get('/api/v1/doctors'));
-    backend.expectOne('/api/v1/doctors').flush({ success: true, statusCode: 200, data: [{ id: 1 }] });
+    backend.expectOne('/api/v1/doctors').flush({ isSuccess: true, statusCode: 200, data: [{ id: 1 }] });
     expect(await result).toEqual([{ id: 1 }]);
   });
 
   it('leaves non-API responses untouched', async () => {
     const result = firstValueFrom(http.get('/assets/config.json'));
-    backend.expectOne('/assets/config.json').flush({ success: true, statusCode: 200, data: 'x' });
-    expect(await result).toEqual({ success: true, statusCode: 200, data: 'x' });
+    backend.expectOne('/assets/config.json').flush({ isSuccess: true, statusCode: 200, data: 'x' });
+    expect(await result).toEqual({ isSuccess: true, statusCode: 200, data: 'x' });
   });
 
   it('passes errors through with the envelope as error body', async () => {
     const result = firstValueFrom(http.get('/api/v1/doctors')).catch((e) => e);
     backend
       .expectOne('/api/v1/doctors')
-      .flush({ success: false, statusCode: 403, errorCode: 'FORBIDDEN', message: 'No.' }, { status: 403, statusText: 'Forbidden' });
+      .flush({ isSuccess: false, statusCode: 403, errorCode: 'FORBIDDEN', message: 'No.' }, { status: 403, statusText: 'Forbidden' });
     expect((await result).error.errorCode).toBe('FORBIDDEN');
   });
 });

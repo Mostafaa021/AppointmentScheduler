@@ -64,7 +64,7 @@ describe('LoginPage (AC-004-15)', () => {
     const req = http.expectOne('/api/v1/auth/login');
     expect(req.request.body).toEqual({ email: 'reception@clinic.test', password: 'Secret123456' });
     req.flush({
-      success: true,
+      isSuccess: true,
       statusCode: 200,
       data: { accessToken: 't', expiresAt: '2026-11-02T10:15:00Z', user: { id: 'u', email: 'e', roles: ['Receptionist'] } },
     });
@@ -81,7 +81,7 @@ describe('LoginPage (AC-004-15)', () => {
       button.click();
       await fixture.whenStable();
 
-      http.expectOne('/api/v1/auth/login').flush({ success: false, statusCode: status, errorCode, message }, { status, statusText: errorCode });
+      http.expectOne('/api/v1/auth/login').flush({ isSuccess: false, statusCode: status, errorCode, message }, { status, statusText: errorCode });
       await fixture.whenStable();
 
       http.expectNone('/api/v1/auth/refresh');

@@ -10,11 +10,21 @@ the Api. The team's house style (used in its other services) is one generic enve
 and one constants class for codes.
 
 ## Decision
-- **One envelope for every body**: `Api/Contracts/ApiResponse<T>` —
-  `success`, `statusCode`, `message?`, `data?`, `errorCode?`, `errors?` (field → messages, 400 only), `traceId?` (errors).
-  Members that don't apply are omitted (attribute-level `WhenWritingNull`, so nulls *inside* `data` still serialise and DTO
-  contracts don't change). `POST /auth/logout` stays **204 with no body**.
-- **Controllers** return `IActionResult` (`OkResponse(...)`, `ApiResponse<T>.Created(...)`) and declare every status they can
+- **One envelope for every body**: `Api/Contracts/ApiResponse<T>`, following the house template.
+  - Template members: `isSuccess`, `statusCode`, `message`, `data?`, `errorDetails?`, `timestamp`.
+  - Template factories: `Success`, `Error`, `NotFound`, `BadRequest`, `Created`, `NoContent`, with the template's default
+    messages (e.g. "Request completed successfully").
+  - Three members kept on top of the template: `errorCode?`, `errors?` (field → messages, 400 only) and `traceId?` (errors).
+    The error pipeline writes them through the `Error(statusCode, errorCode, message, errors, traceId, errorDetails)` overload.
+  - Members that don't apply are omitted (attribute-level `WhenWritingNull`), so nulls *inside* `data` still serialise and DTO
+    contracts don't change.
+  - **`errorDetails`** holds the exception type and message of an unexpected 500, **in Development only**. It is always absent
+    elsewhere, because exception text can carry connection strings, SQL or patient data (`StagingEnvironmentTests` asserts this).
+  - **`timestamp`** is the server's UTC wall-clock time for support. It is not business time, so it is taken from
+    `TimeProvider.System`.
+  - `POST /auth/logout` stays **204 with no body**: an HTTP 204 cannot carry the envelope. `ApiResponse<T>.NoContent()` exists
+    for template parity.
+- **Controllers** return `IActionResult` (`OkResponse(...)` → `ApiResponse<T>.Success`, `ApiResponse<T>.Created(...)`) and declare every status they can
   return with `[ProducesResponseType(typeof(ApiResponse<…>), …)]`; 401 and 500 are declared once on `ApiControllerBase`.
   No `if (!ModelState.IsValid)` in actions: `[ApiController]` short-circuits invalid model state before the action runs and
   `BadRequestResponse.FromModelState` returns the same envelope (400 `BAD_REQUEST`), so the check would be dead code.
@@ -49,5 +59,5 @@ with every new exception type).
 − Not the RFC 7807 standard — generic tooling that understands ProblemDetails won't parse our errors. The envelope repeats the
   HTTP status in the body. Codes are now UPPER_SNAKE: a breaking change for any client that matched the old lowercase values
   (only our Angular app, updated in the same commit).
-− `ApiResponse<T>.Ok(...)` static factories on a generic type trip CA1000; suppressed in that file because the call-site
+− `ApiResponse<T>.Success(...)` and the other static factories on a generic type trip CA1000; suppressed in that file because the call-site
   readability is the point of the type.

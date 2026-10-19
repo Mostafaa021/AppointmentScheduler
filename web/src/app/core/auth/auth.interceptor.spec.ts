@@ -11,7 +11,8 @@ import { AuthService } from './auth.service';
 
 // Real server shape: the envelope, unwrapped by apiResponseInterceptor before AuthService sees it (ADR-0015).
 const response = (token: string): ApiResponse<AuthResponse> => ({
-  success: true,
+  isSuccess: true,
+  timestamp: '2026-11-02T10:00:00Z',
   statusCode: 200,
   data: {
     accessToken: token,
@@ -118,7 +119,7 @@ describe('authInterceptor (spec 004)', () => {
     client.get('/api/v1/appointments/a').subscribe({ error: () => (failed = true) });
 
     http.expectOne('/api/v1/appointments/a').flush({}, unauthorized);
-    http.expectOne('/api/v1/auth/refresh').flush({ success: false, statusCode: 401, errorCode: 'INVALID_REFRESH_TOKEN', message: 'Sign in again.' }, unauthorized);
+    http.expectOne('/api/v1/auth/refresh').flush({ isSuccess: false, statusCode: 401, errorCode: 'INVALID_REFRESH_TOKEN', message: 'Sign in again.' }, unauthorized);
 
     expect(failed).toBe(true);
     expect(auth.user()).toBeNull();
@@ -127,7 +128,7 @@ describe('authInterceptor (spec 004)', () => {
 
   it('non-401 errors pass through to the error snackbar without refresh', () => {
     client.get('/api/v1/appointments/a').subscribe({ error: () => undefined });
-    http.expectOne('/api/v1/appointments/a').flush({ success: false, statusCode: 403, errorCode: 'FORBIDDEN', message: 'Forbidden.' }, { status: 403, statusText: 'Forbidden' });
+    http.expectOne('/api/v1/appointments/a').flush({ isSuccess: false, statusCode: 403, errorCode: 'FORBIDDEN', message: 'Forbidden.' }, { status: 403, statusText: 'Forbidden' });
 
     http.expectNone('/api/v1/auth/refresh');
     expect(snack).toHaveBeenCalledWith('Forbidden.', 'Dismiss', expect.anything());

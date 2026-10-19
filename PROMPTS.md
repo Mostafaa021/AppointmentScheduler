@@ -221,3 +221,17 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   - **Verified live:**
     - the exchange is declared as a durable topic and RabbitMQ shows two connections;
     - with the broker stopped, the API logs the degraded-mode warning and still serves login and health.
+
+### P-18 · ApiResponse in the house template shape
+> "Can we make the API response like this template [IsSuccess, StatusCode, Message, Data, ErrorDetails, Timestamp; Success /
+> Error / NotFound / BadRequest / Created / NoContent factories]?"
+
+- **Accepted:** the template's members, factories and default messages. `success` → `isSuccess`; `timestamp` is added to every body.
+- **Changed (user choices):**
+  - `errorCode`, `errors` and `traceId` are kept on top of the template, because the Angular app branches on `errorCode`.
+  - `errorDetails` is written for unexpected 500s **in Development only**. Exception text can leak connection strings or
+    patient data, so a Staging test proves nothing leaks there.
+- **Debugging:** the "unknown e-mail and wrong password answer identically" test compared whole bodies, and the new `timestamp`
+  made them differ. It now ignores per-request fields (`traceId`, `timestamp`) only.
+- **Kept:** logout answers a real 204 without a body. `NoContent()` exists for template parity, since a 204 response can't carry
+  the envelope.

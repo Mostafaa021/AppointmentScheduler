@@ -34,7 +34,7 @@ public class ValidationAndHeadersTests(ApiFactory api) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.JsonAsync();
-        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.False(body.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(400, body.GetProperty("statusCode").GetInt32());
         Assert.Equal(ErrorCodes.ValidationFailed, body.GetProperty("errorCode").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("message").GetString()));

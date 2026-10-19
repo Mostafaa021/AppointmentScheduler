@@ -11,8 +11,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 - Global exception handler: unexpected errors return a generic 500 `internal_error` and are logged with the trace id.
 ### Changed
 - API moved from Minimal APIs to controllers (routes, status codes and error codes unchanged).
-- **Breaking:** every response body is now an `ApiResponse<T>` envelope (`success`, `statusCode`, `message`, `data` |
-  `errorCode`, `errors`, `traceId`) instead of bare DTOs + RFC 7807 ProblemDetails; error codes are UPPER_SNAKE constants in
+- **Breaking:** every response body is now an `ApiResponse<T>` envelope (`isSuccess`, `statusCode`, `message`, `data`,
+  `errorDetails` (Development only), `timestamp` + `errorCode`, `errors`, `traceId`; template factories `Success` / `Error` /
+  `NotFound` / `BadRequest` / `Created` / `NoContent`) instead of bare DTOs + RFC 7807 ProblemDetails; error codes are UPPER_SNAKE constants in
   `ErrorCodes` (`doctor_conflict` → `DOCTOR_CONFLICT`). Unknown routes / wrong methods answer `ROUTE_NOT_FOUND` /
   `METHOD_NOT_ALLOWED`. Controllers declare every status with `[ProducesResponseType]`. Exceptions carry their own status
   and a log-only `LogDetail` (ADR-0015).

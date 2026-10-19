@@ -9,7 +9,8 @@ namespace AppointmentScheduler.Api.Errors;
 /// is logged and returned as a generic 500 that never exposes the exception message or stack trace. Client aborts never
 /// reach this handler: ExceptionHandlerMiddleware already answers them with 499 and a Debug log.
 /// </summary>
-internal sealed partial class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
+internal sealed partial class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHostEnvironment environment)
+    : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext http, Exception exception, CancellationToken ct)
     {
@@ -17,7 +18,7 @@ internal sealed partial class GlobalExceptionHandler(ILogger<GlobalExceptionHand
         {
             case SchedulerException e:
                 LogRejected(logger, http.Request.Method, http.Request.Path, e.StatusCode, e.ErrorCode, e.LogDetail);
-                await ApiErrorWriter.WriteAsync(http, e.StatusCode, e.ErrorCode, e.Message, (e as ValidationException)?.Errors, ct);
+                await ApiErrorWriter.WriteAsync(http, e.StatusCode, e.ErrorCode, e.Message, (e as ValidationException)?.Errors, ct: ct);
                 break;
 
             case BadHttpRequestException e:
@@ -25,10 +26,12 @@ internal sealed partial class GlobalExceptionHandler(ILogger<GlobalExceptionHand
                 break;
 
             default:
-                // Unexpected: log everything for operators, return nothing internal to the client.
+                // Unexpected: log everything for operators. Clients get nothing internal, except errorDetails on a developer's
+                // own machine (Development only; exception text can carry connection strings, SQL or patient data).
                 LogUnhandled(logger, exception, http.Request.Method, http.Request.Path, http.TraceIdentifier);
+                var details = environment.IsDevelopment() ? $"{exception.GetType().Name}: {exception.Message}" : null;
                 await ApiErrorWriter.WriteAsync(http, StatusCodes.Status500InternalServerError, ErrorCodes.InternalError,
-                    "An unexpected error occurred. Quote the traceId when reporting it.", ct: ct);
+                    "An unexpected error occurred. Quote the traceId when reporting it.", errorDetails: details, ct: ct);
                 break;
         }
 

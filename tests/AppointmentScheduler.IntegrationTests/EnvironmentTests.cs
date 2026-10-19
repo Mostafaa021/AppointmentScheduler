@@ -61,6 +61,20 @@ public class StagingEnvironmentTests(StagingFactory api) : IClassFixture<Staging
     }
 
     [Fact]
+    public async Task Unexpected_exception_leaks_no_details_outside_Development()
+    {
+        var response = await api.CreateClient().GetAsync("/test/errors/unexpected");
+
+        Assert.Equal(System.Net.HttpStatusCode.InternalServerError, response.StatusCode);
+        var raw = await response.Content.ReadAsStringAsync();
+        var body = await response.JsonAsync();
+        Assert.Equal(ErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
+        Assert.False(body.TryGetProperty("errorDetails", out _));
+        Assert.DoesNotContain("hunter2", raw);
+        Assert.DoesNotContain("InvalidOperationException", raw);
+    }
+
+    [Fact]
     public async Task AC_004_23_Hsts_outside_Development_over_https()
     {
         var https = api.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://api.clinic.test") });

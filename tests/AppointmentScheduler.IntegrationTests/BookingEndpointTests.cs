@@ -37,12 +37,24 @@ public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
 
         var envelope = await (await _client.BookAsync(d[0], p[0], At(11))).JsonAsync();
 
-        Assert.True(envelope.GetProperty("success").GetBoolean());
+        Assert.True(envelope.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(201, envelope.GetProperty("statusCode").GetInt32());
         Assert.Equal("Appointment booked.", envelope.GetProperty("message").GetString());
         Assert.Equal(JsonValueKind.Object, envelope.GetProperty("data").ValueKind);
         Assert.False(envelope.TryGetProperty("errorCode", out _)); // unused envelope members are omitted
+        Assert.False(envelope.TryGetProperty("errorDetails", out _));
         Assert.False(envelope.TryGetProperty("traceId", out _));
+        var timestamp = envelope.GetProperty("timestamp").GetDateTimeOffset();
+        Assert.Equal(TimeSpan.Zero, timestamp.Offset);
+        Assert.True(Math.Abs((DateTimeOffset.UtcNow - timestamp).TotalMinutes) < 5, $"timestamp {timestamp} is not current");
+    }
+
+    [Fact]
+    public async Task Read_without_a_message_uses_the_default_success_message()
+    {
+        var envelope = await (await _client.GetAsync("/api/v1/doctors")).JsonAsync();
+
+        Assert.Equal("Request completed successfully", envelope.GetProperty("message").GetString());
     }
 
     [Fact]

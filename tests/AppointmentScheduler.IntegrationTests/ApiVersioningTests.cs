@@ -29,7 +29,7 @@ public class ApiVersioningTests(ApiFactory api) : IAsyncLifetime
         // 404 is Asp.Versioning's answer for URL-segment versions (that path does not exist); the code says why.
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var body = await response.JsonAsync();
-        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.False(body.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(ErrorCodes.UnsupportedApiVersion, body.GetProperty("errorCode").GetString());
         Assert.Contains("1.0", body.GetProperty("message").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));

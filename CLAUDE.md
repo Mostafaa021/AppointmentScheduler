@@ -51,7 +51,8 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 ## Conventions
 - Store time as UTC `DateTimeOffset`/`timestamptz` only. Clinic-local conversion happens server-side via the clinic's IANA zone.
 - Get "now" from injected `TimeProvider` — never `DateTime.Now`/`UtcNow`.
-- Responses (ADR-0015): every action returns `IActionResult` wrapping its DTO in `ApiResponse<T>` (`OkResponse(...)`,
+- Responses (ADR-0015): every action returns `IActionResult` wrapping its DTO in `ApiResponse<T>` (`OkResponse(...)` =
+  `ApiResponse<T>.Success`,
   `ApiResponse<T>.Created(...)`), and declares **every** status it can return with
   `[ProducesResponseType(typeof(ApiResponse<…>), StatusCodes.StatusNNN…)]` (401/500 come from `ApiControllerBase`). Explicit
   `[FromBody]`/`[FromRoute]`/`[FromQuery]`, `CancellationToken cancellationToken = default`. No `ModelState.IsValid` checks:

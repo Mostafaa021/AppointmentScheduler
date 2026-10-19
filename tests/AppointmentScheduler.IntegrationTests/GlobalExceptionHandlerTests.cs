@@ -37,22 +37,23 @@ public sealed class ErrorTestController : ControllerBase
 public class GlobalExceptionHandlerTests(ApiFactory api)
 {
     [Fact]
-    public async Task Unexpected_exception_returns_generic_500_without_internals()
+    public async Task Unexpected_exception_returns_generic_500_with_error_details_in_development_only()
     {
+        // ApiFactory runs in Development; StagingEnvironmentTests asserts the same request leaks nothing outside it.
         var response = await api.CreateClient().GetAsync("/test/errors/unexpected");
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
         var raw = await response.Content.ReadAsStringAsync();
         var body = await response.JsonAsync();
-        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.False(body.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(500, body.GetProperty("statusCode").GetInt32());
         Assert.Equal(ErrorCodes.InternalError, body.GetProperty("errorCode").GetString());
+        Assert.DoesNotContain("hunter2", body.GetProperty("message").GetString()); // the message itself stays generic
+        Assert.StartsWith("InvalidOperationException: ", body.GetProperty("errorDetails").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
         Assert.False(body.TryGetProperty("data", out _));
-        Assert.DoesNotContain("hunter2", raw);
-        Assert.DoesNotContain("InvalidOperationException", raw);
-        Assert.DoesNotContain(" at ", raw); // no stack trace
+        Assert.DoesNotContain(" at ", raw); // never a stack trace
     }
 
     [Fact]
@@ -62,7 +63,7 @@ public class GlobalExceptionHandlerTests(ApiFactory api)
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var body = await response.JsonAsync();
-        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.False(body.GetProperty("isSuccess").GetBoolean());
         Assert.Equal(ErrorCodes.RouteNotFound, body.GetProperty("errorCode").GetString());
         Assert.False(string.IsNullOrEmpty(body.GetProperty("traceId").GetString()));
     }
