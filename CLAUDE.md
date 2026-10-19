@@ -6,15 +6,14 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 ## Stack
 - Backend: .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + Npgsql, Clean Architecture (`src/`)
 - Frontend: Angular 22 (standalone, signals, Angular Material) in `web/`
-- Infra (Docker): PostgreSQL 17, RabbitMQ 4 (Wolverine), Mailpit, Jaeger
+- Infra (Docker): PostgreSQL 17, RabbitMQ 4 (Wolverine, M5), Jaeger. Background jobs: Hangfire inside the Api process
 - Tests: xUnit, Testcontainers, NetArchTest, Vitest, Playwright, k6 (`perf/k6`)
 
 ## Commands
 | Task | Command |
 |---|---|
-| Start infra | `docker compose up -d postgres rabbitmq mailpit jaeger` |
+| Start infra | `docker compose up -d postgres rabbitmq jaeger` |
 | Run API (http://localhost:5080, docs at `/scalar`) | `dotnet run --project src/AppointmentScheduler.Api` |
-| Run worker | `dotnet run --project src/AppointmentScheduler.Worker` |
 | All .NET tests (needs Docker) | `dotnet test` |
 | Unit tests only | `dotnet test tests/AppointmentScheduler.UnitTests` |
 | Add migration | `dotnet ef migrations add <Name> -p src/AppointmentScheduler.Infrastructure -s src/AppointmentScheduler.Api -o Persistence/Migrations` |
@@ -23,7 +22,7 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 | Load test | `docker compose --profile perf run --rm k6 run /scripts/<script>.js` |
 
 ## Architecture rules (enforced by `tests/AppointmentScheduler.ArchitectureTests`)
-- Dependency direction: **Domain ← Application ← Infrastructure ← Api / Worker**. Domain references nothing.
+- Dependency direction: **Domain ← Application ← Infrastructure ← Api** (the Api is the only host; background jobs and message handlers run in it). Domain references nothing.
 - Feature folders in every layer: `Appointments/`, `Patients/`, `Doctors/`, `Clinics/`, `Auth/`. New feature = new folder + spec.
 - Endpoints are thin: bind → call an Application service → map result. No business logic or EF queries in `Api`.
 - Business rules live in Domain (`Appointment`, `DaySchedule`); the DB exclusion constraint is the final guard (see SPEC.md).

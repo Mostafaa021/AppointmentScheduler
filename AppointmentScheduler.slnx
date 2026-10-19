@@ -4,7 +4,6 @@
     <Project Path="src/AppointmentScheduler.Application/AppointmentScheduler.Application.csproj" />
     <Project Path="src/AppointmentScheduler.Domain/AppointmentScheduler.Domain.csproj" />
     <Project Path="src/AppointmentScheduler.Infrastructure/AppointmentScheduler.Infrastructure.csproj" />
-    <Project Path="src/AppointmentScheduler.Worker/AppointmentScheduler.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AppointmentScheduler.ArchitectureTests/AppointmentScheduler.ArchitectureTests.csproj" />

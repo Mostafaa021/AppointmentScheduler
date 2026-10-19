@@ -30,7 +30,7 @@ On first start (Development) the API applies EF Core migrations and seeds fictio
 4 doctors, 12 patients (`MRN-0001`…`MRN-0012`) and a few appointments **today and tomorrow** so the schedule isn't empty.
 To reset: `docker compose down -v` and start again.
 
-> Other infrastructure in `docker-compose.yml` (RabbitMQ, Mailpit, Jaeger) is for later milestones and not needed for the
+> Other infrastructure in `docker-compose.yml` (RabbitMQ, Jaeger) is for later milestones and not needed for the
 > core app. Copy `.env.example` to `.env` to change ports/passwords (default Postgres port 5432).
 
 ## Using it
@@ -61,8 +61,7 @@ cd web && npm test -- --watch=false
 src/AppointmentScheduler.Domain          rules: Appointment, DaySchedule (no dependencies)
 src/AppointmentScheduler.Application     use cases: AppointmentService, AvailabilityService, LookupQueries
 src/AppointmentScheduler.Infrastructure  EF Core + Npgsql, migrations (exclusion constraints), seed
-src/AppointmentScheduler.Api             minimal API endpoints, ProblemDetails, OpenAPI
-src/AppointmentScheduler.Worker          message handlers (planned, spec 008)
+src/AppointmentScheduler.Api             controllers, global exception handler, auth, Hangfire host, OpenAPI
 tests/                                   Unit, Architecture, Integration
 web/                                     Angular app (features/schedule)
 docs/                                    specs, ADRs, architecture, SDLC, backlog

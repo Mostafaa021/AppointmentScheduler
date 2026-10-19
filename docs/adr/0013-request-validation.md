@@ -22,7 +22,7 @@ Option 1, package **`FluentValidation`** (12.x) in Application only.
   not justify a package; Development's `ValidateOnBuild` fails startup if a service asks for an unregistered validator.
 - **Validation runs inside the Application service**, as the first statement of each use-case method:
   `validator.ValidateOrThrow(request)` (extension in `Application/Common/ValidationExtensions.cs`). Not an Api endpoint
-  filter, because (a) every caller of the service (endpoints now, the Worker/tests later) gets validation, (b) the
+  filter, because (a) every caller of the service (controllers now, background jobs/tests later) gets validation, (b) the
   "validate before lookups" order sits in one readable method, and (c) endpoints stay bind → service → map (ADR-0001).
   Precedence still holds: authentication and authorization middleware run before the endpoint is invoked, so 401/403 come
   first by construction.

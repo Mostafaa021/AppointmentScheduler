@@ -49,7 +49,7 @@ Opened 2026-10-19 by scrum-master. Next: product-owner re-confirms DoR → archi
 ## Sprint 5 — M5 Messaging
 | ID | Story | Spec | Status |
 |---|---|---|---|
-| S-50 | Domain events → Wolverine outbox → RabbitMQ → Worker | 008 | Refined |
+| S-50 | Domain events → Wolverine outbox → RabbitMQ → in-process handlers | 008 | Refined |
 | S-51 | E-mails + reminders + SMTP resilience pipeline + DLQ | 008 | Refined |
 
 ## Sprint 6 — M6 Observability & ops

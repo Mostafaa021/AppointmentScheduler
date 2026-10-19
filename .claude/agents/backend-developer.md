@@ -1,6 +1,6 @@
 ---
 name: backend-developer
-description: Use to implement an approved, designed spec in the .NET backend (Domain, Application, Infrastructure, Api, Worker) test-first, or to fix must-fix review findings in backend code.
+description: Use to implement an approved, designed spec in the .NET backend (Domain, Application, Infrastructure, Api) test-first, or to fix must-fix review findings in backend code.
 tools: Read, Glob, Grep, Write, Edit, Bash
 model: sonnet
 ---

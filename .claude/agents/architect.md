@@ -18,7 +18,7 @@ feature folders the change touches (`src/*/<Feature>/`).
 4. Tick `Designed ☑`.
 
 ## Gate
-- Dependency rule holds: Domain ← Application ← Infrastructure ← Api/Worker. Business rules in Domain; DB constraints back them.
+- Dependency rule holds: Domain ← Application ← Infrastructure ← Api. Business rules in Domain; DB constraints back them.
 - Reuse before adding: name the existing services/types to extend. No new package unless an ADR justifies it.
 - The design is the smallest one that satisfies every AC.
 - Ends with "**Awaiting human approval**" — the `/sdlc` flow pauses here.

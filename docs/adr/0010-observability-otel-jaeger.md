@@ -4,7 +4,7 @@
 
 ## Decision
 - **Traces:** OpenTelemetry SDK with ASP.NET Core, HttpClient, Npgsql and Wolverine instrumentation, exported via OTLP to
-  **Jaeger** (all-in-one, UI on :16686). W3C trace context flows API → RabbitMQ → Worker.
+  **Jaeger** (all-in-one, UI on :16686). W3C trace context flows API → RabbitMQ → in-process Wolverine handler / Hangfire job.
 - **Logs:** Serilog, compact JSON to console, enriched with `TraceId`, `SpanId`, `UserId`, `CorrelationId`. No PII (ids only).
 - **Metrics:** OTel meters (`scheduler.appointments.booked`, `scheduler.appointments.conflicts`, `scheduler.idempotency.replayed`,
   `scheduler.rate_limit.rejected`) + runtime/ASP.NET metrics, exposed at `/metrics` (Prometheus format) for any scraper.

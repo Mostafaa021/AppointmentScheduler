@@ -6,7 +6,7 @@ description: Run every quality check for the Appointment Scheduler (build, unit,
 
 Run in order, stop at the first failure and report it with output:
 
-1. Infra up: `docker compose up -d postgres rabbitmq mailpit jaeger` (Docker Desktop must be running).
+1. Infra up: `docker compose up -d postgres rabbitmq jaeger` (Docker Desktop must be running).
 2. Backend: `dotnet build -warnaserror` then `dotnet test` (unit + architecture + Testcontainers integration).
 3. Frontend: `cd web && npm ci` (only if `node_modules` missing) → `npm test -- --watch=false` → `npm run build`.
 4. Full stack (M6+): `docker compose up -d --build` → `docker compose ps` all healthy → `curl -fsS http://localhost:8080/health/ready`.

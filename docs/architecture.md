@@ -7,9 +7,9 @@ flowchart LR
   W -->|/api/v1 JSON, JWT| A[api<br/>ASP.NET Core]
   A --> P[(PostgreSQL<br/>appointments, identity,<br/>idempotency, outbox)]
   A -->|outbox relay| R[[RabbitMQ]]
-  R --> K[worker<br/>Wolverine handlers]
+  R -->|Wolverine handlers, in-process| A
   K --> P
-  K -->|SMTP, Polly| M[Mailpit]
+  A -->|Hangfire jobs: e-mail via SMTP + Polly, reminders, cleanup| M[SMTP provider<br/>logging sender in Development]
   A -. OTLP .-> J[Jaeger]
   K -. OTLP .-> J
 ```
@@ -20,7 +20,6 @@ flowchart BT
   D[Domain<br/>entities, rules, events] --> AP[Application<br/>services, DTOs, ports]
   AP --> I[Infrastructure<br/>EF Core, Identity, Wolverine, SMTP]
   I --> API[Api host]
-  I --> WK[Worker host]
 ```
 Arrows point from a project to the projects that depend on it. Enforced by `ArchitectureTests`.
 Identity types live in `Microsoft.AspNetCore.Identity`, so Identity stays in Infrastructure; Application owns the auth
@@ -94,8 +93,8 @@ sequenceDiagram
   participant API
   participant DB as PostgreSQL (outbox)
   participant MQ as RabbitMQ
-  participant WK as Worker
-  participant SMTP as Mailpit
+  participant WK as Api background (Wolverine handler / Hangfire job)
+  participant SMTP as SMTP (logging sender in dev)
   API->>DB: tx: INSERT appointment + outbox message
   DB-->>API: commit
   DB->>MQ: relay AppointmentBooked
