@@ -20,13 +20,15 @@ Statuses: `Todo → Refined → Designed → Built → Tested → Reviewed → R
 | S-14 | Angular schedule page, book & reschedule dialogs | 001–003 | Done |
 | S-15 | README, SPEC.md, PROMPTS.md for submission | — | Done |
 
-## Sprint 2 — M2 Security
+## Sprint 2 — M2 Security (active)
+Opened 2026-10-19 by scrum-master. Next: product-owner re-confirms DoR → architect → human approval.
+
 | ID | Story | Spec | Status |
 |---|---|---|---|
-| S-20 | Identity + JWT + refresh rotation | 004 | Refined |
-| S-21 | Role policies + Doctor resource check (BR-7) | 004, 003 | Refined |
-| S-22 | Angular login, guards, auth interceptor | 004 | Refined |
-| S-23 | FluentValidation, security headers, audit log | 000 | Todo |
+| S-20 | Identity + JWT + refresh rotation, user admin, demo users (AC-004-1..7, 10..14, 26) | 004 | Refined |
+| S-21 | Role policies + Doctor resource check (BR-7) (AC-004-8, 9; AC-003-9) | 004, 003 | Refined |
+| S-22 | Angular login, guards, auth interceptor (AC-004-15..21) | 004 | Refined |
+| S-23 | FluentValidation, security headers, audit log (AC-004-22..25) | 004, 000 | Refined |
 
 ## Sprint 3 — M3 Reliability
 | ID | Story | Spec | Status |

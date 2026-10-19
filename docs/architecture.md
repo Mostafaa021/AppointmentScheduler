@@ -23,6 +23,34 @@ flowchart BT
   I --> WK[Worker host]
 ```
 Arrows point from a project to the projects that depend on it. Enforced by `ArchitectureTests`.
+Identity types live in `Microsoft.AspNetCore.Identity`, so Identity stays in Infrastructure; Application owns the auth
+contracts (`IAuthService`, `IUserAdminService`, `ICurrentUser`, `AuditLog`) — spec 004.
+
+## API request pipeline (M2)
+`SecurityHeaders` → `ExceptionHandler` (domain exceptions → ProblemDetails `code`) → `StatusCodePages` → `Hsts` (non-Development)
+→ `Cors` → `Authentication` (JWT, 401 `unauthorized`) → `Authorization` (role policies, 403 `forbidden`) → endpoint
+(bind → Application service: validate → lookups → BR-7 check → rules → one `SaveChanges` incl. audit row).
+
+## Sign-in, refresh rotation and reuse detection (spec 004, ADR-0005)
+```mermaid
+sequenceDiagram
+  participant B as Browser (Angular, token in memory)
+  participant API
+  participant DB as PostgreSQL (identity.*, audit_records)
+  B->>API: POST /auth/login {email, password}
+  API->>DB: reserve attempt (atomic UPDATE, not locked, count < 5)
+  API->>DB: verify hash → reset count, INSERT refresh token (new family), audit login_succeeded
+  API-->>B: 200 {accessToken 15 min, user} + Set-Cookie refresh_token (HttpOnly, Secure, Strict, Path=/api/v1/auth)
+  B->>API: GET /appointments… Authorization: Bearer
+  API-->>B: 401 unauthorized (token expired)
+  B->>API: POST /auth/refresh (cookie) — one call for all pending 401s
+  API->>DB: claim token (UPDATE … WHERE not revoked/replaced) + INSERT successor (same family)
+  API-->>B: 200 new accessToken + new cookie
+  B->>API: retry original request once
+  Note over B,API: Later, the old (rotated) cookie is presented again, e.g. by a thief
+  API->>DB: token already replaced → revoke whole family, audit refresh_token_reused
+  API-->>B: 401 refresh_token_reused to the caller (newest token now → 401 invalid_refresh_token)
+```
 
 ## Booking a slot (happy path + race)
 ```mermaid

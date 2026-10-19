@@ -21,6 +21,7 @@ View a doctor's appointments for a day, cancel one, or move it to another free s
 - **AC-003-8** (M3) Cancel/reschedule accept `If-Match: "<etag>"`; stale ETag → 412 `precondition_failed`; concurrent updates
   never silently overwrite each other (xmin token → 409 `concurrency_conflict`).
 - **AC-003-9** (M2) A user in role Doctor can read only their own schedule (403 otherwise) and cannot cancel/reschedule.
+  Detailed in spec 004: AC-004-9 (resource check), AC-004-8 (403 `forbidden` on cancel/reschedule), AC-004-17 (Doctor UI).
 
 ## API contract
 | Method | Route | Request | Responses |
