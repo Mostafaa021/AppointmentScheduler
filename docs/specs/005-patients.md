@@ -14,8 +14,8 @@ Receptionists find patients quickly when booking and maintain patient records.
 - **AC-005-2** `POST /patients` creates a patient; MRN generated server-side (`MRN-000123`); full name 2–200 chars, DOB in the past,
   phone/email validated → 201.
 - **AC-005-3** `PUT /patients/{id}` updates contact details → 200; unknown → 404.
-- **AC-005-4** (BR-6) `POST /patients/{id}/deactivate` with future Scheduled appointments → 422 `patient_has_future_appointments`;
-  otherwise 200 and the patient can no longer be booked (422 `patient_inactive`).
+- **AC-005-4** (BR-6) `POST /patients/{id}/deactivate` with future Scheduled appointments → 422 `PATIENT_HAS_FUTURE_APPOINTMENTS`;
+  otherwise 200 and the patient can no longer be booked (422 `PATIENT_INACTIVE`).
 
 ## Data changes
 `patients(id, mrn unique, full_name, date_of_birth, phone, email, is_active)`; trigram index on `full_name` for search (M4).

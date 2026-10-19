@@ -15,8 +15,8 @@ Convert a request into an unambiguous, testable spec so developers and QA never 
 ## Produce
 1. A new `docs/specs/NNN-<kebab-name>.md` copied from `docs/specs/_template.md` (next free number), or an edit to an existing spec.
    - Goal, user story, out of scope.
-   - Acceptance criteria `AC-NNN-x` in Given/When/Then — include error cases with exact status codes and `code` values
-     (`404 doctor_not_found`, `409 doctor_conflict`, `422 …`).
+   - Acceptance criteria `AC-NNN-x` in Given/When/Then — include error cases with exact status codes and `errorCode` values (UPPER_SNAKE, `ErrorCodes` constants)
+     (`404 DOCTOR_NOT_FOUND`, `409 DOCTOR_CONFLICT`, `422 …`).
    - List touched business rules (BR-x) and NFRs (NFR-x).
 2. A backlog row in `docs/backlog.md` (status `Refined`).
 3. Tick `Refined ☑` in the spec Status row.

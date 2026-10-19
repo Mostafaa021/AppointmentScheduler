@@ -25,17 +25,24 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 - Dependency direction: **Domain ← Application ← Infrastructure ← Api** (the Api is the only host; background jobs and message handlers run in it). Domain references nothing.
 - Feature folders in every layer: `Appointments/`, `Patients/`, `Doctors/`, `Clinics/`, `Auth/`. New feature = new folder + spec.
 - Controllers (`Api/Controllers`, inherit `ApiControllerBase` → authenticated by default) are thin: bind → call an Application
-  service → return. No business logic or EF queries in `Api`.
+  service → return. No business logic or EF queries in `Api`. Template in `.claude/skills/new-feature/SKILL.md` step 6.
 - Background jobs: Hangfire job classes in Infrastructure, registered in `BackgroundJobs/BackgroundJobsSetup.cs` (ADR-0014).
 - Business rules live in Domain (`Appointment`, `DaySchedule`); the DB exclusion constraint is the final guard (see SPEC.md).
 
 ## Conventions
 - Store time as UTC `DateTimeOffset`/`timestamptz` only. Clinic-local conversion happens server-side via the clinic's IANA zone.
 - Get "now" from injected `TimeProvider` — never `DateTime.Now`/`UtcNow`.
-- Errors: throw domain exceptions (`ValidationException` 400, `UnauthorizedException` 401, `ForbiddenException` 403,
-  `NotFoundException` 404, `ConflictException` 409, `BusinessRuleException` 422, `LockedException` 423).
-  `GlobalExceptionHandler` maps them to RFC 7807 ProblemDetails with a stable `code`; anything else becomes a logged, generic
-  500 `internal_error`. Never catch-and-return errors in controllers.
+- Responses (ADR-0015): every action returns `IActionResult` wrapping its DTO in `ApiResponse<T>` (`OkResponse(...)`,
+  `ApiResponse<T>.Created(...)`), and declares **every** status it can return with
+  `[ProducesResponseType(typeof(ApiResponse<…>), StatusCodes.StatusNNN…)]` (401/500 come from `ApiControllerBase`). Explicit
+  `[FromBody]`/`[FromRoute]`/`[FromQuery]`, `CancellationToken cancellationToken = default`. No `ModelState.IsValid` checks:
+  `[ApiController]` already answers 400 `BAD_REQUEST` through `BadRequestResponse`.
+- Errors: throw a `SchedulerException` subclass — `ValidationException` 400, `UnauthorizedException` 401,
+  `ForbiddenException` 403, `NotFoundException` 404, `ConflictException` 409, `BusinessRuleException` 422, `LockedException`
+  423 — with an `ErrorCodes.X` constant (never a string literal; new codes go in `Domain/Common/ErrorCodes.cs` under their
+  feature section, UPPER_SNAKE) and a message safe to show users. Put diagnostics in `LogDetail` (ids only, never PII).
+  `GlobalExceptionHandler` turns them into `ApiResponse` errors; anything else becomes a logged, generic 500
+  `INTERNAL_ERROR`. Never catch-and-return errors in controllers.
 - Every mutating endpoint requires an `Idempotency-Key` header (M3+).
 - Never log patient names, phone numbers or emails — log ids only.
 - Fictional data only (seed in `Infrastructure/Persistence/Seed`).

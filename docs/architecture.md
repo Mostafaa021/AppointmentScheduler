@@ -26,8 +26,8 @@ Identity types live in `Microsoft.AspNetCore.Identity`, so Identity stays in Inf
 contracts (`IAuthService`, `IUserAdminService`, `ICurrentUser`, `AuditLog`) — spec 004.
 
 ## API request pipeline (M2)
-`SecurityHeaders` → `ExceptionHandler` (domain exceptions → ProblemDetails `code`) → `StatusCodePages` → `Hsts` (non-Development)
-→ `Cors` → `Authentication` (JWT, 401 `unauthorized`) → `Authorization` (role policies, 403 `forbidden`) → endpoint
+`SecurityHeaders` → `ExceptionHandler` (`SchedulerException` → `ApiResponse` error with `errorCode`, ADR-0015) → `StatusCodePages` (bodiless 404/405 → `ApiResponse`) → `Hsts` (non-Development)
+→ `Cors` → `Authentication` (JWT, 401 `UNAUTHORIZED`) → `Authorization` (role policies, 403 `FORBIDDEN`) → endpoint
 (bind → Application service: validate → lookups → BR-7 check → rules → one `SaveChanges` incl. audit row).
 
 ## Sign-in, refresh rotation and reuse detection (spec 004, ADR-0005)
@@ -41,14 +41,14 @@ sequenceDiagram
   API->>DB: verify hash → reset count, INSERT refresh token (new family), audit login_succeeded
   API-->>B: 200 {accessToken 15 min, user} + Set-Cookie refresh_token (HttpOnly, Secure, Strict, Path=/api/v1/auth)
   B->>API: GET /appointments… Authorization: Bearer
-  API-->>B: 401 unauthorized (token expired)
+  API-->>B: 401 UNAUTHORIZED (token expired)
   B->>API: POST /auth/refresh (cookie) — one call for all pending 401s
   API->>DB: claim token (UPDATE … WHERE not revoked/replaced) + INSERT successor (same family)
   API-->>B: 200 new accessToken + new cookie
   B->>API: retry original request once
   Note over B,API: Later, the old (rotated) cookie is presented again, e.g. by a thief
-  API->>DB: token already replaced → revoke whole family, audit refresh_token_reused
-  API-->>B: 401 refresh_token_reused to the caller (newest token now → 401 invalid_refresh_token)
+  API->>DB: token already replaced → revoke whole family, audit REFRESH_TOKEN_REUSED
+  API-->>B: 401 REFRESH_TOKEN_REUSED to the caller (newest token now → 401 INVALID_REFRESH_TOKEN)
 ```
 
 ## Booking a slot (happy path + race)
@@ -66,7 +66,7 @@ sequenceDiagram
   API-->>R1: 201 Created
   API->>DB: INSERT B
   DB-->>API: 23P01 exclusion violation
-  API-->>R2: 409 doctor_conflict
+  API-->>R2: 409 DOCTOR_CONFLICT
 ```
 
 ## Idempotent retry

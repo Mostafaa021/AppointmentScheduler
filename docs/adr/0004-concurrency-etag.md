@@ -8,9 +8,9 @@ Two kinds of races: (a) two bookings for the same slot; (b) two users modifying 
 ## Decision
 - (a) is handled by the exclusion constraint (ADR-0002) → 409.
 - (b) uses PostgreSQL's system column `xmin` mapped as an EF Core concurrency token (no extra column). A stale update raises
-  `DbUpdateConcurrencyException` → 409 `concurrency_conflict`.
+  `DbUpdateConcurrencyException` → 409 `CONCURRENCY_CONFLICT`.
 - From M3, `GET /appointments/{id}` returns `ETag: "<xmin>"`; cancel/reschedule accept `If-Match`. A mismatch is detected before
-  the update → 412 `precondition_failed`. Clients without `If-Match` still get xmin protection.
+  the update → 412 `PRECONDITION_FAILED`. Clients without `If-Match` still get xmin protection.
 
 ## Consequences
 + No lost updates, no locks held across requests, standard HTTP semantics.

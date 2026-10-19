@@ -16,7 +16,14 @@ As a <role>, I want <capability>, so that <benefit>.
 - **AC-NNN-2** …
 
 ## API contract
-| Method | Route | Request | Responses |
+Bodies are `ApiResponse<T>` (ADR-0015). List every status per route — each becomes a `[ProducesResponseType]` — with the
+`errorCode`s (UPPER_SNAKE; new ones are added to `Domain/Common/ErrorCodes.cs`).
+
+| Method | Route | Request | Responses (status → `data` type or `errorCode`s) |
+|---|---|---|---|
+
+New error codes:
+| Code | Status | Exception | Meaning |
 |---|---|---|---|
 
 ## Data changes

@@ -16,7 +16,8 @@ registrations.
 - Mutating endpoints in an idempotent + `writes` rate-limited group; login in `auth` policy — API4.
 - No secrets in code/config committed; new settings documented in `.env.example`.
 - No PII (names, phone, email, DOB) in logs, traces, exception messages or metrics labels.
-- Error responses are ProblemDetails without stack traces; same message for unknown user vs wrong password.
+- Error responses are `ApiResponse` errors without stack traces or exception text; same message for unknown user vs wrong
+  password. Exception `Message`s are user-safe; `LogDetail` holds ids only (no names, e-mails, phones, tokens).
 - SQL only through EF parameters; no string-built SQL except reviewed migrations.
 - Tokens: lifetime, rotation, cookie flags unchanged or improved.
 

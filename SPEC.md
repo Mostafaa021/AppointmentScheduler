@@ -36,8 +36,20 @@ appointments  (id uuid PK (v7), doctor_id FK, patient_id FK,
 ```
 Cancel is a soft status change: history is kept and the `WHERE status = 'Scheduled'` makes the slot free again.
 
-## 3. Main APIs (`/api/v1`, JSON, errors are RFC 7807 ProblemDetails with a stable `code`)
+## 3. Main APIs (`/api/v1`, JSON, every body is an `ApiResponse<T>` envelope)
 ASP.NET Core **controllers** (`Api/Controllers`), authenticated by default with a JWT bearer token (M2, [spec 004](docs/specs/004-auth.md)).
+Each action declares every status it can return with `[ProducesResponseType]`, so `/scalar` shows the full contract.
+
+Response envelope ([ADR-0015](docs/adr/0015-api-response-envelope.md)); members that don't apply are omitted:
+```jsonc
+// 201 POST /appointments
+{ "success": true, "statusCode": 201, "message": "Appointment booked.", "data": { "id": "…", "localStart": "10:00", … } }
+// 409
+{ "success": false, "statusCode": 409, "errorCode": "DOCTOR_CONFLICT",
+  "message": "The doctor already has an appointment at this time.", "traceId": "00-…" }
+// 400 adds "errors": { "reason": ["…"] }
+```
+`POST /auth/logout` is the one exception: **204** with no body.
 
 | Method | Route | Notes |
 |---|---|---|
@@ -52,16 +64,19 @@ ASP.NET Core **controllers** (`Api/Controllers`), authenticated by default with 
 | POST | `/appointments/{id}/cancel` | `{reason?}` → 200 |
 | POST | `/appointments/{id}/reschedule` | `{startUtc}` → 200 |
 
-| Status | `code` |
+| Status | `errorCode` (constants in `Domain/Common/ErrorCodes.cs`) |
 |---|---|
-| 400 | `validation_failed` (field errors), `bad_request` (malformed input) |
-| 401 / 403 / 423 | `unauthorized`, `invalid_credentials`, `invalid_refresh_token`, `refresh_token_reused` / `forbidden` / `account_locked` |
-| 404 | `doctor_not_found`, `patient_not_found`, `appointment_not_found` |
-| 409 | `doctor_conflict`, `patient_conflict`, `concurrency_conflict` |
-| 422 | `appointment_in_past`, `invalid_slot`, `appointment_not_modifiable` |
-| 500 | `internal_error` — generic message only; details go to the server log with the `traceId` |
+| 400 | `VALIDATION_FAILED` (field errors), `BAD_REQUEST` (malformed input) |
+| 401 / 403 / 423 | `UNAUTHORIZED`, `INVALID_CREDENTIALS`, `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED` / `FORBIDDEN` / `ACCOUNT_LOCKED` |
+| 404 | `DOCTOR_NOT_FOUND`, `PATIENT_NOT_FOUND`, `APPOINTMENT_NOT_FOUND`, `USER_NOT_FOUND`, `ROUTE_NOT_FOUND` (no such URL) |
+| 405 | `METHOD_NOT_ALLOWED` |
+| 409 | `DOCTOR_CONFLICT`, `PATIENT_CONFLICT`, `CONCURRENCY_CONFLICT`, `EMAIL_TAKEN` |
+| 422 | `APPOINTMENT_IN_PAST`, `INVALID_SLOT`, `APPOINTMENT_NOT_MODIFIABLE` |
+| 500 | `INTERNAL_ERROR` — generic message only; details go to the server log with the `traceId` |
 
-All errors are produced in one place, `Api/Errors/GlobalExceptionHandler.cs` (domain exceptions → 4xx, anything else → 500).
+Expected failures are `SchedulerException` subclasses that carry their own `ErrorCode`, `StatusCode` and a log-only
+`LogDetail` (ids only). All of them become HTTP responses in one place, `Api/Errors/GlobalExceptionHandler.cs`; anything else
+→ logged 500. JWT 401/403 and bodiless statuses (unknown route) are written by `ApiErrorWriter` in the same shape.
 
 Interactive docs: `http://localhost:5080/scalar` (Development).
 
@@ -69,8 +84,8 @@ Interactive docs: `http://localhost:5080/scalar` (Development).
 **All three layers, each with a different job** ([ADR-0002](docs/adr/0002-postgres-exclusion-constraints.md)):
 
 1. **UI** shows only Free slots and disables the rest. Pure UX — it is stale the moment it renders and is never trusted.
-2. **API (Application service)** runs an overlap query before saving so the user gets a precise `409 doctor_conflict` or
-   `patient_conflict`. It cannot be the guarantee: two requests can both pass the check before either commits.
+2. **API (Application service)** runs an overlap query before saving so the user gets a precise `409 DOCTOR_CONFLICT` or
+   `PATIENT_CONFLICT`. It cannot be the guarantee: two requests can both pass the check before either commits.
 3. **Database** is the source of truth: two `EXCLUDE USING gist` constraints over `tstzrange(start, end, '[)')`. PostgreSQL
    rejects any overlapping Scheduled row atomically; the violation (SQLSTATE `23P01`) is translated to the same 409 codes.
    Range-based (not a unique index on start time), so it stays correct if durations vary; half-open `[)` lets 09:00–09:30
@@ -80,7 +95,7 @@ Interactive docs: `http://localhost:5080/scalar` (Development).
 Both requests pass the pre-check; the first `INSERT` commits; the second violates the exclusion constraint and gets `409`.
 Proven by `BookingEndpointTests.AC_002_8` (10 parallel requests → exactly one 201) and `ExclusionConstraintTests` (writes that
 bypass the service are still rejected). Updates (cancel vs reschedule of the same appointment) use PostgreSQL `xmin` as an
-optimistic concurrency token → `409 concurrency_conflict` instead of a lost update ([ADR-0004](docs/adr/0004-concurrency-etag.md)).
+optimistic concurrency token → `409 CONCURRENCY_CONFLICT` instead of a lost update ([ADR-0004](docs/adr/0004-concurrency-etag.md)).
 
 ## 6. Time zones
 ([ADR-0003](docs/adr/0003-time-zones.md))
@@ -94,7 +109,7 @@ optimistic concurrency token → `409 concurrency_conflict` instead of a lost up
 ## 7. Architecture
 Clean Architecture ([ADR-0001](docs/adr/0001-clean-architecture.md)): `Domain` (rules) ← `Application` (use cases, `IAppDbContext`
 port) ← `Infrastructure` (EF Core/Npgsql, constraint → error translation, seed) ← `Api` (thin controllers, global exception
-handler, auth). The Api is the only host: background jobs run in it via **Hangfire** ([ADR-0014](docs/adr/0014-hangfire-background-jobs.md),
+handler, auth; responses are `ApiResponse<T>`, [ADR-0015](docs/adr/0015-api-response-envelope.md)). The Api is the only host: background jobs run in it via **Hangfire** ([ADR-0014](docs/adr/0014-hangfire-background-jobs.md),
 PostgreSQL storage, hourly expired-refresh-token purge). Layer rules are enforced by `ArchitectureTests`. Frontend: Angular 22 +
 Material, feature folders `features/schedule` and `features/auth`.
 

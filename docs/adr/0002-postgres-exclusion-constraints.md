@@ -16,7 +16,7 @@ slot at the same moment, and with variable durations later (M4).
 ## Decision
 Use all three layers, each with a different job:
 - **UI** only offers Free slots (UX).
-- **Application** pre-checks overlaps to return a specific, friendly `409 doctor_conflict` / `patient_conflict`.
+- **Application** pre-checks overlaps to return a specific, friendly `409 DOCTOR_CONFLICT` / `PATIENT_CONFLICT`.
 - **Database** guarantees it:
   ```sql
   CREATE EXTENSION IF NOT EXISTS btree_gist;

@@ -10,7 +10,7 @@
 | `writes` | token bucket | 30 / min / user, burst 10 | mutating groups |
 | `reads` | sliding window (6 segments) | 300 / min / user | GET groups |
 | global | concurrency | 200 concurrent requests | all |
-Rejections → 429 ProblemDetails `rate_limited` with `Retry-After`; counted in metric `scheduler.rate_limit.rejected`.
+Rejections → 429 `ApiResponse` error `RATE_LIMITED` (ADR-0015) with `Retry-After`; counted in metric `scheduler.rate_limit.rejected`.
 Limits come from configuration so k6 tests and production can differ.
 
 ## Consequences

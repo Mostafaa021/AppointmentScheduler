@@ -114,3 +114,19 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   with an integration test; Wolverine + RabbitMQ kept for domain events (ADR-0014 explains the split).
 - **Changed:** the build failed with NU1903 — Hangfire.Core pulls `Newtonsoft.Json` 11.0.1 (known vulnerability). Fixed by
   central transitive pinning to 13.0.4 instead of suppressing the warning.
+
+### P-13 · House-style responses, exceptions and error codes
+> "Build endpoints with a structure like this [`ProducesResponseType` per status, `ApiResponse<T>.Created(...)`], return a
+> generic API response and a status code for each one; build exceptions like `PartnerWalletException` (ErrorCode, StatusCode,
+> log-only LogDetail) and error codes like `ErrorCodes`; update the Claude files and workflows to match."
+
+- **Accepted:** `ApiResponse<T>` for every body, `SchedulerException` with status on the exception, `ErrorCodes` constants,
+  `[ProducesResponseType]` on every action, `LogDetail` used for constraint names / token family / BR-7 ids (ADR-0015).
+- **Changed:** business rules stay **422** (the example used 400) so form errors and rule rejections differ by status; codes
+  became UPPER_SNAKE. No `if (!ModelState.IsValid)` in actions — `[ApiController]` answers first, so it would be dead code; the
+  model-state factory returns the same envelope instead. Logout keeps 204 without a body.
+- **Changed (debugging):** removing `AddProblemDetails()` made `UseExceptionHandler()` throw at startup (all 91 integration
+  tests failed) — it needs a fallback even though `GlobalExceptionHandler` always handles; gave it a no-op `ExceptionHandler`.
+  A global `WhenWritingNull` would have dropped `doctorId: null` from DTOs the web app reads, so null-skipping is scoped to
+  the envelope's own properties.
+- **Rejected:** action-name routes like `CreateDelegatedWallet` — the REST routes stay unchanged.

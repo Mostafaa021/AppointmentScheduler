@@ -19,8 +19,11 @@ The spec (AC + Design), `CLAUDE.md` conventions, the feature folder you extend, 
 4. Tick `Built ☑`.
 
 ## Conventions you must follow
-UTC `DateTimeOffset` + `TimeProvider`; throw `NotFoundException` / `ConflictException` / `BusinessRuleException` with a stable
-`code`; endpoints contain no logic or EF queries; mutating endpoints are idempotent (M3+) and authorized (M2+); log ids, never PII.
+UTC `DateTimeOffset` + `TimeProvider`; throw `SchedulerException` subclasses (`NotFoundException`, `ConflictException`,
+`BusinessRuleException`, …) with an `ErrorCodes` constant — add new codes to `Domain/Common/ErrorCodes.cs`, never a literal —
+and ids-only `LogDetail`; actions return `ApiResponse<T>` and declare every status with `[ProducesResponseType]` (template:
+`/new-feature` step 6); endpoints contain no logic or EF queries; mutating endpoints are idempotent (M3+) and authorized (M2+);
+log ids, never PII. Integration tests read `DataAsync()` / `ErrorCodeAsync()` and assert `ErrorCodes.X`.
 
 ## Never
 Touch `web/`. Skip or weaken a test to make it pass. Change a spec's AC (ask the product-owner). Add packages without an ADR.

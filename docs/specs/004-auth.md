@@ -46,53 +46,53 @@ A user's permissions are the **union** of their roles. The BR-7 restriction appl
 | S-22 Angular login, guards, interceptor | AC-004-15..21 |
 | S-23 Validation, security headers, audit | AC-004-22..25 |
 
-All routes below are under `/api/v1`. Every error is RFC 7807 ProblemDetails with a stable `code` extension (SPEC.md §3).
+All routes below are under `/api/v1`. Every body is an `ApiResponse<T>` envelope; errors carry a stable `errorCode` (SPEC.md §3, ADR-0015 — supersedes the ProblemDetails shape this spec was designed with; the Design tables below are kept as built at the time).
 
 ## Acceptance criteria
 
 ### Authentication (S-20)
 - **AC-004-1** Given an existing user, When `POST /auth/login {email, password}` with correct credentials, Then 200
   `{accessToken, expiresAt, user{id, email, roles, doctorId?}}` and a `Set-Cookie` refresh token with `HttpOnly; Secure;
-  SameSite=Strict; Path=/api/v1/auth`. Given email or password missing/blank, Then 400 `validation_failed` with
+  SameSite=Strict; Path=/api/v1/auth`. Given email or password missing/blank, Then 400 `VALIDATION_FAILED` with
   `errors.email` / `errors.password`.
-- **AC-004-2** Given an unknown email or a wrong password, When login, Then 401 `invalid_credentials`; the response body is
+- **AC-004-2** Given an unknown email or a wrong password, When login, Then 401 `INVALID_CREDENTIALS`; the response body is
   identical in both cases.
 - **AC-004-3** Given a user with 4 consecutive failed logins, When the 5th consecutive attempt fails, Then 423
-  `account_locked`; And for the next 15 min every login for that user, even with the correct password, → 423
-  `account_locked`; And after 15 min the correct password → 200. A successful login resets the failure count.
+  `ACCOUNT_LOCKED`; And for the next 15 min every login for that user, even with the correct password, → 423
+  `ACCOUNT_LOCKED`; And after 15 min the correct password → 200. A successful login resets the failure count.
 - **AC-004-4** Given an access token, Then it expires 15 min after issue (`expiresAt`). When any `/api/v1` route other than
   `POST /auth/login` and `POST /auth/refresh` is called with no token, a malformed token, a token with an invalid signature /
-  issuer / audience, or a token expired by more than 30 s, Then 401 `unauthorized` with header `WWW-Authenticate: Bearer`.
+  issuer / audience, or a token expired by more than 30 s, Then 401 `UNAUTHORIZED` with header `WWW-Authenticate: Bearer`.
 - **AC-004-5** Given a valid refresh cookie, When `POST /auth/refresh`, Then 200 with the same body shape as AC-004-1 (roles and
   `doctorId` read from the user's current data) and a new refresh cookie; the presented token is revoked. Each refresh token
-  expires 7 days after issue. Given no cookie, an unknown, expired or logout-revoked token, Then 401 `invalid_refresh_token`.
+  expires 7 days after issue. Given no cookie, an unknown, expired or logout-revoked token, Then 401 `INVALID_REFRESH_TOKEN`.
 - **AC-004-6** Given a refresh token that was already rotated (AC-004-5), When it is presented to `POST /auth/refresh`, Then
-  401 `refresh_token_reused`; And every token of that family is revoked, so the newest token of the family → 401
-  `invalid_refresh_token`.
+  401 `REFRESH_TOKEN_REUSED`; And every token of that family is revoked, so the newest token of the family → 401
+  `INVALID_REFRESH_TOKEN`.
 - **AC-004-7** Given an authenticated user (valid bearer) with a refresh cookie, When `POST /auth/logout`, Then 204, the
-  refresh token is revoked (a later refresh with it → 401 `invalid_refresh_token`) and the cookie is cleared (`Set-Cookie`
-  expired). Without a refresh cookie → still 204. Without a valid bearer → 401 `unauthorized` (NFR-4). An already-issued access
+  refresh token is revoked (a later refresh with it → 401 `INVALID_REFRESH_TOKEN`) and the cookie is cleared (`Set-Cookie`
+  expired). Without a refresh cookie → still 204. Without a valid bearer → 401 `UNAUTHORIZED` (NFR-4). An already-issued access
   token stays valid until it expires (≤ 15 min).
 - **AC-004-10** Given a valid access token, When `GET /me`, Then 200 `{id, email, roles, doctorId?}` of the caller. Given no
-  token or an expired token, Then 401 `unauthorized`.
+  token or an expired token, Then 401 `UNAUTHORIZED`.
 
 ### User administration (S-20)
 - **AC-004-11** Given an Admin, When `POST /users {email, password, roles[], doctorId?}` with valid data, Then 201
   `{id, email, roles, doctorId?}`; And the new user can log in (AC-004-1). A user with role Doctor is linked to `doctorId`.
 - **AC-004-12** Given an Admin, When `POST /users` with any of: invalid e-mail format; a password that violates the password
   policy (values set in Design per ADR-0005); `roles` empty or containing a value other than `Admin`, `Receptionist`,
-  `Doctor`; role `Doctor` without `doctorId`; `doctorId` without role `Doctor` — Then 400 `validation_failed` with the
+  `Doctor`; role `Doctor` without `doctorId`; `doctorId` without role `Doctor` — Then 400 `VALIDATION_FAILED` with the
   offending field(s) in `errors` (`email`, `password`, `roles`, `doctorId`) and no user is created.
-- **AC-004-13** Given an Admin, When `POST /users` with a `doctorId` that does not exist, Then 404 `doctor_not_found`; When the
-  e-mail already belongs to a user (case-insensitive), Then 409 `email_taken`. No user is created in either case.
+- **AC-004-13** Given an Admin, When `POST /users` with a `doctorId` that does not exist, Then 404 `DOCTOR_NOT_FOUND`; When the
+  e-mail already belongs to a user (case-insensitive), Then 409 `EMAIL_TAKEN`. No user is created in either case.
 - **AC-004-14** Given an Admin and an existing user, When `PUT /users/{id}/roles {roles[], doctorId?}` with valid data, Then
   200 `{id, email, roles, doctorId?}` and the stored `doctorId` becomes the given value (null when role Doctor is absent); the
-  change applies to the user's next login or refresh (AC-004-5). Unknown user id → 404 `user_not_found`; unknown `doctorId` →
-  404 `doctor_not_found`; the AC-004-12 rules for `roles` / `doctorId` → 400 `validation_failed`.
+  change applies to the user's next login or refresh (AC-004-5). Unknown user id → 404 `USER_NOT_FOUND`; unknown `doctorId` →
+  404 `DOCTOR_NOT_FOUND`; the AC-004-12 rules for `roles` / `doctorId` → 400 `VALIDATION_FAILED`.
 
 ### Authorization (S-21)
 - **AC-004-8** Given an authenticated user, When they call a route their roles do not allow (matrix below), Then 403
-  `forbidden` and nothing changes. Precedence: missing/invalid token → 401 before any role check; role check → 403 before
+  `FORBIDDEN` and nothing changes. Precedence: missing/invalid token → 401 before any role check; role check → 403 before
   validation or lookups.
 
   | Route | Admin | Receptionist | Doctor |
@@ -104,13 +104,13 @@ All routes below are under `/api/v1`. Every error is RFC 7807 ProblemDetails wit
   | `POST /appointments`, `POST /appointments/{id}/cancel`, `POST /appointments/{id}/reschedule` | ✔ | ✔ | 403 |
   | `POST /users`, `PUT /users/{id}/roles` | ✔ | 403 | 403 |
 - **AC-004-9** (BR-7, see AC-003-9) Given a user whose only role is Doctor, linked to doctor D: When `GET /appointments?doctorId=D&date=…`,
-  Then 200; When `doctorId` ≠ D, Then 403 `forbidden`. When `GET /appointments/{id}` of an appointment of D, Then 200; of
-  another doctor, Then 403 `forbidden`; of an unknown id, Then 404 `appointment_not_found`.
+  Then 200; When `doctorId` ≠ D, Then 403 `FORBIDDEN`. When `GET /appointments/{id}` of an appointment of D, Then 200; of
+  another doctor, Then 403 `FORBIDDEN`; of an unknown id, Then 404 `APPOINTMENT_NOT_FOUND`.
 
 ### Angular (S-22)
 - **AC-004-15** Given an unauthenticated visitor, When they open `/login`, Then they see an e-mail and a password field with
   labels and a submit button that is disabled while the request is pending. On 200 the app navigates to `/schedule`. On 400,
-  401 or 423 the app stays on `/login` and shows the server's ProblemDetails `detail` (existing problem interceptor behaviour).
+  401 or 423 the app stays on `/login` and shows the server's `message` (existing error interceptor behaviour).
 - **AC-004-16** Given the app starts (first load or browser reload), When no access token is in memory, Then it makes one
   `POST /auth/refresh`; on 200 the requested route opens, otherwise any route other than `/login` redirects to `/login`.
 - **AC-004-17** (AC-004-9, AC-003-9) Given a user whose only role is Doctor, When `/schedule` opens, Then it shows only their own
@@ -132,9 +132,9 @@ All routes below are under `/api/v1`. Every error is RFC 7807 ProblemDetails wit
 
 ### Validation, security headers, audit (S-23)
 - **AC-004-22** Given a request body that fails validation, When it reaches any endpoint below, Then 400 with the same shape as
-  today: `{type, title: "Validation failed", status: 400, detail, code: "validation_failed", errors: {<camelCaseField>: [messages]}}`,
+  today: `{type, title: "Validation failed", status: 400, detail, code: "VALIDATION_FAILED", errors: {<camelCaseField>: [messages]}}`,
   all failing fields reported at once, no state change and no audit record. Validation runs before lookups (404/409/422).
-  Malformed input that cannot bind (unparseable JSON, wrong types, missing required query values) stays 400 `bad_request`.
+  Malformed input that cannot bind (unparseable JSON, wrong types, missing required query values) stays 400 `BAD_REQUEST`.
 
   | Endpoint | Rules |
   |---|---|
@@ -156,7 +156,7 @@ All routes below are under `/api/v1`. Every error is RFC 7807 ProblemDetails wit
   | AC-004-1 | `auth.login_succeeded` | `User` / user id |
   | AC-004-2, AC-004-3 (each 401/423) | `auth.login_failed` | `User` / user id or null |
   | AC-004-7 | `auth.logout` | `User` / user id |
-  | AC-004-6 | `auth.refresh_token_reused` | `RefreshTokenFamily` / family id (`userId` = family owner) |
+  | AC-004-6 | `auth.REFRESH_TOKEN_REUSED` | `RefreshTokenFamily` / family id (`userId` = family owner) |
   | Book (AC-002-1) | `appointment.booked` | `Appointment` / id |
   | Cancel (AC-003-2) | `appointment.cancelled` | `Appointment` / id |
   | Reschedule (AC-003-4) | `appointment.rescheduled` | `Appointment` / id |
@@ -182,8 +182,8 @@ All routes below are under `/api/v1`. Every error is RFC 7807 ProblemDetails wit
 
 `POST /users` returns 201 without `Location` (there is no `GET /users/{id}` until S-43).
 
-New error codes: 401 `unauthorized`, `invalid_credentials`, `invalid_refresh_token`, `refresh_token_reused` · 403
-`forbidden` · 404 `user_not_found` · 409 `email_taken` · 423 `account_locked`. All existing routes gain 401 and 403 (AC-004-8).
+New error codes: 401 `UNAUTHORIZED`, `INVALID_CREDENTIALS`, `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED` · 403
+`FORBIDDEN` · 404 `USER_NOT_FOUND` · 409 `EMAIL_TAKEN` · 423 `ACCOUNT_LOCKED`. All existing routes gain 401 and 403 (AC-004-8).
 
 ## Data changes
 Confirmed by the architect (snake_case via the existing naming convention, `timestamptz` for all instants):
@@ -220,7 +220,7 @@ Infrastructure copies the same constants into `IdentityOptions.Password` (`Requi
 ### Domain
 | File | Change |
 |---|---|
-| `Common/DomainExceptions.cs` | add `UnauthorizedException(code, message)` → 401, `ForbiddenException()` → 403 `forbidden`, `LockedException(code, message)` → 423 (same pattern as the existing types) |
+| `Common/DomainExceptions.cs` | add `UnauthorizedException(code, message)` → 401, `ForbiddenException()` → 403 `FORBIDDEN`, `LockedException(code, message)` → 423 (same pattern as the existing types) |
 | `Common/AuditRecord.cs` | new entity: `Id` (`Guid.CreateVersion7()`), `UserId?`, `Action`, `EntityType`, `EntityId?`, `TimestampUtc`, `TraceId?`; ctor only, no setters used after creation |
 
 ### Application
@@ -252,8 +252,8 @@ Infrastructure copies the same constants into `IdentityOptions.Password` (`Requi
 | `Auth/JwtOptions.cs` | section `Jwt`: `Issuer`, `Audience`; `SigningKey` bound from configuration key **`JWT_SIGNING_KEY`** (env var in compose/prod, dev value in `appsettings.Development.json`, random per run in tests). `ValidateOnStart`: key ≥ 32 UTF-8 bytes, issuer/audience non-empty → the API refuses to start otherwise. Lifetimes are constants, not config: access 15 min, refresh 7 days, skew 30 s |
 | `Auth/TokenIssuer.cs` | `JsonWebTokenHandler` + HS256 `SymmetricSecurityKey`; claims `sub`, `role` (one per role), `doctor_id` (if set), `iss`, `aud`, `iat`/`nbf`/`exp` from `TimeProvider`. Refresh token = 32 bytes `RandomNumberGenerator` → base64url; stored as SHA-256 bytes |
 | `Auth/IdentityAuthService.cs` | `IAuthService` using `UserManager<AppUser>`, `AppDbContext`, `TokenIssuer`, `AuditLog`, `TimeProvider`, `IValidator<LoginRequest>` — flows below |
-| `Auth/IdentityUserAdminService.cs` | `IUserAdminService` (injects both user validators): `ValidateOrThrow` → (Set: user exists else 404 `user_not_found`) → doctor exists else 404 `doctor_not_found` → (Create: `FindByEmailAsync` → 409 `email_taken`) → in **one transaction**: `CreateAsync`/`AddToRolesAsync` (or remove+add roles, set `DoctorId`, `null` when Doctor absent) + `audit.Record("user.created" / "user.roles_changed")`. An Identity `DuplicateUserName/DuplicateEmail` result → 409 `email_taken`; any other failed `IdentityResult` is a bug → exception (500) |
-| `Persistence/AppDbContext.cs` | inherits `IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>` (calls `base.OnModelCreating` first); + `RefreshTokens`, `AuditRecords`; `SaveChangesAsync` additionally maps unique violation (23505) on `normalized_user_name` → `ConflictException("email_taken")` (race backstop) |
+| `Auth/IdentityUserAdminService.cs` | `IUserAdminService` (injects both user validators): `ValidateOrThrow` → (Set: user exists else 404 `USER_NOT_FOUND`) → doctor exists else 404 `DOCTOR_NOT_FOUND` → (Create: `FindByEmailAsync` → 409 `EMAIL_TAKEN`) → in **one transaction**: `CreateAsync`/`AddToRolesAsync` (or remove+add roles, set `DoctorId`, `null` when Doctor absent) + `audit.Record("user.created" / "user.roles_changed")`. An Identity `DuplicateUserName/DuplicateEmail` result → 409 `EMAIL_TAKEN`; any other failed `IdentityResult` is a bug → exception (500) |
+| `Persistence/AppDbContext.cs` | inherits `IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>` (calls `base.OnModelCreating` first); + `RefreshTokens`, `AuditRecords`; `SaveChangesAsync` additionally maps unique violation (23505) on `normalized_user_name` → `ConflictException("EMAIL_TAKEN")` (race backstop) |
 | `Persistence/Configurations/IdentityConfiguration.cs` | Identity tables → `identity` schema with short names; `AppUser.DoctorId` FK; role `HasData` (fixed Guids + concurrency stamps) |
 | `Persistence/Configurations/RefreshTokenConfiguration.cs`, `AuditRecordConfiguration.cs` | per Data changes |
 | `Persistence/Seed/DbSeeder.cs` | `SeedAsync(…, bool includeDemoUsers)`: after the existing data, if `includeDemoUsers` and no users exist, insert 3 fictional users (`*@clinic.test`, Admin / Receptionist / Doctor → first seeded doctor) with `new PasswordHasher<AppUser>()`, upper-invariant normalized names, security stamps and `user_roles` rows. Credentials are constants here and in README (AC-004-26) |
@@ -262,10 +262,10 @@ Infrastructure copies the same constants into `IdentityOptions.Password` (`Requi
 #### Login and lockout (AC-004-1..3)
 1. `ValidateOrThrow` → 400.
 2. `FindByEmailAsync`. Unknown → verify the password against a static dummy hash (equal timing), audit
-   `auth.login_failed` (user and entity null), save → 401 `invalid_credentials`.
+   `auth.login_failed` (user and entity null), save → 401 `INVALID_CREDENTIALS`.
 3. **Reserve an attempt atomically:** `ExecuteUpdate users SET access_failed_count = access_failed_count + 1 WHERE id = @id
    AND access_failed_count < 5 AND (lockout_end IS NULL OR lockout_end <= @now)`. 0 rows → audit failed, save → 423
-   `account_locked` (also with the correct password).
+   `ACCOUNT_LOCKED` (also with the correct password).
 4. Verify with `IPasswordHasher<AppUser>.VerifyHashedPassword` (not `CheckPasswordAsync`, whose rehash path calls
    `UpdateAsync` and would write the stale tracked counter back over step 3). Success → `ExecuteUpdate` count = 0, lockout_end = null; insert refresh token
    (new `family_id`); audit `auth.login_succeeded`; save → 200 + cookie.
@@ -276,10 +276,10 @@ The `< 5` guard caps a parallel burst at 5 guesses per lockout window (a read-mo
 guesses count as 1). All times come from `TimeProvider`.
 
 #### Refresh rotation and reuse (AC-004-5, 6)
-Hash the cookie value → find by `token_hash`, then in this order: not found → 401 `invalid_refresh_token`;
+Hash the cookie value → find by `token_hash`, then in this order: not found → 401 `INVALID_REFRESH_TOKEN`;
 `replaced_by_id` set (already rotated) → **reuse**: in one transaction revoke every unrevoked token of the family, audit
-`auth.refresh_token_reused` (`RefreshTokenFamily` / family id, user = owner), commit → 401 `refresh_token_reused`; revoked
-or expired → 401 `invalid_refresh_token`; otherwise in one transaction **claim** it with `ExecuteUpdate … SET
+`auth.REFRESH_TOKEN_REUSED` (`RefreshTokenFamily` / family id, user = owner), commit → 401 `REFRESH_TOKEN_REUSED`; revoked
+or expired → 401 `INVALID_REFRESH_TOKEN`; otherwise in one transaction **claim** it with `ExecuteUpdate … SET
 revoked_at_utc = now, replaced_by_id = @newId WHERE id = @id AND revoked_at_utc IS NULL AND replaced_by_id IS NULL`
 (0 rows → concurrent rotation → take the reuse path), insert the new token (same family, expires now + 7 days), reload the
 user's roles and `doctor_id`, issue the access token. No audit on a successful refresh (not in AC-004-24).
@@ -312,10 +312,10 @@ use an `https://` base address with another host name.
 origin (`localhost:4200`), so the host-only cookie works. Safari (WebKit) does not → local dev in Safari is unsupported. .NET's
 `CookieContainer` won't send `Secure` cookies over `http://`, so integration tests pass the cookie explicitly (below).
 
-**Error codes → source.** `invalid_credentials`, `invalid_refresh_token`, `refresh_token_reused` → `UnauthorizedException`;
-`account_locked` → `LockedException`; `forbidden` → `ForbiddenException` (BR-7) or `OnForbidden` (role); `unauthorized` →
-`OnChallenge`; `email_taken` → `ConflictException`; `user_not_found`, `doctor_not_found` → `NotFoundException`. `detail` texts
-never echo the e-mail; `invalid_credentials` uses one fixed text for both cases (AC-004-2).
+**Error codes → source.** `INVALID_CREDENTIALS`, `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED` → `UnauthorizedException`;
+`ACCOUNT_LOCKED` → `LockedException`; `FORBIDDEN` → `ForbiddenException` (BR-7) or `OnForbidden` (role); `UNAUTHORIZED` →
+`OnChallenge`; `EMAIL_TAKEN` → `ConflictException`; `USER_NOT_FOUND`, `DOCTOR_NOT_FOUND` → `NotFoundException`. `detail` texts
+never echo the e-mail; `INVALID_CREDENTIALS` uses one fixed text for both cases (AC-004-2).
 
 ### Tests impact
 - **`ApiFactory`**: `UseSetting("JWT_SIGNING_KEY", <random ≥ 32 chars per run>)`; after start, creates test users via
@@ -379,7 +379,7 @@ forbidden availability endpoint); `localStart`/`localEnd` on each appointment ar
   whether an e-mail exists, and an attacker can keep a known staff account locked (DoS). Accepted because: it is an internal
   staff app; each probe is noisy (5 attempts, audited `auth.login_failed`) and locks the real account; the 401 body and
   timing are otherwise identical; M3's `auth` rate limit (5/min/IP, S-32) slows it further. Alternative if rejected: return
-  401 `invalid_credentials` while locked (needs an AC change).
+  401 `INVALID_CREDENTIALS` while locked (needs an AC change).
 - **Strict reuse detection — ACCEPTED (human, 2026-10-19), no grace window.** It logs out every tab if two tabs reload at the same instant with the same cookie (second refresh
   = reuse). Accepted; a grace window would weaken theft detection.
 - **AC-004-19 — CONFIRMED (human, 2026-10-19):** a retried request that 401s again ends the session like AC-004-20 (clear + `/login`).
@@ -398,7 +398,7 @@ forbidden availability endpoint); `localStart`/`localEnd` on each appointment ar
   brute-force control is the lockout, with the atomic attempt reservation capping parallel guesses. No rate-limit AC here.
 - **Observability (NFR-8)** — audit rows carry the W3C trace id (`Activity.Current.TraceId`, fallback
   `HttpContext.TraceIdentifier`). Log, with ids only: login failed (Information, `UserId` or none), lockout started and
-  `refresh_token_reused` (Warning, `UserId`, `FamilyId`), user created / roles changed (Information, actor + target id).
+  `REFRESH_TOKEN_REUSED` (Warning, `UserId`, `FamilyId`), user created / roles changed (Information, actor + target id).
   Never log e-mail, password, access or refresh token, cookie or `Authorization` header; keep EF sensitive-data logging
   and IdentityModel `ShowPII` at their defaults (off). New metrics wait for ADR-0010 in M3.
 - **Time zones (NFR-11)** — token `iat`/`nbf`/`exp`, refresh `created/expires/revoked_at_utc`, `lockout_end`, cookie

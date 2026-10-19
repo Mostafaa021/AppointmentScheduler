@@ -1,12 +1,16 @@
 # ADR-0013 — Request validation: FluentValidation validators in Application, mapped to the domain `ValidationException`
 
+> The 400 body shape described below (ProblemDetails `title`/`code`) was replaced by the `ApiResponse` envelope in
+> [ADR-0015](0015-api-response-envelope.md): same status, `errorCode: "VALIDATION_FAILED"`, same camelCase `errors`.
+> The validation decision itself is unchanged.
+
 - Status: Accepted (human decision 2026-10-19; rev. 2 — rev. 1 proposed hand-written validators and was rejected) ·
   Spec: [004](../specs/004-auth.md) (AC-004-12, AC-004-22)
 
 ## Context
 AC-004-22 needs field validation on 6 request types (login, book, cancel, reschedule, create user, set roles) that runs
 after authentication/authorization and before lookups (401 → 403 → 400 → 404/409/422), reports all failing fields at once
-and keeps today's 400 shape (`title: "Validation failed"`, `code: "validation_failed"`, camelCase `errors`). Today the only
+and keeps today's 400 shape (`title: "Validation failed"`, `code: "VALIDATION_FAILED"`, camelCase `errors`). Today the only
 validation is `Appointment.NormalizeReason` throwing the domain `ValidationException`, which `GlobalExceptionHandler` (formerly `DomainExceptionHandler`)
 already maps to exactly that shape. Backlog S-23 names FluentValidation.
 

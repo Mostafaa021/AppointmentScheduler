@@ -35,9 +35,10 @@ security / code-review gates are **pending** — run them before calling M2 Done
 | ID | Story | Spec | Status |
 |---|---|---|---|
 | S-24 | Minimal APIs → controllers (same routes, codes, policies) | 004 | Done |
-| S-25 | Global exception handler (generic 500 `internal_error`, no leaks) | 000 | Done |
+| S-25 | Global exception handler (generic 500 `INTERNAL_ERROR`, no leaks) | 000 | Done |
 | S-26 | Remove Worker project and Mailpit; Api is the single host | ADR-0014 | Done |
 | S-27 | Hangfire in the Api + hourly expired refresh-token purge | ADR-0014 | Done |
+| S-28 | `ApiResponse<T>` envelope, `[ProducesResponseType]` per status, `SchedulerException` + `ErrorCodes` (UPPER_SNAKE) | ADR-0015 | Done |
 
 ## Sprint 3 — M3 Reliability
 | ID | Story | Spec | Status |

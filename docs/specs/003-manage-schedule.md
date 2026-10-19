@@ -12,16 +12,16 @@ View a doctor's appointments for a day, cancel one, or move it to another free s
 - **AC-003-1** GET day schedule for doctor+date returns appointments ordered by start, with patient name, reason, status and
   clinic-local times; cancelled ones are included with status `Cancelled`.
 - **AC-003-2** Cancel a future Scheduled appointment → 200, status `Cancelled`, slot becomes Free (AC-001-3).
-- **AC-003-3** (BR-5) Cancel/reschedule a Cancelled or already-started appointment → 422 `appointment_not_modifiable`.
+- **AC-003-3** (BR-5) Cancel/reschedule a Cancelled or already-started appointment → 422 `APPOINTMENT_NOT_MODIFIABLE`.
 - **AC-003-4** Reschedule to a free future slot (same doctor) → 200 with new times; old slot becomes Free.
-- **AC-003-5** Reschedule into a conflicting slot → 409 `doctor_conflict` / `patient_conflict`; the appointment's own current
+- **AC-003-5** Reschedule into a conflicting slot → 409 `DOCTOR_CONFLICT` / `PATIENT_CONFLICT`; the appointment's own current
   slot never counts as a conflict.
 - **AC-003-6** Reschedule into the past / an invalid slot → 422.
 - **AC-003-7** Unknown appointment → 404.
-- **AC-003-8** (M3) Cancel/reschedule accept `If-Match: "<etag>"`; stale ETag → 412 `precondition_failed`; concurrent updates
-  never silently overwrite each other (xmin token → 409 `concurrency_conflict`).
+- **AC-003-8** (M3) Cancel/reschedule accept `If-Match: "<etag>"`; stale ETag → 412 `PRECONDITION_FAILED`; concurrent updates
+  never silently overwrite each other (xmin token → 409 `CONCURRENCY_CONFLICT`).
 - **AC-003-9** (M2) A user in role Doctor can read only their own schedule (403 otherwise) and cannot cancel/reschedule.
-  Detailed in spec 004: AC-004-9 (resource check), AC-004-8 (403 `forbidden` on cancel/reschedule), AC-004-17 (Doctor UI).
+  Detailed in spec 004: AC-004-9 (resource check), AC-004-8 (403 `FORBIDDEN` on cancel/reschedule), AC-004-17 (Doctor UI).
 
 ## API contract
 | Method | Route | Request | Responses |

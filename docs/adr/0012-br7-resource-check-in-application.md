@@ -10,7 +10,7 @@ another doctor's appointment.
 
 ## Options
 1. **Application service check** — `AppointmentService` calls `currentUser.EnsureCanRead(doctorId)` (port `ICurrentUser`,
-   implemented in Api from the JWT claims) and throws `ForbiddenException` → 403 `forbidden`.
+   implemented in Api from the JWT claims) and throws `ForbiddenException` → 403 `FORBIDDEN`.
 2. **ASP.NET Core resource-based authorization** — `IAuthorizationHandler<SameDoctorRequirement, int>`, invoked from the
    endpoint with `IAuthorizationService.AuthorizeAsync(user, doctorId, …)`.
 3. **Endpoint filter** that reads `doctorId` from the query / loads the appointment before the handler.

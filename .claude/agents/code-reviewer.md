@@ -12,7 +12,10 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
 ## Check
 - Correctness: edge cases (time boundaries, DST, cancelled rows, concurrency, null/empty), error codes match the spec.
 - Layer rule: run `dotnet test tests/AppointmentScheduler.ArchitectureTests`.
-- Conventions: `TimeProvider`, UTC, ProblemDetails codes, thin controllers, feature folders, async + `CancellationToken` passed.
+- Conventions: `TimeProvider`, UTC, thin controllers, feature folders, async + `CancellationToken` passed.
+- Contract (ADR-0015): actions return `ApiResponse<T>`; every status the action can produce has a `[ProducesResponseType]`
+  (and none it can't); errors thrown as `SchedulerException` with an `ErrorCodes` constant — flag any string-literal code or
+  a new code missing from `ErrorCodes`; `LogDetail` ids only; no `ModelState.IsValid` checks in actions.
 - Simplicity: no speculative abstractions, dead code, duplicate helpers, unnecessary packages; reuse existing types.
 - Tests: meaningful asserts, named after AC IDs, no sleeps/flakiness.
 - EF: no N+1, `AsNoTracking` for reads, indexes exist for new filters.

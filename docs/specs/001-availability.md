@@ -21,7 +21,7 @@ As a receptionist, I want to see a doctor's slots for a date, so that I only off
   Then that slot is `PatientBusy`.
 - **AC-001-6** Each slot returns `startUtc`, `endUtc` (ISO-8601 UTC) and `localStart` (`HH:mm`, clinic zone); the UI never
   converts time zones itself.
-- **AC-001-7** Unknown doctor → 404 `doctor_not_found`; malformed date → 400.
+- **AC-001-7** Unknown doctor → 404 `DOCTOR_NOT_FOUND`; malformed date → 400.
 - **AC-001-8** (M4) Slots come from the doctor's working-hour ranges for that weekday, exclude breaks, time off and clinic
   holidays, and only offer starts where the selected appointment type's whole duration fits.
 
