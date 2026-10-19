@@ -31,7 +31,9 @@ Data access (ADR-0016):
 - Application services inject `IUnitOfWork` only and use its repositories (`unitOfWork.Appointments…`; contracts in
   `Domain/<Feature>/I<Aggregate>Repository.cs`), never a repository directly and never EF Core.
 - Each use case commits once via `IUnitOfWork.SaveChangesAsync`.
-- New queries become named repository methods that return entities.
+- Contracts extend `IRepository<TEntity, TKey>` (Add, GetById, GetByIdReadOnly, Exists) and implementations inherit
+  `Repository<TEntity, TKey>` (plan 013); entities implement `IEntity<TKey>`. New queries become named repository methods
+  that return entities; never redeclare the inherited members.
 - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`, exposed as a property of `UnitOfWork`.
 - Unit-test the use-case order with fakes. Real queries and constraints are checked live (no integration tests).
 

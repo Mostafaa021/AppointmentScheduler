@@ -3,13 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AppointmentScheduler.Infrastructure.Persistence.Repositories;
 
-internal sealed class PatientRepository(AppDbContext db) : IPatientRepository
+internal sealed class PatientRepository(AppDbContext db) : Repository<Patient, int>(db), IPatientRepository
 {
-    public Task<bool> ExistsAsync(int id, CancellationToken ct) => db.Patients.AnyAsync(p => p.Id == id, ct);
-
     public async Task<(IReadOnlyList<Patient> Items, int Total)> SearchAsync(string? term, int page, int pageSize, CancellationToken ct)
     {
-        var query = db.Patients.AsNoTracking();
+        var query = Set.AsNoTracking();
         if (!string.IsNullOrEmpty(term))
         {
             // Translates to lower(full_name) LIKE '%term%' OR mrn = 'TERM' (MRNs are stored upper-case).

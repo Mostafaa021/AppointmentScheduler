@@ -1,7 +1,7 @@
 namespace AppointmentScheduler.Domain.Common;
 
 /// <summary>Append-only audit entry (ADR-0011). Holds ids only, never PII (NFR-9).</summary>
-public sealed class AuditRecord
+public sealed class AuditRecord : IEntity<Guid>
 {
     public Guid Id { get; private set; }
     public Guid? UserId { get; private set; }

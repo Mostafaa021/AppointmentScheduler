@@ -334,3 +334,13 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
     with the attribute is exempt.
   - The Angular interceptor keys POSTs only.
   - `InternalsVisibleTo` lets UnitTests reach the internal helper.
+- **Plan 013 (generic repository base):** "each repository should inherit from a generic repository that includes the common
+  functionality". The user chose the members: Add, GetById (tracked), GetByIdReadOnly, Exists. There is no Remove (audit is
+  append-only), no list-all (unbounded tables), and no `IQueryable` (still ADR-0016's line).
+  - `IEntity<TKey>` on the four entities. `Repository<TEntity, TKey>` matches by key with `e.Id.Equals(id)`.
+  - `AppointmentRepository` overrides the `WithDetails` hook to include doctor and patient.
+  - Derived classes use the base's `Set` instead of the primary-constructor `db`, which avoids a double capture.
+  - Two arch tests (contracts extend `IRepository<,>`, implementations inherit `Repository<,>`), each asserting a non-empty
+    set so it can't pass vacuously.
+  - **Verified live:** EF translates the generic `Equals` (there are no integration tests to prove it). Availability, book
+    with names, get, cancel, and unknown doctor / appointment → 404.

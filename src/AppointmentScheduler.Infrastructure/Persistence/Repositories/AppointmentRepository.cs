@@ -3,19 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AppointmentScheduler.Infrastructure.Persistence.Repositories;
 
-internal sealed class AppointmentRepository(AppDbContext db) : IAppointmentRepository
+internal sealed class AppointmentRepository(AppDbContext db) : Repository<Appointment, Guid>(db), IAppointmentRepository
 {
-    public void Add(Appointment appointment) => db.Appointments.Add(appointment);
-
-    public Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        WithPeople(db.Appointments).FirstOrDefaultAsync(a => a.Id == id, ct);
-
-    public Task<Appointment?> GetByIdReadOnlyAsync(Guid id, CancellationToken ct) =>
-        WithPeople(db.Appointments.AsNoTracking()).FirstOrDefaultAsync(a => a.Id == id, ct);
-
     public async Task<IReadOnlyList<Appointment>> ListDayScheduleAsync(
         int doctorId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct) =>
-        await WithPeople(db.Appointments.AsNoTracking())
+        await WithDetails(Set.AsNoTracking())
             .Where(a => a.DoctorId == doctorId && a.StartUtc >= fromUtc && a.StartUtc < toUtc)
             .OrderBy(a => a.StartUtc).ThenBy(a => a.Status)
             .ToListAsync(ct);
@@ -34,12 +26,13 @@ internal sealed class AppointmentRepository(AppDbContext db) : IAppointmentRepos
     public Task<bool> PatientHasOverlapAsync(Appointment appointment, CancellationToken ct) =>
         OthersOverlapping(appointment).AnyAsync(o => o.PatientId == appointment.PatientId, ct);
 
-    private static IQueryable<Appointment> WithPeople(IQueryable<Appointment> query) =>
+    // Appointments are shown with their doctor and patient names.
+    protected override IQueryable<Appointment> WithDetails(IQueryable<Appointment> query) =>
         query.Include(a => a.Doctor).Include(a => a.Patient);
 
     // Half-open [start, end) like the exclusion constraints, so back-to-back slots never overlap.
     private IQueryable<Appointment> ScheduledOverlapping(DateTimeOffset fromUtc, DateTimeOffset toUtc) =>
-        db.Appointments.AsNoTracking()
+        Set.AsNoTracking()
             .Where(a => a.Status == AppointmentStatus.Scheduled && a.StartUtc < toUtc && a.EndUtc > fromUtc);
 
     private IQueryable<Appointment> OthersOverlapping(Appointment a) =>

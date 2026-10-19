@@ -49,9 +49,14 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   - **Services inject `IUnitOfWork` only** and reach every repository through it (`unitOfWork.Appointments.Add(...)`,
     `unitOfWork.Doctors.ExistsAsync(...)`). Never inject a repository: they are not registered in DI, and ArchitectureTests
     `Repositories_are_reached_only_through_the_unit_of_work` rejects a repository in any constructor.
-  - Contracts sit next to their aggregate in Domain (`Domain/Appointments/IAppointmentRepository.cs`, …).
-  - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`, created by `UnitOfWork` over its
-    `AppDbContext`. A new repository = contract in Domain + implementation + a property on `IUnitOfWork` / `UnitOfWork`.
+  - Contracts sit next to their aggregate in Domain (`Domain/Appointments/IAppointmentRepository.cs`, …) and **extend the
+    generic `IRepository<TEntity, TKey>`** (`Add`, `GetByIdAsync` tracked, `GetByIdReadOnlyAsync`, `ExistsAsync`; plan 013).
+  - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`, **inherit
+    `Repository<TEntity, TKey>`** (use its `Set` / `Db`; override `WithDetails` to load navigations on get-by-id), and are
+    created by `UnitOfWork` over its `AppDbContext`. ArchitectureTests enforce both.
+  - A new aggregate = entity implements `IEntity<TKey>` + `I<X>Repository : IRepository<X, TKey>` + `<X>Repository :
+    Repository<X, TKey>` + a property on `IUnitOfWork` / `UnitOfWork`. Don't redeclare the inherited members, and don't
+    add Remove or list-everything to the base (append-only audit, unbounded tables).
   - Repositories return entities, never `IQueryable`.
   - Repository methods only stage changes; the use case calls `unitOfWork.SaveChangesAsync` once (change + audit row together).
   - A new query is a named repository method, not inline LINQ in a service.

@@ -27,7 +27,8 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
   registration written inline in `Program.cs`.
 - Data access (ADR-0016): no EF Core outside Infrastructure; services inject `IUnitOfWork` only (flag a repository in
   any constructor) and commit once with `unitOfWork.SaveChangesAsync` per use case; repositories return entities (no
-  `IQueryable`), are `internal sealed`, and use `AsNoTracking` for read methods; no N+1; indexes exist for new filters.
+  `IQueryable`), are `internal sealed`, extend `IRepository<,>` / inherit `Repository<,>` without redeclaring its members
+  (plan 013), and use `AsNoTracking` for read methods; no N+1; indexes exist for new filters.
 
 ## Produce
 `docs/reviews/NNN-code.md`: **must-fix** / should-fix / nit, each with file:line and suggested change. If none must-fix:

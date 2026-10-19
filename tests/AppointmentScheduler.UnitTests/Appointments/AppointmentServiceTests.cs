@@ -80,6 +80,9 @@ public class AppointmentServiceTests
     {
         public Task<bool> ExistsAsync(int id, CancellationToken ct) => Task.FromResult(ids.Contains(id));
         public Task<IReadOnlyList<Doctor>> ListAsync(CancellationToken ct) => throw new NotSupportedException();
+        public void Add(Doctor entity) => throw new NotSupportedException();
+        public Task<Doctor?> GetByIdAsync(int id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<Doctor?> GetByIdReadOnlyAsync(int id, CancellationToken ct) => throw new NotSupportedException();
     }
 
     private sealed class FakePatients(int[] ids) : IPatientRepository
@@ -87,6 +90,9 @@ public class AppointmentServiceTests
         public Task<bool> ExistsAsync(int id, CancellationToken ct) => Task.FromResult(ids.Contains(id));
         public Task<(IReadOnlyList<Patient> Items, int Total)> SearchAsync(string? term, int page, int pageSize, CancellationToken ct) =>
             throw new NotSupportedException();
+        public void Add(Patient entity) => throw new NotSupportedException();
+        public Task<Patient?> GetByIdAsync(int id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<Patient?> GetByIdReadOnlyAsync(int id, CancellationToken ct) => throw new NotSupportedException();
     }
 
     private sealed class FakeAppointments : IAppointmentRepository
@@ -100,6 +106,7 @@ public class AppointmentServiceTests
         public Task<bool> PatientHasOverlapAsync(Appointment appointment, CancellationToken ct) => Count(false);
         public Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
         public Task<Appointment?> GetByIdReadOnlyAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<bool> ExistsAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Appointment>> ListDayScheduleAsync(int doctorId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct) =>
             throw new NotSupportedException();
         public Task<IReadOnlyList<Appointment>> ListScheduledForDoctorAsync(int doctorId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct) =>
@@ -136,5 +143,8 @@ public class AppointmentServiceTests
     {
         public List<AuditRecord> Added { get; } = [];
         public void Add(AuditRecord record) => Added.Add(record);
+        public Task<AuditRecord?> GetByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<AuditRecord?> GetByIdReadOnlyAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<bool> ExistsAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
     }
 }

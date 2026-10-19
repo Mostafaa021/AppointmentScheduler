@@ -1,19 +1,14 @@
+using AppointmentScheduler.Domain.Common;
+
 namespace AppointmentScheduler.Domain.Appointments;
 
 /// <summary>
 /// Persistence of the <see cref="Appointment"/> aggregate (ADR-0016). Changes are staged; <c>IUnitOfWork</c> commits them.
-/// Methods that return appointments for display load <see cref="Appointment.Doctor"/> and <see cref="Appointment.Patient"/>.
+/// Methods that return appointments for display, including the inherited get-by-id, load <see cref="Appointment.Doctor"/> and
+/// <see cref="Appointment.Patient"/>.
 /// </summary>
-public interface IAppointmentRepository
+public interface IAppointmentRepository : IRepository<Appointment, Guid>
 {
-    void Add(Appointment appointment);
-
-    /// <summary>Tracked (for changes), with doctor and patient; null when missing.</summary>
-    Task<Appointment?> GetByIdAsync(Guid id, CancellationToken ct);
-
-    /// <summary>Read-only, with doctor and patient; null when missing.</summary>
-    Task<Appointment?> GetByIdReadOnlyAsync(Guid id, CancellationToken ct);
-
     /// <summary>A doctor's appointments (any status) starting in [<paramref name="fromUtc"/>, <paramref name="toUtc"/>), by start.</summary>
     Task<IReadOnlyList<Appointment>> ListDayScheduleAsync(int doctorId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken ct);
 

@@ -2,7 +2,5 @@ using AppointmentScheduler.Domain.Common;
 
 namespace AppointmentScheduler.Infrastructure.Persistence.Repositories;
 
-internal sealed class AuditRecordRepository(AppDbContext db) : IAuditRecordRepository
-{
-    public void Add(AuditRecord record) => db.AuditRecords.Add(record);
-}
+// Append-only: everything it needs (Add) comes from the base (ADR-0011).
+internal sealed class AuditRecordRepository(AppDbContext db) : Repository<AuditRecord, Guid>(db), IAuditRecordRepository;

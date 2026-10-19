@@ -1,6 +1,8 @@
+using AppointmentScheduler.Domain.Common;
+
 namespace AppointmentScheduler.Domain.Doctors;
 
-public sealed class Doctor
+public sealed class Doctor : IEntity<int>
 {
     public int Id { get; private set; }
     public string FullName { get; private set; } = "";

@@ -2,6 +2,7 @@ using System.Reflection;
 using AppointmentScheduler.Api.Controllers;
 using AppointmentScheduler.Application.Appointments;
 using AppointmentScheduler.Domain.Appointments;
+using AppointmentScheduler.Domain.Common;
 using AppointmentScheduler.Infrastructure.Persistence;
 using NetArchTest.Rules;
 
@@ -90,6 +91,42 @@ public class LayerDependencyTests
             .ToList();
 
         Assert.True(violations.Count == 0, "Inject IUnitOfWork instead of a repository: " + string.Join(", ", violations));
+    }
+
+    [Fact]
+    public void Repository_contracts_extend_the_generic_repository()
+    {
+        // Plan 013: every aggregate's contract inherits Add / GetById / GetByIdReadOnly / Exists from IRepository<TEntity, TKey>.
+        var contracts = DomainAssembly.GetTypes()
+            .Where(t => t.IsInterface && t.Name.EndsWith("Repository", StringComparison.Ordinal) && !t.IsGenericTypeDefinition)
+            .ToList();
+        var violations = contracts
+            .Where(t => !t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)))
+            .Select(t => t.FullName)
+            .ToList();
+
+        Assert.NotEmpty(contracts); // not vacuous
+        Assert.True(violations.Count == 0, "Extend IRepository<TEntity, TKey>: " + string.Join(", ", violations));
+    }
+
+    [Fact]
+    public void Repository_implementations_inherit_the_generic_base()
+    {
+        // The base is internal, so it is matched by its generic definition's name and namespace.
+        static bool InheritsBase(Type t) =>
+            t.BaseType is { IsGenericType: true } b && b.GetGenericTypeDefinition() is var d
+            && d.Name == "Repository`2" && d.Namespace == $"{Infrastructure}.Persistence.Repositories";
+
+        var implementations = InfrastructureAssembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && t.Name.EndsWith("Repository", StringComparison.Ordinal))
+            .ToList();
+        var violations = implementations
+            .Where(t => !InheritsBase(t))
+            .Select(t => t.FullName)
+            .ToList();
+
+        Assert.NotEmpty(implementations); // not vacuous
+        Assert.True(violations.Count == 0, "Inherit Repository<TEntity, TKey>: " + string.Join(", ", violations));
     }
 
     private static string Describe(TestResult result) =>

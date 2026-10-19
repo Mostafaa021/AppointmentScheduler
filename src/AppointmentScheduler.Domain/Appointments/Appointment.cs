@@ -11,7 +11,7 @@ public enum AppointmentStatus { Scheduled, Cancelled }
 /// Aggregate root. Enforces BR-3 (not in the past), BR-4 (valid slot) and BR-5 (only future Scheduled ones change).
 /// Overlaps (BR-1/BR-2) need other rows, so they are checked by the application service and guaranteed by DB constraints.
 /// </summary>
-public sealed class Appointment
+public sealed class Appointment : IEntity<Guid>
 {
     public const int ReasonMaxLength = 500;
 

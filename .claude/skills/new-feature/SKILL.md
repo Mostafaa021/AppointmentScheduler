@@ -20,7 +20,8 @@ description: Single-session, spec-first checklist for adding a feature end to en
    ```csharp
    throw new ConflictException(ErrorCodes.ClinicClosed, "The clinic is closed on this day.") { LogDetail = $"clinic {clinicId} {date}" };
    ```
-   New aggregate or new query → add a named method to the aggregate's repository contract
+   New aggregate → entity implements `IEntity<TKey>`, contract `I<Aggregate>Repository : IRepository<<Aggregate>, TKey>`
+   (inherits Add / GetById / GetByIdReadOnly / Exists, plan 013). New query → a named method on that contract
    (`Domain/<Feature>/I<Aggregate>Repository.cs`, ADR-0016). It returns entities, never `IQueryable`; tracked only when the
    caller will change the entity.
 4. **Application** — `src/AppointmentScheduler.Application/<Feature>/`: service method + request/response records +
@@ -30,7 +31,8 @@ description: Single-session, spec-first checklist for adding a feature end to en
    stage changes, then **one** `await unitOfWork.SaveChangesAsync(ct)` per use case (after `audit.Record(...)`).
    No EF Core here (architecture test). Use-case order can be unit-tested with fakes (see `AppointmentServiceTests`).
 5. **Infrastructure** — EF configuration in `Infrastructure/Persistence/Configurations/`; schema change → `/add-migration`.
-   Repository implementation `internal sealed` in `Infrastructure/Persistence/Repositories/`; a new repository also gets a
+   Repository implementation `internal sealed` in `Infrastructure/Persistence/Repositories/`, inheriting
+   `Repository<TEntity, TKey>` (override `WithDetails` for navigations); a new repository also gets a
    property on `IUnitOfWork` / `UnitOfWork` (not a DI registration). Other services go in `AddPersistence`
    (`Infrastructure/DependencyInjection.cs`), never in `Program.cs`. A new host-level
    concern (e.g. rate limiting) gets `Api/Configuration/<Concern>Config.cs`, chained in `Program.cs`:
