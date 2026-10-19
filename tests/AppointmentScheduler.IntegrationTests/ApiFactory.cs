@@ -60,6 +60,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Seed:Enabled", SeedEnabled ? "true" : "false");
         builder.UseSetting("Jwt:SigningKey", SigningKey);
         builder.UseSetting("BackgroundJobs:Enabled", "false"); // no Hangfire polling; jobs are run directly in tests
+        builder.UseSetting("Observability:OtlpEndpoint", ""); // never export test traces, even if Jaeger runs locally
         builder.ConfigureLogging(logging => logging.AddProvider(Logs));
         builder.ConfigureTestServices(services =>
         {

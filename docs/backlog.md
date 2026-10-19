@@ -67,7 +67,7 @@ security / code-review gates are **pending** — run them before calling M2 Done
 ## Sprint 6 — M6 Observability & ops
 | ID | Story | Spec | Status |
 |---|---|---|---|
-| S-60 | OTel → Jaeger, Serilog, /metrics, health checks | 000 | Refined |
+| S-60 | OTel → Jaeger, Serilog, /metrics, health checks | 000 | OTel traces + optional metrics done (ADR-0010 status); Serilog, /metrics, /health/ready Todo |
 | S-61 | Dockerfiles, full compose, migrator, operations.md | 000 | Todo |
 
 ## Sprint 7 — M7 Performance & hardening

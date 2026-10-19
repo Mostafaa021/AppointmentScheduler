@@ -197,3 +197,11 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   `/api/v{n}/` with an unserved `n` and returns `UNSUPPORTED_API_VERSION` listing the supported versions (taken from the
   API explorer, not hard-coded). `[ApiVersion]` is not inherited from the base controller, so an architecture test makes sure
   every controller states it.
+- **Step 3 (observability):** followed the template:
+  - service name from config;
+  - ASP.NET Core / HttpClient / EF Core instrumentation plus the `Wolverine` source;
+  - OTLP exporter only when an endpoint is set; metrics exported only to a metrics backend.
+  - **Changed:** dropped the correlation-id enrichment (we have no correlation header; W3C trace context covers it). Added an
+    `enduser.id` tag (id only) and filtered out `/health` and `/hangfire`.
+  - **Rejected:** Npgsql-level spans, because Hangfire's polling would flood them.
+  - **Verified:** Jaeger listed the service with route-template request spans and EF Core database spans.

@@ -28,6 +28,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `ApiResponseProblemDetailsWriter` / `ApiResponseClientErrorFactory`; new codes `UNSUPPORTED_MEDIA_TYPE`, `UNSUPPORTED_API_VERSION`.
 - API versioning (Asp.Versioning, ADR-0017): routes `api/v{version:apiVersion}/…`, `[ApiVersion(1.0)]` per controller,
   `api-supported-versions` header, `X-Api-Version` / `api-version` accepted; unknown versions → `UNSUPPORTED_API_VERSION`.
+- OpenTelemetry tracing → Jaeger over OTLP (ASP.NET Core, HttpClient, EF Core, Wolverine source; `enduser.id` tag) and
+  optional OTLP metrics, via `ObservabilityConfig` (ADR-0010 status).
 ### Removed
 - `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
 ### Security

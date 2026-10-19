@@ -41,8 +41,9 @@ On first start (Development) the API applies EF Core migrations and seeds fictio
 4 doctors, 12 patients (`MRN-0001`…`MRN-0012`) and a few appointments **today and tomorrow** so the schedule isn't empty.
 To reset: `docker compose down -v` and start again.
 
-> Other infrastructure in `docker-compose.yml` (RabbitMQ, Jaeger) is for later milestones and not needed for the
-> core app. Copy `.env.example` to `.env` to change ports/passwords (default Postgres port 5432).
+> `docker compose up -d postgres rabbitmq jaeger` also starts the tracing UI: **Jaeger** at http://localhost:16686
+> (service `appointment-scheduler-api`; the API sends OTLP traces to `localhost:4317` in Development). RabbitMQ
+> (management UI http://localhost:15672) is used by messaging; the app also runs without it. Copy `.env.example` to `.env` to change ports/passwords (default Postgres port 5432).
 
 ## Using it
 1. Pick a doctor and a date (times are shown in the clinic zone, Europe/London).
@@ -68,6 +69,9 @@ cd web && npm test -- --watch=false
 | `Seed:Enabled` | `true` | Seed fictional data on an empty database (demo users only in Development) |
 | `Jwt:SigningKey` (env `Jwt__SigningKey` / `JWT_SIGNING_KEY`) | dev-only value in `appsettings.Development.json` | ≥ 32-byte HS256 key; never commit a real one |
 | `BackgroundJobs:Enabled` | `true` | Run the Hangfire server and recurring jobs in the API process |
+| `Observability:ServiceName` | `appointment-scheduler-api` | OpenTelemetry service name (as shown in Jaeger) |
+| `Observability:OtlpEndpoint` (env `Observability__OtlpEndpoint`) | empty; `http://localhost:4317` in Development | OTLP traces target (Jaeger); empty = no export |
+| `Observability:MetricsEndpoint` | empty | OTLP metrics target (Jaeger has no metrics); empty = no export |
 
 ## Project layout
 ```

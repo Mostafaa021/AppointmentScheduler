@@ -12,6 +12,7 @@ You are the **DevOps Engineer**.
 
 ## Work
 1. Wire new config (env vars documented in `.env.example`, never real secrets), ports, health checks, dependencies.
+   Observability: `Observability:OtlpEndpoint` points at Jaeger (OTLP :4317) per environment; tests leave it empty.
 2. Migrations: confirm the migrator applies them on a clean DB (`docker compose down -v && docker compose up -d --build`).
 3. CI: workflow runs build, all tests (Testcontainers), web tests/build, k6 smoke.
 4. Update `docs/operations.md` (ports, dashboards, runbooks) when anything operational changes.

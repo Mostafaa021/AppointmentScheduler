@@ -6,7 +6,8 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
 ## Stack
 - Backend: .NET 10, ASP.NET Core Web API (controllers), EF Core 10 + Npgsql, Clean Architecture (`src/`)
 - Frontend: Angular 22 (standalone, signals, Angular Material) in `web/`
-- Infra (Docker): PostgreSQL 17, RabbitMQ 4 (Wolverine, M5), Jaeger. Background jobs: Hangfire inside the Api process
+- Infra (Docker): PostgreSQL 17, RabbitMQ 4 (Wolverine), Jaeger (OTLP :4317, UI :16686 — `ObservabilityConfig`). Background
+  jobs: Hangfire inside the Api process
 - Tests: xUnit, Testcontainers, NetArchTest, Vitest, Playwright, k6 (`perf/k6`)
 
 ## Commands

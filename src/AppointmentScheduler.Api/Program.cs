@@ -9,7 +9,8 @@ builder
     .AddApiConfiguration()
     .AddSecurityConfiguration()
     .AddApiVersioningConfiguration()
-    .AddOpenApiConfiguration();
+    .AddOpenApiConfiguration()
+    .AddObservabilityConfiguration();
 
 var app = builder.Build();
 
