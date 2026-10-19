@@ -64,6 +64,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
+            // Test-only controllers (e.g. ErrorTestController) live in this assembly, outside /api/v1.
+            services.AddControllers().AddApplicationPart(typeof(ApiFactory).Assembly);
         });
     }
 
