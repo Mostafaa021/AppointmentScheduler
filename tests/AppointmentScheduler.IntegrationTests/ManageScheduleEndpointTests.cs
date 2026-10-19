@@ -5,9 +5,13 @@ using static AppointmentScheduler.IntegrationTests.ApiFactory;
 namespace AppointmentScheduler.IntegrationTests;
 
 [Collection(nameof(ApiCollection))]
-public class ManageScheduleEndpointTests(ApiFactory api)
+public class ManageScheduleEndpointTests(ApiFactory api) : IAsyncLifetime
 {
-    private readonly HttpClient _client = api.CreateClient();
+    private HttpClient _client = null!;
+
+    public async Task InitializeAsync() => _client = await api.ClientForAsync(TestUsers.Receptionist);
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     private async Task<Guid> BookIdAsync(int doctorId, int patientId, DateTimeOffset start) =>
         (await (await _client.BookAsync(doctorId, patientId, start)).JsonAsync()).GetProperty("id").GetGuid();

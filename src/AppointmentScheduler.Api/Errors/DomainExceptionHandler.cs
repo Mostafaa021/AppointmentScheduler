@@ -18,6 +18,9 @@ internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetai
             NotFoundException e => Problem(new ProblemDetails(), 404, "Not found", e),
             ConflictException e => Problem(new ProblemDetails(), 409, "Conflict", e),
             BusinessRuleException e => Problem(new ProblemDetails(), 422, "Business rule violated", e),
+            UnauthorizedException e => Problem(new ProblemDetails(), 401, "Unauthorized", e),
+            ForbiddenException e => Problem(new ProblemDetails(), 403, "Forbidden", e),
+            LockedException e => Problem(new ProblemDetails(), 423, "Locked", e),
             BadHttpRequestException e => new ProblemDetails { Status = e.StatusCode, Title = "Bad request", Detail = e.Message, Extensions = { ["code"] = "bad_request" } },
             _ => null,
         };

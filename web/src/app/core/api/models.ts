@@ -72,3 +72,19 @@ export interface Problem {
   code?: string;
   errors?: Record<string, string[]>;
 }
+
+export type Role = 'Admin' | 'Receptionist' | 'Doctor';
+
+/** Spec 004: the signed-in user as returned by login/refresh/me. */
+export interface AuthUser {
+  id: string;
+  email: string;
+  roles: Role[];
+  doctorId?: number | null;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  expiresAt: string;
+  user: AuthUser;
+}

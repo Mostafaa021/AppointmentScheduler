@@ -1,15 +1,18 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, throwError } from 'rxjs';
 import { Problem } from '../api/models';
+
+/** Set on a request to suppress the snackbar (silent startup refresh, logout). */
+export const SILENT = new HttpContextToken<boolean>(() => false);
 
 /** Shows the server's ProblemDetails message for any failed request, then lets callers react (e.g. refresh on 409). */
 export const problemInterceptor: HttpInterceptorFn = (req, next) => {
   const snackBar = inject(MatSnackBar);
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      snackBar.open(problemMessage(error), 'Dismiss', { duration: 6000 });
+      if (!req.context.get(SILENT)) snackBar.open(problemMessage(error), 'Dismiss', { duration: 6000 });
       return throwError(() => error);
     }),
   );

@@ -6,9 +6,13 @@ using static AppointmentScheduler.IntegrationTests.ApiFactory;
 namespace AppointmentScheduler.IntegrationTests;
 
 [Collection(nameof(ApiCollection))]
-public class AvailabilityEndpointTests(ApiFactory api)
+public class AvailabilityEndpointTests(ApiFactory api) : IAsyncLifetime
 {
-    private readonly HttpClient _client = api.CreateClient();
+    private HttpClient _client = null!;
+
+    public async Task InitializeAsync() => _client = await api.ClientForAsync(TestUsers.Receptionist);
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     private async Task<JsonElement[]> SlotsAsync(int doctorId, DateOnly date, int? patientId = null)
     {

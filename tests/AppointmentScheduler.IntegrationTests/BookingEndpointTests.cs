@@ -5,9 +5,13 @@ using static AppointmentScheduler.IntegrationTests.ApiFactory;
 namespace AppointmentScheduler.IntegrationTests;
 
 [Collection(nameof(ApiCollection))]
-public class BookingEndpointTests(ApiFactory api)
+public class BookingEndpointTests(ApiFactory api) : IAsyncLifetime
 {
-    private readonly HttpClient _client = api.CreateClient();
+    private HttpClient _client = null!;
+
+    public async Task InitializeAsync() => _client = await api.ClientForAsync(TestUsers.Receptionist);
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task AC_002_1_Books_a_free_slot()

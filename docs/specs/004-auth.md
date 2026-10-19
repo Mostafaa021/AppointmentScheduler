@@ -1,6 +1,6 @@
 # 004 — Authentication, authorization & API hardening
 
-| Status | Refined ☑ · Designed ☑ · Built ☐ · Tested ☐ · Reviewed ☐ · Released ☐ · Documented ☐ |
+| Status | Refined ☑ · Designed ☑ · Built ☑ · Tested ☐ · Reviewed ☐ · Released ☐ · Documented ☐ |
 |---|---|
 | Milestone | M2 (stories S-20, S-21, S-22, S-23) |
 | Business rules touched | BR-7 — a user whose only role is Doctor can read only their own doctor's appointments and cannot change any |
@@ -10,6 +10,17 @@
 > Status note 2026-10-19 — Human approved design (FluentValidation per ADR-0013 rev.; decisions: 423 enumeration risk
 > accepted for M2; AC-004-21 Playwright check deferred to M7, Vitest only in M2; simultaneous two-tab refresh → reuse/logout
 > accepted, no grace window; AC-004-19 retried 401 → logout + `/login` confirmed).
+> Status note 2026-10-19 — Backend built (S-20, S-21, S-23) by backend-developer, test-first. Migrations
+> `AddIdentityAndRefreshTokens`, `AddAuditRecords`; `dotnet build -warnaserror` succeeded; `dotnet test`:
+> `Passed!  - Failed:     0, Passed:    55, Skipped:     0, Total:    55 - AppointmentScheduler.UnitTests.dll (net10.0)`
+> `Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3 - AppointmentScheduler.ArchitectureTests.dll (net10.0)`
+> `Passed!  - Failed:     0, Passed:    84, Skipped:     0, Total:    84 - AppointmentScheduler.IntegrationTests.dll (net10.0)`
+> Deviations: signing key read from `Jwt:SigningKey` (env `Jwt__SigningKey`), falling back to `JWT_SIGNING_KEY`;
+> CA1873 added to NoWarn (same logging-perf family as CA1848). AC-004-2 "identical body" compared without the per-request
+> `traceId`. Demo users (AC-004-26) — see `Persistence/Seed/DbSeeder.cs`; README entry pending (tech-writer).
+> Status note 2026-10-19 — S-22 frontend Built (AC-004-15..21): `ng test` 32/32 passed (8 files; was 11), `npm run build`
+> OK. Specs: `core/auth/auth.service.spec`, `auth.interceptor.spec`, `auth.guards.spec`, `features/auth/login-page.spec`,
+> `features/schedule/doctor-schedule-page.spec`. Overall Built ☐ stays until S-20/21/23 backend lands.
 
 ## Goal
 Only authenticated staff use the system, each role can do only its job, and every request is validated, hardened and audited.

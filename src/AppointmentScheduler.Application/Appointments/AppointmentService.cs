@@ -2,6 +2,7 @@ using AppointmentScheduler.Application.Common;
 using AppointmentScheduler.Domain.Appointments;
 using AppointmentScheduler.Domain.Common;
 using AppointmentScheduler.Domain.Scheduling;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -10,47 +11,67 @@ namespace AppointmentScheduler.Application.Appointments;
 /// <summary>
 /// Book / cancel / reschedule / read. Overlap pre-checks give specific error codes (BR-1, BR-2);
 /// the PostgreSQL exclusion constraints remain the guarantee under concurrency (ADR-0002).
+/// Order per use case: validate (ADR-0013) → lookups → BR-7 read check (ADR-0012) → rules → one save incl. audit (ADR-0011).
 /// </summary>
-public sealed class AppointmentService(IAppDbContext db, TimeProvider clock, IOptions<ClinicOptions> clinic)
+public sealed class AppointmentService(
+    IAppDbContext db,
+    TimeProvider clock,
+    IOptions<ClinicOptions> clinic,
+    ICurrentUser currentUser,
+    AuditLog audit,
+    IValidator<BookAppointmentRequest> bookValidator,
+    IValidator<CancelAppointmentRequest> cancelValidator,
+    IValidator<RescheduleAppointmentRequest> rescheduleValidator)
 {
     private readonly DaySchedule _schedule = clinic.Value.ToDaySchedule();
 
     public async Task<AppointmentDto> BookAsync(BookAppointmentRequest request, CancellationToken ct)
     {
+        bookValidator.ValidateOrThrow(request);
         await EnsureExistsAsync(request.DoctorId, request.PatientId, ct);
 
         var appointment = Appointment.Schedule(
-            request.DoctorId, request.PatientId, request.StartUtc, request.Reason, _schedule, clock.GetUtcNow());
+            request.DoctorId, request.PatientId, request.StartUtc!.Value, request.Reason, _schedule, clock.GetUtcNow());
         await EnsureNoOverlapAsync(appointment, ct);
 
         db.Appointments.Add(appointment);
+        audit.Record(AuditActions.AppointmentBooked, nameof(Appointment), appointment.Id.ToString());
         await db.SaveChangesAsync(ct);
         return await GetAsync(appointment.Id, ct);
     }
 
     public async Task<AppointmentDto> CancelAsync(Guid id, CancelAppointmentRequest request, CancellationToken ct)
     {
+        cancelValidator.ValidateOrThrow(request);
         var appointment = await FindAsync(id, ct);
         appointment.Cancel(request.Reason, clock.GetUtcNow());
+        audit.Record(AuditActions.AppointmentCancelled, nameof(Appointment), id.ToString());
         await db.SaveChangesAsync(ct);
         return AppointmentDto.From(appointment, _schedule);
     }
 
     public async Task<AppointmentDto> RescheduleAsync(Guid id, RescheduleAppointmentRequest request, CancellationToken ct)
     {
+        rescheduleValidator.ValidateOrThrow(request);
         var appointment = await FindAsync(id, ct);
-        appointment.Reschedule(request.StartUtc, _schedule, clock.GetUtcNow());
+        appointment.Reschedule(request.StartUtc!.Value, _schedule, clock.GetUtcNow());
         await EnsureNoOverlapAsync(appointment, ct);
+        audit.Record(AuditActions.AppointmentRescheduled, nameof(Appointment), id.ToString());
         await db.SaveChangesAsync(ct);
         return AppointmentDto.From(appointment, _schedule);
     }
 
-    public async Task<AppointmentDto> GetAsync(Guid id, CancellationToken ct) =>
-        AppointmentDto.From(await FindAsync(id, ct, tracked: false), _schedule);
+    public async Task<AppointmentDto> GetAsync(Guid id, CancellationToken ct)
+    {
+        var appointment = await FindAsync(id, ct, tracked: false); // 404 before 403 (AC-004-9)
+        currentUser.EnsureCanRead(appointment.DoctorId);
+        return AppointmentDto.From(appointment, _schedule);
+    }
 
     /// <summary>All appointments (incl. cancelled) of a doctor on a clinic-local date, ordered by start.</summary>
     public async Task<IReadOnlyList<AppointmentDto>> GetDayScheduleAsync(int doctorId, DateOnly date, CancellationToken ct)
     {
+        currentUser.EnsureCanRead(doctorId);
         var (from, to) = _schedule.UtcWindowOf(date);
         var items = await db.Appointments.AsNoTracking()
             .Include(a => a.Doctor).Include(a => a.Patient)

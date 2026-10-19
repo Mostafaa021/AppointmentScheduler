@@ -23,7 +23,7 @@ public class LayerDependencyTests
     public void Domain_depends_on_no_other_layer_or_framework()
     {
         var result = Types.InAssembly(DomainAssembly).ShouldNot()
-            .HaveDependencyOnAny(Application, Infrastructure, Api, Worker, "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore")
+            .HaveDependencyOnAny(Application, Infrastructure, Api, Worker, "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore", "FluentValidation")
             .GetResult();
 
         Assert.True(result.IsSuccessful, Describe(result));

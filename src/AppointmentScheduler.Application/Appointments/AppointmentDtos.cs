@@ -3,9 +3,9 @@ using AppointmentScheduler.Domain.Scheduling;
 
 namespace AppointmentScheduler.Application.Appointments;
 
-public sealed record BookAppointmentRequest(int DoctorId, int PatientId, DateTimeOffset StartUtc, string? Reason);
+public sealed record BookAppointmentRequest(int DoctorId, int PatientId, DateTimeOffset? StartUtc, string? Reason);
 
-public sealed record RescheduleAppointmentRequest(DateTimeOffset StartUtc);
+public sealed record RescheduleAppointmentRequest(DateTimeOffset? StartUtc);
 
 public sealed record CancelAppointmentRequest(string? Reason);
 

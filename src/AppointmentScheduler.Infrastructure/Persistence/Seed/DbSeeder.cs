@@ -1,7 +1,11 @@
+using AppointmentScheduler.Application.Auth;
 using AppointmentScheduler.Domain.Appointments;
 using AppointmentScheduler.Domain.Doctors;
 using AppointmentScheduler.Domain.Patients;
 using AppointmentScheduler.Domain.Scheduling;
+using AppointmentScheduler.Infrastructure.Auth;
+using AppointmentScheduler.Infrastructure.Persistence.Configurations;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace AppointmentScheduler.Infrastructure.Persistence.Seed;
@@ -9,10 +13,20 @@ namespace AppointmentScheduler.Infrastructure.Persistence.Seed;
 /// <summary>Fictional sample data. Appointments are placed relative to "today" so the demo always has a populated schedule.</summary>
 internal static class DbSeeder
 {
-    public static async Task SeedAsync(DbContext db, DaySchedule schedule, DateTimeOffset nowUtc, CancellationToken ct)
-    {
-        if (await db.Set<Doctor>().AnyAsync(ct)) return;
+    // AC-004-26 demo users (Development only, fictional; documented in README). All share this password.
+    public const string DemoPassword = "DemoClinic2026";
+    public const string DemoAdmin = "admin@clinic.test";
+    public const string DemoReceptionist = "reception@clinic.test";
+    public const string DemoDoctor = "doctor@clinic.test"; // linked to the first seeded doctor (Dr. Amelia Hart)
 
+    public static async Task SeedAsync(DbContext db, DaySchedule schedule, DateTimeOffset nowUtc, bool includeDemoUsers, CancellationToken ct)
+    {
+        if (!await db.Set<Doctor>().AnyAsync(ct)) await SeedScheduleAsync(db, schedule, nowUtc, ct);
+        if (includeDemoUsers && !await db.Set<AppUser>().AnyAsync(ct)) await SeedDemoUsersAsync(db, ct);
+    }
+
+    private static async Task SeedScheduleAsync(DbContext db, DaySchedule schedule, DateTimeOffset nowUtc, CancellationToken ct)
+    {
         Doctor[] doctors =
         [
             new("Dr. Amelia Hart", "General Practice"),
@@ -54,6 +68,38 @@ internal static class DbSeeder
                     db.Add(Appointment.Schedule(doctor.Id, patient.Id, slot.StartUtc, reasons[p % reasons.Length], schedule, nowUtc));
                 }
             }
+        }
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static async Task SeedDemoUsersAsync(DbContext db, CancellationToken ct)
+    {
+        var doctorId = await db.Set<Doctor>().OrderBy(d => d.Id).Select(d => d.Id).FirstAsync(ct);
+        var hasher = new PasswordHasher<AppUser>();
+        foreach (var (email, role, linkedDoctor) in new[]
+                 {
+                     (DemoAdmin, Roles.Admin, (int?)null),
+                     (DemoReceptionist, Roles.Receptionist, null),
+                     (DemoDoctor, Roles.Doctor, doctorId),
+                 })
+        {
+            // Same normalisation as Identity's UpperInvariantLookupNormalizer, so FindByEmailAsync finds them.
+            var user = new AppUser
+            {
+                Id = Guid.CreateVersion7(),
+                UserName = email,
+                NormalizedUserName = email.ToUpperInvariant(),
+                Email = email,
+                NormalizedEmail = email.ToUpperInvariant(),
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                ConcurrencyStamp = Guid.NewGuid().ToString(),
+                LockoutEnabled = true,
+                DoctorId = linkedDoctor,
+            };
+            user.PasswordHash = hasher.HashPassword(user, DemoPassword);
+            db.Add(user);
+            db.Add(new IdentityUserRole<Guid> { UserId = user.Id, RoleId = IdentityConfiguration.RoleIds[role] });
         }
         await db.SaveChangesAsync(ct);
     }

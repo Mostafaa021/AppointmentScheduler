@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Endpoints;
 using AppointmentScheduler.Api.Errors;
+using AppointmentScheduler.Api.Security;
 using AppointmentScheduler.Application;
 using AppointmentScheduler.Application.Common;
 using AppointmentScheduler.Infrastructure;
@@ -16,10 +18,12 @@ builder.Services.AddOptions<ClinicOptions>().Bind(builder.Configuration.GetSecti
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApiAuth();
 
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+builder.Services.AddHsts(o => o.MaxAge = TimeSpan.FromDays(365));
 builder.Services.AddOpenApi();
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
@@ -27,9 +31,14 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
 
 var app = builder.Build();
 
+// Order matters (docs/architecture.md): headers first so error/401/403 responses carry them; auth before endpoints (AC-004-8).
+app.UseSecurityHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -42,7 +51,10 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/health/live", () => TypedResults.Ok("Healthy")).ExcludeFromDescription();
 
-app.MapGroup("/api/v1")
+// Every /api/v1 route requires an authenticated user unless it opts out (login, refresh); groups add role policies.
+app.MapGroup("/api/v1").RequireAuthorization()
+    .MapAuthEndpoints()
+    .MapUserEndpoints()
     .MapLookupEndpoints()
     .MapAppointmentEndpoints();
 
