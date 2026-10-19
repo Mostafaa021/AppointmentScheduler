@@ -44,9 +44,13 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   - layer services go in that layer's `DependencyInjection.cs` (see docs/architecture.md "Host composition").
 - Business rules live in Domain (`Appointment`, `DaySchedule`); the DB exclusion constraint is the final guard (see SPEC.md).
 - Data access (ADR-0016):
-  - Application uses repository interfaces + `IUnitOfWork`, never EF Core. Application has no EF package; ArchitectureTests enforce it.
+  - Application uses `IUnitOfWork`, never EF Core. Application has no EF package; ArchitectureTests enforce it.
+  - **Services inject `IUnitOfWork` only** and reach every repository through it (`unitOfWork.Appointments.Add(...)`,
+    `unitOfWork.Doctors.ExistsAsync(...)`). Never inject a repository: they are not registered in DI, and ArchitectureTests
+    `Repositories_are_reached_only_through_the_unit_of_work` rejects a repository in any constructor.
   - Contracts sit next to their aggregate in Domain (`Domain/Appointments/IAppointmentRepository.cs`, …).
-  - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`, registered in `AddPersistence`.
+  - Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`, created by `UnitOfWork` over its
+    `AppDbContext`. A new repository = contract in Domain + implementation + a property on `IUnitOfWork` / `UnitOfWork`.
   - Repositories return entities, never `IQueryable`.
   - Repository methods only stage changes; the use case calls `unitOfWork.SaveChangesAsync` once (change + audit row together).
   - A new query is a named repository method, not inline LINQ in a service.

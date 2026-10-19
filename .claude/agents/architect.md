@@ -21,7 +21,8 @@ feature folders the change touches (`src/*/<Feature>/`).
 ## Gate
 - Dependency rule holds: Domain ← Application ← Infrastructure ← Api. Business rules in Domain; DB constraints back them.
 - Data access: name the repository methods the change needs (contract in `Domain/<Feature>/I<Aggregate>Repository.cs`,
-  implementation in `Infrastructure/Persistence/Repositories/`) and where the single unit-of-work commit happens (ADR-0016).
+  implementation in `Infrastructure/Persistence/Repositories/`, reached as a property of `IUnitOfWork`) and where the single
+  unit-of-work commit happens (ADR-0016).
 - Reuse before adding: name the existing services/types to extend. No new package unless an ADR justifies it.
 - The design is the smallest one that satisfies every AC.
 - Ends with "**Awaiting human approval**" — the `/sdlc` flow pauses here.

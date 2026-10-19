@@ -307,3 +307,12 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   - The four `BeginTransactionAsync` blocks and `UnitOfWork` are unchanged: they are already atomic.
   - **Tests:** throwing endpoints on the test-only `ErrorTestController` (transient, wrapped in `DbUpdateException`,
     non-transient).
+- **Plan 010 (repositories through the unit of work):** the user found repositories injected into services next to
+  `IUnitOfWork`, and wanted every repository reached through the unit of work ("that is the goal of unit of work").
+  - `IUnitOfWork` gained `Appointments` / `Doctors` / `Patients` / `AuditRecords`.
+  - `UnitOfWork` creates them lazily over its `AppDbContext` with the C# 14 `field` keyword.
+  - The four DI registrations were removed, and the services (and `AuditLog`) now inject `IUnitOfWork` only.
+  - **Test-first guard:** the new arch test `Repositories_are_reached_only_through_the_unit_of_work` (reflection over
+    constructor parameters) first failed, naming exactly the four classes, then passed after the switch.
+  - **Seen once:** `ObservabilityTests.Request_span_is_tagged_with_the_user_id_only` failed in one full parallel run and
+    passed alone and on the re-run. The cause is a pre-existing flake: a process-wide `ActivityListener` plus `Assert.Single`.

@@ -24,12 +24,14 @@ description: Single-session, spec-first checklist for adding a feature end to en
    caller will change the entity.
 4. **Application** — `src/AppointmentScheduler.Application/<Feature>/`: service method + request/response records +
    (DTOs expose Application types only — an Application enum, never a Domain one: the Api must not reference Domain) +
-   FluentValidation validator (`ValidateOrThrow`); register in `Application/DependencyInjection.cs`. Data access only via
-   repositories; stage changes, then **one** `await unitOfWork.SaveChangesAsync(ct)` per use case (after `audit.Record(...)`).
+   FluentValidation validator (`ValidateOrThrow`); register in `Application/DependencyInjection.cs`.
+   Inject `IUnitOfWork` only and reach repositories through it (`unitOfWork.Appointments…`), never inject a repository;
+   stage changes, then **one** `await unitOfWork.SaveChangesAsync(ct)` per use case (after `audit.Record(...)`).
    No EF Core here (architecture test). Use-case order can be unit-tested with fakes (see `AppointmentServiceTests`).
 5. **Infrastructure** — EF configuration in `Infrastructure/Persistence/Configurations/`; schema change → `/add-migration`.
-   Repository implementation `internal sealed` in `Infrastructure/Persistence/Repositories/`, registered in `AddPersistence`
-   (`Infrastructure/DependencyInjection.cs`). Never in `Program.cs`. A new host-level
+   Repository implementation `internal sealed` in `Infrastructure/Persistence/Repositories/`; a new repository also gets a
+   property on `IUnitOfWork` / `UnitOfWork` (not a DI registration). Other services go in `AddPersistence`
+   (`Infrastructure/DependencyInjection.cs`), never in `Program.cs`. A new host-level
    concern (e.g. rate limiting) gets `Api/Configuration/<Concern>Config.cs`, chained in `Program.cs`:
    ```csharp
    public static class RateLimitingConfig

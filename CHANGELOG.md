@@ -3,6 +3,10 @@
 Format: [Keep a Changelog](https://keepachangelog.com). Versions follow milestones.
 
 ## [Unreleased]
+### Changed
+- Repositories are reached only through the unit of work (plan 010, ADR-0016 amended): `IUnitOfWork` exposes `Appointments`,
+  `Doctors`, `Patients`, `AuditRecords`; services inject `IUnitOfWork` alone, repositories are no longer registered in DI, and
+  ArchitectureTests reject a repository in any constructor. No behaviour change.
 ### Added
 - 503 `SERVICE_UNAVAILABLE` + `Retry-After: 5` when the database fails transiently (S-33, ADR-0008 revised): no server-side
   retry and no Polly for the database. The atomic unit of work guarantees nothing is half-saved, and the client retries with

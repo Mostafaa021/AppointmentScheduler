@@ -2,8 +2,6 @@ using AppointmentScheduler.Application.Common;
 using AppointmentScheduler.Domain.Appointments;
 using AppointmentScheduler.Domain.Common;
 using AppointmentScheduler.Domain.Scheduling;
-using AppointmentScheduler.Domain.Doctors;
-using AppointmentScheduler.Domain.Patients;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 
@@ -13,12 +11,9 @@ namespace AppointmentScheduler.Application.Appointments;
 /// Book / cancel / reschedule / read. Overlap pre-checks give specific error codes (BR-1, BR-2);
 /// the PostgreSQL exclusion constraints remain the guarantee under concurrency (ADR-0002).
 /// Order per use case: validate (ADR-0013) → lookups → BR-7 read check (ADR-0012) → rules → one unit-of-work commit incl.
-/// audit (ADR-0011, ADR-0016). Data access only through repositories (ADR-0016).
+/// audit (ADR-0011, ADR-0016). Data access only through the unit of work's repositories (ADR-0016).
 /// </summary>
 public sealed class AppointmentService(
-    IAppointmentRepository appointments,
-    IDoctorRepository doctors,
-    IPatientRepository patients,
     IUnitOfWork unitOfWork,
     TimeProvider clock,
     IOptions<ClinicOptions> clinic,
@@ -39,7 +34,7 @@ public sealed class AppointmentService(
             request.DoctorId, request.PatientId, request.StartUtc!.Value, request.Reason, _schedule, clock.GetUtcNow());
         await EnsureNoOverlapAsync(appointment, ct);
 
-        appointments.Add(appointment);
+        unitOfWork.Appointments.Add(appointment);
         audit.Record(AuditActions.AppointmentBooked, nameof(Appointment), appointment.Id.ToString());
         await unitOfWork.SaveChangesAsync(ct);
         return await GetAsync(appointment.Id, ct);
@@ -68,7 +63,7 @@ public sealed class AppointmentService(
 
     public async Task<AppointmentDto> GetAsync(Guid id, CancellationToken ct)
     {
-        var appointment = await appointments.GetByIdReadOnlyAsync(id, ct) ?? throw AppointmentNotFound(id); // 404 before 403 (AC-004-9)
+        var appointment = await unitOfWork.Appointments.GetByIdReadOnlyAsync(id, ct) ?? throw AppointmentNotFound(id); // 404 before 403 (AC-004-9)
         currentUser.EnsureCanRead(appointment.DoctorId);
         return AppointmentDto.From(appointment, _schedule);
     }
@@ -78,29 +73,29 @@ public sealed class AppointmentService(
     {
         currentUser.EnsureCanRead(doctorId);
         var (from, to) = _schedule.UtcWindowOf(date);
-        var items = await appointments.ListDayScheduleAsync(doctorId, from, to, ct);
+        var items = await unitOfWork.Appointments.ListDayScheduleAsync(doctorId, from, to, ct);
         return [.. items.Select(a => AppointmentDto.From(a, _schedule))];
     }
 
     private async Task<Appointment> FindAsync(Guid id, CancellationToken ct) =>
-        await appointments.GetByIdAsync(id, ct) ?? throw AppointmentNotFound(id);
+        await unitOfWork.Appointments.GetByIdAsync(id, ct) ?? throw AppointmentNotFound(id);
 
     private static NotFoundException AppointmentNotFound(Guid id) =>
         new(ErrorCodes.AppointmentNotFound, $"Appointment {id} was not found.");
 
     private async Task EnsureExistsAsync(int doctorId, int patientId, CancellationToken ct)
     {
-        if (!await doctors.ExistsAsync(doctorId, ct))
+        if (!await unitOfWork.Doctors.ExistsAsync(doctorId, ct))
             throw new NotFoundException(ErrorCodes.DoctorNotFound, $"Doctor {doctorId} was not found.");
-        if (!await patients.ExistsAsync(patientId, ct))
+        if (!await unitOfWork.Patients.ExistsAsync(patientId, ct))
             throw new NotFoundException(ErrorCodes.PatientNotFound, $"Patient {patientId} was not found.");
     }
 
     private async Task EnsureNoOverlapAsync(Appointment a, CancellationToken ct)
     {
-        if (await appointments.DoctorHasOverlapAsync(a, ct))
+        if (await unitOfWork.Appointments.DoctorHasOverlapAsync(a, ct))
             throw AppointmentConflicts.Doctor("pre-check");
-        if (await appointments.PatientHasOverlapAsync(a, ct))
+        if (await unitOfWork.Appointments.PatientHasOverlapAsync(a, ct))
             throw AppointmentConflicts.Patient("pre-check");
     }
 }

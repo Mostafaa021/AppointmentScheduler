@@ -19,16 +19,16 @@ public class AppointmentServiceTests
     private static readonly DateTimeOffset TomorrowNine = new(2026, 11, 3, 9, 0, 0, TimeSpan.Zero); // GMT in November
 
     private readonly FakeAppointments _appointments = new();
-    private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly FakeAuditRecords _audit = new();
+    private FakeUnitOfWork _unitOfWork = null!;
 
     private AppointmentService Service(int[]? doctorIds = null, int[]? patientIds = null)
     {
         var clock = new FakeTimeProvider(Now);
         var user = new Receptionist();
+        _unitOfWork = new FakeUnitOfWork(_appointments, new FakeDoctors(doctorIds ?? [1]), new FakePatients(patientIds ?? [2]), _audit);
         return new AppointmentService(
-            _appointments, new FakeDoctors(doctorIds ?? [1]), new FakePatients(patientIds ?? [2]), _unitOfWork,
-            clock, Options.Create(new ClinicOptions()), user, new AuditLog(_audit, user, clock),
+            _unitOfWork, clock, Options.Create(new ClinicOptions()), user, new AuditLog(_unitOfWork, user, clock),
             new BookAppointmentRequestValidator(), new CancelAppointmentRequestValidator(), new RescheduleAppointmentRequestValidator());
     }
 
@@ -114,8 +114,15 @@ public class AppointmentServiceTests
         }
     }
 
-    private sealed class FakeUnitOfWork : IUnitOfWork
+    // Services reach repositories only through the unit of work (ADR-0016), so the fake hands out the fake repositories.
+    private sealed class FakeUnitOfWork(
+        IAppointmentRepository appointments, IDoctorRepository doctors, IPatientRepository patients, IAuditRecordRepository auditRecords)
+        : IUnitOfWork
     {
+        public IAppointmentRepository Appointments => appointments;
+        public IDoctorRepository Doctors => doctors;
+        public IPatientRepository Patients => patients;
+        public IAuditRecordRepository AuditRecords => auditRecords;
         public int Commits { get; private set; }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

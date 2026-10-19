@@ -20,3 +20,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 007 | [ApiResponse in the house template shape](007-api-response-house-template.md) | Done | ADR-0015 |
 | 008 | [RabbitMQ local credentials guest/guest](008-rabbitmq-guest-credentials.md) | Done | ADR-0007 |
 | 009 | [Sprint 3 — M3 reliability](009-sprint-3-reliability.md) | Done (S-31 set aside) | S-30, S-32, S-33; spec 009, ADR-0006/0009 |
+| 010 | [Repositories only through the unit of work](010-repositories-through-unit-of-work.md) | Done | ADR-0016 |

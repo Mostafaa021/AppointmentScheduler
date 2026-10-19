@@ -1,7 +1,5 @@
 using AppointmentScheduler.Application.Common;
-using AppointmentScheduler.Domain.Appointments;
 using AppointmentScheduler.Domain.Common;
-using AppointmentScheduler.Domain.Doctors;
 using Microsoft.Extensions.Options;
 
 namespace AppointmentScheduler.Application.Availability;
@@ -14,20 +12,19 @@ public sealed record AvailabilityDto(int DoctorId, DateOnly Date, string TimeZon
 
 /// <summary>Spec 001: classifies each slot of a doctor's day. Two appointment queries regardless of slot count.</summary>
 public sealed class AvailabilityService(
-    IDoctorRepository doctors,
-    IAppointmentRepository appointments,
+    IUnitOfWork unitOfWork,
     TimeProvider clock,
     IOptions<ClinicOptions> clinic)
 {
     public async Task<AvailabilityDto> GetAsync(int doctorId, DateOnly date, int? patientId, CancellationToken ct)
     {
-        if (!await doctors.ExistsAsync(doctorId, ct))
+        if (!await unitOfWork.Doctors.ExistsAsync(doctorId, ct))
             throw new NotFoundException(ErrorCodes.DoctorNotFound, $"Doctor {doctorId} was not found.");
 
         var schedule = clinic.Value.ToDaySchedule();
         var (from, to) = schedule.UtcWindowOf(date);
-        var doctorBusy = await appointments.ListScheduledForDoctorAsync(doctorId, from, to, ct);
-        var patientBusy = patientId is { } pid ? await appointments.ListScheduledForPatientAsync(pid, from, to, ct) : [];
+        var doctorBusy = await unitOfWork.Appointments.ListScheduledForDoctorAsync(doctorId, from, to, ct);
+        var patientBusy = patientId is { } pid ? await unitOfWork.Appointments.ListScheduledForPatientAsync(pid, from, to, ct) : [];
 
         var now = clock.GetUtcNow();
         var slots = schedule.SlotsFor(date).Select(s =>

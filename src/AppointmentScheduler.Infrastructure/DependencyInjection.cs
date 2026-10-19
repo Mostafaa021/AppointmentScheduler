@@ -8,10 +8,7 @@ using AppointmentScheduler.Application.Idempotency;
 using AppointmentScheduler.Infrastructure.Persistence;
 using AppointmentScheduler.Infrastructure.Persistence.Seed;
 using AppointmentScheduler.Infrastructure.Persistence.Repositories;
-using AppointmentScheduler.Domain.Appointments;
 using AppointmentScheduler.Domain.Common;
-using AppointmentScheduler.Domain.Doctors;
-using AppointmentScheduler.Domain.Patients;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -54,12 +51,9 @@ public static class DependencyInjection
             options.UseSeeding((db, _) =>
                 DbSeeder.SeedAsync(db, schedule, clock.GetUtcNow(), includeDemoUsers, CancellationToken.None).GetAwaiter().GetResult());
         });
-        // Repositories + unit of work share the request-scoped AppDbContext, so one SaveChanges commits them all (ADR-0016).
+        // The unit of work owns the repositories (unitOfWork.Appointments, …) over the request-scoped AppDbContext, so one
+        // SaveChanges commits them all. Repositories are deliberately not registered: nothing can inject one (ADR-0016).
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<IAppointmentRepository, AppointmentRepository>();
-        services.AddScoped<IDoctorRepository, DoctorRepository>();
-        services.AddScoped<IPatientRepository, PatientRepository>();
-        services.AddScoped<IAuditRecordRepository, AuditRecordRepository>();
 
         // Idempotent writes (spec 009): the Api filter talks to this port; records live in idempotency_records.
         services.AddOptions<IdempotencyOptions>().Bind(configuration.GetSection(IdempotencyOptions.Section));

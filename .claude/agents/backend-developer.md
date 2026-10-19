@@ -26,10 +26,11 @@ and ids-only `LogDetail`; actions return `ApiResponse<T>` and declare every stat
 `/new-feature` step 6); endpoints contain no logic or EF queries; mutating endpoints are idempotent (M3+) and authorized (M2+);
 log ids, never PII. Integration tests read `DataAsync()` / `ErrorCodeAsync()` and assert `ErrorCodes.X`.
 Data access (ADR-0016):
-- Application services use repository interfaces (contracts in `Domain/<Feature>/I<Aggregate>Repository.cs`), never EF Core.
+- Application services inject `IUnitOfWork` only and use its repositories (`unitOfWork.Appointments…`; contracts in
+  `Domain/<Feature>/I<Aggregate>Repository.cs`), never a repository directly and never EF Core.
 - Each use case commits once via `IUnitOfWork.SaveChangesAsync`.
 - New queries become named repository methods that return entities.
-- Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`.
+- Implementations are `internal sealed` in `Infrastructure/Persistence/Repositories/`, exposed as a property of `UnitOfWork`.
 - Unit-test the use-case order with fakes; integration tests cover the real queries and constraints.
 
 The Api never references Domain: use Application DTOs (Application enums, not Domain ones) and `ApplicationError` (architecture

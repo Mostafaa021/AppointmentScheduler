@@ -19,12 +19,12 @@ public static class AuditActions
 /// ADR-0011: stages an audit row in the current unit of work; the caller's single <c>IUnitOfWork.SaveChangesAsync</c> (or, in
 /// Infrastructure, <c>AppDbContext.SaveChangesAsync</c>) commits it together with the change, so a rejected change leaves no record.
 /// </summary>
-public sealed class AuditLog(IAuditRecordRepository records, ICurrentUser currentUser, TimeProvider clock)
+public sealed class AuditLog(IUnitOfWork unitOfWork, ICurrentUser currentUser, TimeProvider clock)
 {
     public void Record(string action, string entityType, string? entityId) =>
         Record(action, entityType, entityId, currentUser.UserId);
 
     /// <summary>For events without an authenticated caller (login, refresh-token reuse).</summary>
     public void Record(string action, string entityType, string? entityId, Guid? actingUserId) =>
-        records.Add(new AuditRecord(actingUserId, action, entityType, entityId, clock.GetUtcNow(), currentUser.TraceId));
+        unitOfWork.AuditRecords.Add(new AuditRecord(actingUserId, action, entityType, entityId, clock.GetUtcNow(), currentUser.TraceId));
 }

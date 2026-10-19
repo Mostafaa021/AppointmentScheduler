@@ -77,6 +77,21 @@ public class LayerDependencyTests
         Assert.True(result.IsSuccessful, Describe(result));
     }
 
+    [Fact]
+    public void Repositories_are_reached_only_through_the_unit_of_work()
+    {
+        // ADR-0016: services inject IUnitOfWork and use unitOfWork.Appointments etc., so every repository and the commit share
+        // one DbContext. UnitOfWork creates its repositories itself, so no constructor anywhere takes one.
+        var violations = new[] { ApplicationAssembly, InfrastructureAssembly }
+            .SelectMany(a => a.GetTypes())
+            .Where(t => t.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Any(c => c.GetParameters().Any(p => p.ParameterType.Name.EndsWith("Repository", StringComparison.Ordinal))))
+            .Select(t => t.FullName)
+            .ToList();
+
+        Assert.True(violations.Count == 0, "Inject IUnitOfWork instead of a repository: " + string.Join(", ", violations));
+    }
+
     private static string Describe(TestResult result) =>
         "Violations: " + string.Join(", ", result.FailingTypeNames ?? []);
 }

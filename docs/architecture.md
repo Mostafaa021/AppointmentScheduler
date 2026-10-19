@@ -38,7 +38,7 @@ Each layer registers its own services:
 |---|---|---|
 | `AddApiConfiguration()` | `Api/Configuration/ApiConfig.cs` | `ClinicOptions` (validated on start), `TimeProvider`, `AddApplication()`, `AddInfrastructure()`, controllers, JSON, model-state 400, `IClientErrorFactory` + `IProblemDetailsWriter` (both → `ApiResponse`), `GlobalExceptionHandler`, `AddProblemDetails`, health checks; app side `UseApiExceptionHandling()` |
 | ↳ `AddApplication()` | `Application/DependencyInjection.cs` | services, `AuditLog`, validators |
-| ↳ `AddInfrastructure()` | `Infrastructure/DependencyInjection.cs` | `AddPersistence` (DbContext, seed, repositories + unit of work), `AddIdentityAndJwt`, `AddBackgroundJobs` (Hangfire) |
+| ↳ `AddInfrastructure()` | `Infrastructure/DependencyInjection.cs` | `AddPersistence` (DbContext, seed, unit of work — which owns the repositories), `AddIdentityAndJwt`, `AddBackgroundJobs` (Hangfire) |
 | `AddSecurityConfiguration()` | `Api/Configuration/SecurityConfig.cs` | role policies + JWT 401/403 bodies (`AddApiAuth`), HSTS, CORS from `Cors:AllowedOrigins` |
 | `AddMessagingConfiguration()` | `Api/Configuration/MessagingConfig.cs` → `Infrastructure/Messaging/MessagingSetup.cs` | Wolverine: PostgreSQL message store (schema `wolverine`), EF Core transactions, RabbitMQ transport when the startup probe succeeds, otherwise degraded mode + `RabbitMqRecoveryService` (ADR-0007) |
 | `AddApiVersioningConfiguration()` | `Api/Configuration/ApiVersioningConfig.cs` | Asp.Versioning: v1 default, URL segment + `X-Api-Version` + `api-version`, reported versions, API explorer groups (ADR-0017) |
@@ -57,7 +57,7 @@ The middleware order stays written out in `Program.cs` on purpose, so you can re
 ## API request pipeline (M2)
 `SecurityHeaders` → `ExceptionHandler` (`SchedulerException` → `ApiResponse` error with `errorCode`, ADR-0015) → `StatusCodePages` (bodiless 404/405 → `ApiResponse`) → `Hsts` (non-Development)
 → `Cors` → `Authentication` (JWT, 401 `UNAUTHORIZED`) → `PollyRateLimiting` (429 `RATE_LIMITED`) → `Authorization` (role policies, 403 `FORBIDDEN`) → endpoint
-(bind → Application service: validate → lookups → BR-7 check → rules → one `IUnitOfWork.SaveChangesAsync` incl. audit row).
+(bind → Application service: validate → lookups → BR-7 check → rules → repositories reached through `IUnitOfWork`, one `SaveChangesAsync` incl. audit row).
 
 ## Sign-in, refresh rotation and reuse detection (spec 004, ADR-0005)
 ```mermaid
