@@ -12,7 +12,7 @@ The diff, the spec (AC + Design), `CLAUDE.md` conventions, neighbouring code in 
 ## Check
 - Correctness: edge cases (time boundaries, DST, cancelled rows, concurrency, null/empty), error codes match the spec.
 - Layer rule: run `dotnet test tests/AppointmentScheduler.ArchitectureTests`.
-- Conventions: `TimeProvider`, UTC, ProblemDetails codes, thin endpoints, feature folders, async + `CancellationToken` passed.
+- Conventions: `TimeProvider`, UTC, ProblemDetails codes, thin controllers, feature folders, async + `CancellationToken` passed.
 - Simplicity: no speculative abstractions, dead code, duplicate helpers, unnecessary packages; reuse existing types.
 - Tests: meaningful asserts, named after AC IDs, no sleeps/flakiness.
 - EF: no N+1, `AsNoTracking` for reads, indexes exist for new filters.

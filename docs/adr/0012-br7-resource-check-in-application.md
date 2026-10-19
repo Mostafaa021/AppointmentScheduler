@@ -3,7 +3,7 @@
 - Status: Accepted (human approval 2026-10-19) · Date: 2026-10-19 · Spec: [004](../specs/004-auth.md) (AC-004-8, AC-004-9), [003](../specs/003-manage-schedule.md) (AC-003-9)
 
 ## Context
-Role policies on endpoint groups (ADR-0005) decide *which routes* a role may call. BR-7 is narrower: a user whose only role
+Role policies on controllers (ADR-0005) decide *which routes* a role may call. BR-7 is narrower: a user whose only role
 is Doctor may read `GET /appointments?doctorId=D` and `GET /appointments/{id}` only for their own doctor D. For the
 by-id route the doctor is known only after loading the appointment, and AC-004-9 requires 404 for an unknown id but 403 for
 another doctor's appointment.

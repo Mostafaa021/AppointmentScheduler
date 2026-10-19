@@ -20,15 +20,24 @@ Statuses: `Todo → Refined → Designed → Built → Tested → Reviewed → R
 | S-14 | Angular schedule page, book & reschedule dialogs | 001–003 | Done |
 | S-15 | README, SPEC.md, PROMPTS.md for submission | — | Done |
 
-## Sprint 2 — M2 Security (active)
-Opened 2026-10-19 by scrum-master. Next: product-owner re-confirms DoR → architect → human approval.
+## Sprint 2 — M2 Security
+Built and verified 2026-10-19 (tests + browser). The role-agent ceremony was stopped by the user after Build, so QA /
+security / code-review gates are **pending** — run them before calling M2 Done.
 
 | ID | Story | Spec | Status |
 |---|---|---|---|
-| S-20 | Identity + JWT + refresh rotation, user admin, demo users (AC-004-1..7, 10..14, 26) | 004 | Refined |
-| S-21 | Role policies + Doctor resource check (BR-7) (AC-004-8, 9; AC-003-9) | 004, 003 | Refined |
-| S-22 | Angular login, guards, auth interceptor (AC-004-15..21) | 004 | Refined |
-| S-23 | FluentValidation, security headers, audit log (AC-004-22..25) | 004, 000 | Refined |
+| S-20 | Identity + JWT + refresh rotation, user admin, demo users (AC-004-1..7, 10..14, 26) | 004 | Built (review pending) |
+| S-21 | Role policies + Doctor resource check (BR-7) (AC-004-8, 9; AC-003-9) | 004, 003 | Built (review pending) |
+| S-22 | Angular login, guards, auth interceptor (AC-004-15..21) | 004 | Built (review pending) |
+| S-23 | FluentValidation, security headers, audit log (AC-004-22..25) | 004, 000 | Built (review pending) |
+
+## Sprint 2b — Refactor (user-directed)
+| ID | Story | Spec | Status |
+|---|---|---|---|
+| S-24 | Minimal APIs → controllers (same routes, codes, policies) | 004 | Done |
+| S-25 | Global exception handler (generic 500 `internal_error`, no leaks) | 000 | Done |
+| S-26 | Remove Worker project and Mailpit; Api is the single host | ADR-0014 | Done |
+| S-27 | Hangfire in the Api + hourly expired refresh-token purge | ADR-0014 | Done |
 
 ## Sprint 3 — M3 Reliability
 | ID | Story | Spec | Status |

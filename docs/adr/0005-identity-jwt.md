@@ -11,7 +11,7 @@ Need staff login with roles (Admin, Receptionist, Doctor) for an Angular SPA, si
   body and kept **in memory** by the SPA (not localStorage → reduces XSS token theft).
 - A **7-day refresh token** (random 256-bit, stored as SHA-256 hash) is set as an `HttpOnly; Secure; SameSite=Strict` cookie with
   path `/api/v1/auth`. `/auth/refresh` rotates it; reuse of a rotated token revokes the whole family (theft detection).
-- Authorization via policies on endpoint groups plus a resource check for "Doctor reads own schedule".
+- Authorization via role policies on controllers/actions plus a resource check for "Doctor reads own schedule".
 
 ## Alternatives
 Keycloak/OIDC (more realistic, more moving parts — rejected for scope); cookie-only auth (simpler but less representative of API

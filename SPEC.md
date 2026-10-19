@@ -19,6 +19,7 @@ A receptionist books patients with doctors and manages the day's schedule **with
 | BR-3 | No booking or rescheduling into the past | `Appointment` aggregate + injected `TimeProvider` |
 | BR-4 | Start must be a slot on the 30-min grid inside opening hours | `DaySchedule.EnsureValidSlot` |
 | BR-5 | Only future Scheduled appointments can be cancelled / rescheduled | `Appointment` aggregate |
+| BR-7 | A Doctor-only user reads only their own schedule and changes nothing (M2) | Role policies + `ScheduleAccess` in `AppointmentService` |
 
 ## 2. Data model (PostgreSQL, snake_case)
 ```
@@ -36,8 +37,12 @@ appointments  (id uuid PK (v7), doctor_id FK, patient_id FK,
 Cancel is a soft status change: history is kept and the `WHERE status = 'Scheduled'` makes the slot free again.
 
 ## 3. Main APIs (`/api/v1`, JSON, errors are RFC 7807 ProblemDetails with a stable `code`)
+ASP.NET Core **controllers** (`Api/Controllers`), authenticated by default with a JWT bearer token (M2, [spec 004](docs/specs/004-auth.md)).
+
 | Method | Route | Notes |
 |---|---|---|
+| POST | `/auth/login`, `/auth/refresh`, `/auth/logout` · GET `/me` | 15-min access token + rotating refresh cookie; login/refresh anonymous |
+| POST / PUT | `/users`, `/users/{id}/roles` | Admin only |
 | GET | `/doctors` | list |
 | GET | `/patients?search=&page=&pageSize=` | name contains / exact MRN, paged (≤100) |
 | GET | `/doctors/{id}/availability?date=YYYY-MM-DD[&patientId=]` | `{timeZone, slots:[{startUtc,endUtc,localStart,status,appointmentId}]}` |
@@ -50,9 +55,13 @@ Cancel is a soft status change: history is kept and the `WHERE status = 'Schedul
 | Status | `code` |
 |---|---|
 | 400 | `validation_failed` (field errors), `bad_request` (malformed input) |
+| 401 / 403 / 423 | `unauthorized`, `invalid_credentials`, `invalid_refresh_token`, `refresh_token_reused` / `forbidden` / `account_locked` |
 | 404 | `doctor_not_found`, `patient_not_found`, `appointment_not_found` |
 | 409 | `doctor_conflict`, `patient_conflict`, `concurrency_conflict` |
 | 422 | `appointment_in_past`, `invalid_slot`, `appointment_not_modifiable` |
+| 500 | `internal_error` — generic message only; details go to the server log with the `traceId` |
+
+All errors are produced in one place, `Api/Errors/GlobalExceptionHandler.cs` (domain exceptions → 4xx, anything else → 500).
 
 Interactive docs: `http://localhost:5080/scalar` (Development).
 
@@ -84,12 +93,14 @@ optimistic concurrency token → `409 concurrency_conflict` instead of a lost up
 
 ## 7. Architecture
 Clean Architecture ([ADR-0001](docs/adr/0001-clean-architecture.md)): `Domain` (rules) ← `Application` (use cases, `IAppDbContext`
-port) ← `Infrastructure` (EF Core/Npgsql, constraint → error translation, seed) ← `Api` (thin minimal-API endpoints). Layer
-rules are enforced by `ArchitectureTests`. Frontend: Angular 22 + Material, one feature folder (`features/schedule`).
+port) ← `Infrastructure` (EF Core/Npgsql, constraint → error translation, seed) ← `Api` (thin controllers, global exception
+handler, auth). The Api is the only host: background jobs run in it via **Hangfire** ([ADR-0014](docs/adr/0014-hangfire-background-jobs.md),
+PostgreSQL storage, hourly expired-refresh-token purge). Layer rules are enforced by `ArchitectureTests`. Frontend: Angular 22 +
+Material, feature folders `features/schedule` and `features/auth`.
 
 ## 8. Beyond the brief (roadmap, specs written)
 The repository is set up as a production simulation; these are specified and planned as later milestones
-([backlog](docs/backlog.md)): authentication/roles (004), patient CRUD (005), working hours/breaks/time off/appointment types
+([backlog](docs/backlog.md)): authentication/roles (004 — **built in M2**), patient CRUD (005), working hours/breaks/time off/appointment types
 (006), multiple clinics & time zones (007), notifications via Wolverine + RabbitMQ outbox (008), idempotency keys (009),
 rate limiting, resilience, OpenTelemetry → Jaeger, k6 load tests. Non-functional targets: [000-nfr](docs/specs/000-nfr.md).
 

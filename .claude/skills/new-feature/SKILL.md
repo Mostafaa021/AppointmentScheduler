@@ -13,7 +13,7 @@ description: Single-session, spec-first checklist for adding a feature end to en
 4. **Application** — `src/AppointmentScheduler.Application/<Feature>/`: service method + request/response records; register in
    `Application/DependencyInjection.cs`.
 5. **Infrastructure** — EF configuration in `Infrastructure/Persistence/Configurations/`; schema change → `/add-migration`.
-6. **Api** — endpoint in `Api/Endpoints/<Feature>Endpoints.cs`, mapped in `Program.cs`; thin; correct policy, rate-limit and
+6. **Api** — action on `Api/Controllers/<Feature>Controller.cs` (inherits `ApiControllerBase`); thin; correct policy, rate-limit and
    idempotent group.
 7. **Web** — `web/src/app/core/api/` service + model, `web/src/app/features/<feature>/` component + spec.
 8. **Verify** — `/verify`.

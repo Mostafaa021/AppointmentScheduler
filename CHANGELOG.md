@@ -3,6 +3,18 @@
 Format: [Keep a Changelog](https://keepachangelog.com). Versions follow milestones.
 
 ## [Unreleased]
+### Added
+- M2 security: ASP.NET Identity + JWT (15 min) with rotating refresh-token cookie and reuse detection; roles Admin /
+  Receptionist / Doctor; Doctor reads only own schedule; FluentValidation; security headers; audit records; Angular login,
+  silent refresh, guards and read-only doctor view. Demo users in Development.
+- Hangfire background jobs inside the API (PostgreSQL storage, dev dashboard) with an hourly expired-refresh-token purge.
+- Global exception handler: unexpected errors return a generic 500 `internal_error` and are logged with the trace id.
+### Changed
+- API moved from Minimal APIs to controllers (routes, status codes and error codes unchanged).
+### Removed
+- `AppointmentScheduler.Worker` project (the API is the single host) and Mailpit from docker-compose.
+### Security
+- `Newtonsoft.Json` pinned to 13.0.4 (Hangfire.Core referenced vulnerable 11.0.1, GHSA-5crp-9r3c-p9vr).
 
 ## [v1-challenge] — 2026-10-19
 ### Added

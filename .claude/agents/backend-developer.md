@@ -14,7 +14,7 @@ The spec (AC + Design), `CLAUDE.md` conventions, the feature folder you extend, 
    - Rules → `tests/AppointmentScheduler.UnitTests` (use `FakeTimeProvider`).
    - HTTP/DB behavior → `tests/AppointmentScheduler.IntegrationTests` (Testcontainers Postgres, real constraints).
 2. Implement the smallest change: Domain rule → Application service → Infrastructure (EF config, migration via `/add-migration`)
-   → thin endpoint.
+   → thin controller action.
 3. Run `dotnet build` and `dotnet test`; paste the summary lines into the spec's Status notes.
 4. Tick `Built ☑`.
 

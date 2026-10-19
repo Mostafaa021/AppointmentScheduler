@@ -83,3 +83,34 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
 - **Rejected:** the generated `EF.Functions.ILike` — it is Npgsql-specific and would make Application depend on the provider
   (the ArchitectureTests forbid `Npgsql` there). Used `ToLower().Contains()` which EF translates to `lower(...) LIKE`.
 - **Changed:** a `Directory` namespace shadowed `System.IO.Directory` under implicit usings → renamed to `Lookups`.
+
+### P-10 · Running M2 through the role-agent ceremony — and stopping it
+> "Build M2 through the /sdlc role-agent ceremony, pausing for my approval after the architect step." … later: "Stop the
+> ceremony; let's focus on coding."
+
+- **Accepted:** product-owner and architect output (26 AC, ADR-0011/0012/0013) and the built code — verified independently
+  (142 .NET + 32 web tests, browser login as receptionist and doctor) before committing.
+- **Changed:** at the approval checkpoint I overrode the architect's hand-written validation in favour of FluentValidation
+  (ADR-0013 revised).
+- **Rejected (for now):** the remaining QA / security / code-review gates — backlog marks M2 "built, review pending".
+
+### P-11 · Controllers instead of Minimal APIs
+> "Use controllers instead of minimal APIs, and a global exception handler."
+
+- **Accepted:** `ApiControllerBase` (`[ApiController]` + `[Authorize]` by default), one controller per feature, same routes,
+  status codes and error codes, so all 142 existing tests passed after only one test change.
+- **Changed (debugging):** returning `TypedResults` from controllers serialised enums as numbers — `IResult` uses the
+  Minimal-API JSON options, not MVC's. Switched to MVC results (`Ok`, `CreatedAtRoute`, `NoContent`). The auth sweep test
+  matched `/api/v1`, but controller route templates have no leading slash — normalised in the test.
+- **Changed:** MVC's implicit `[Required]` on non-nullable members would have answered 400 before FluentValidation ran,
+  breaking the `validation_failed` contract — disabled with `SuppressImplicitRequiredAttributeForNonNullableReferenceTypes`.
+- **Rejected:** a custom 499 branch in the global handler for client aborts — the test proved `ExceptionHandlerMiddleware`
+  already handles aborts before any `IExceptionHandler` runs, so the branch was dead code.
+
+### P-12 · No Worker project, Hangfire instead, no Mailpit
+> "Why a separate Worker dll? What is Mailpit for? Use Hangfire inside our project instead of the worker; remove Mailpit."
+
+- **Accepted:** Hangfire server inside the Api with PostgreSQL storage, one real hourly job (purge expired refresh tokens)
+  with an integration test; Wolverine + RabbitMQ kept for domain events (ADR-0014 explains the split).
+- **Changed:** the build failed with NU1903 — Hangfire.Core pulls `Newtonsoft.Json` 11.0.1 (known vulnerability). Fixed by
+  central transitive pinning to 13.0.4 instead of suppressing the warning.

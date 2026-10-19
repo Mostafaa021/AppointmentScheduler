@@ -24,7 +24,18 @@ dotnet run --project src/AppointmentScheduler.Api
 ```bash
 cd web && npm install && npm start
 ```
-Open **http://localhost:4200**. API docs: **http://localhost:5080/scalar**.
+Open **http://localhost:4200** and sign in. API docs: **http://localhost:5080/scalar**. Background jobs dashboard (Development,
+local only): **http://localhost:5080/hangfire**.
+
+**Demo users** (Development seed only, fictional), all with password `DemoClinic2026`:
+
+| E-mail | Role | Sees |
+|---|---|---|
+| `admin@clinic.test` | Admin | everything, incl. user admin API |
+| `reception@clinic.test` | Receptionist | full schedule: book / reschedule / cancel |
+| `doctor@clinic.test` | Doctor (Dr. Amelia Hart) | own day schedule, read-only |
+
+Use Chrome or Firefox locally: the refresh cookie is `Secure`, which Safari rejects on `http://localhost`.
 
 On first start (Development) the API applies EF Core migrations and seeds fictional data:
 4 doctors, 12 patients (`MRN-0001`…`MRN-0012`) and a few appointments **today and tomorrow** so the schedule isn't empty.
@@ -54,7 +65,9 @@ cd web && npm test -- --watch=false
 | `ConnectionStrings:Scheduler` | localhost:5432, db `scheduler` | PostgreSQL |
 | `Clinic:TimeZone` | `Europe/London` | IANA zone of the clinic |
 | `Clinic:Open` / `Clinic:Close` / `Clinic:SlotMinutes` | `09:00` / `17:00` / `30` | Opening hours and slot size |
-| `Seed:Enabled` | `true` | Seed fictional data on an empty database |
+| `Seed:Enabled` | `true` | Seed fictional data on an empty database (demo users only in Development) |
+| `Jwt:SigningKey` (env `Jwt__SigningKey` / `JWT_SIGNING_KEY`) | dev-only value in `appsettings.Development.json` | ≥ 32-byte HS256 key; never commit a real one |
+| `BackgroundJobs:Enabled` | `true` | Run the Hangfire server and recurring jobs in the API process |
 
 ## Project layout
 ```

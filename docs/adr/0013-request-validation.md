@@ -7,7 +7,7 @@
 AC-004-22 needs field validation on 6 request types (login, book, cancel, reschedule, create user, set roles) that runs
 after authentication/authorization and before lookups (401 → 403 → 400 → 404/409/422), reports all failing fields at once
 and keeps today's 400 shape (`title: "Validation failed"`, `code: "validation_failed"`, camelCase `errors`). Today the only
-validation is `Appointment.NormalizeReason` throwing the domain `ValidationException`, which `DomainExceptionHandler`
+validation is `Appointment.NormalizeReason` throwing the domain `ValidationException`, which `GlobalExceptionHandler` (formerly `DomainExceptionHandler`)
 already maps to exactly that shape. Backlog S-23 names FluentValidation.
 
 ## Options
@@ -29,7 +29,7 @@ Option 1, package **`FluentValidation`** (12.x) in Application only.
 - **Mapping:** `ValidateOrThrow` runs the validator synchronously (rules are pure — no DB access; existence checks stay
   404/409 lookups) and, on failure, throws the existing **domain `ValidationException`** with failures grouped by
   property name. Names are converted to the response's camelCase with `JsonNamingPolicy.CamelCase` and cut at the first
-  `[` or `.` (so `Roles[1]` → `roles`). `DomainExceptionHandler` is unchanged; the 400 shape is unchanged.
+  `[` or `.` (so `Roles[1]` → `roles`). The exception handler is unchanged; the 400 shape is unchanged.
 - FluentValidation's own `ValidationException` is never thrown (no `ValidateAndThrow`).
 - **Domain invariants stay** (e.g. `Appointment` reason 1–500 after trim) as the second guard for any path that bypasses
   a validator.
