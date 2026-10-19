@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using AppointmentScheduler.Api.Auth;
-using AppointmentScheduler.Api.Endpoints;
 using AppointmentScheduler.Api.Errors;
 using AppointmentScheduler.Api.Security;
 using AppointmentScheduler.Application;
@@ -20,7 +19,12 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApiAuth();
 
-builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddControllers(o =>
+        // Required-ness is checked by FluentValidation in the Application layer (400 validation_failed, ADR-0013),
+        // so MVC must not reject missing non-nullable members first.
+        o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
+    .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = BadRequestResponse.FromModelState);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddHsts(o => o.MaxAge = TimeSpan.FromDays(365));
@@ -51,12 +55,8 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/health/live", () => TypedResults.Ok("Healthy")).ExcludeFromDescription();
 
-// Every /api/v1 route requires an authenticated user unless it opts out (login, refresh); groups add role policies.
-app.MapGroup("/api/v1").RequireAuthorization()
-    .MapAuthEndpoints()
-    .MapUserEndpoints()
-    .MapLookupEndpoints()
-    .MapAppointmentEndpoints();
+// Controllers are authenticated by default (ApiControllerBase); login/refresh opt out, role policies narrow access.
+app.MapControllers();
 
 await app.RunAsync();
 

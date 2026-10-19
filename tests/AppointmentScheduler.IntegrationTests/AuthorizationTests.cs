@@ -10,13 +10,14 @@ namespace AppointmentScheduler.IntegrationTests;
 [Collection(nameof(ApiCollection))]
 public class AuthorizationTests(ApiFactory api)
 {
-    private static readonly string[] Anonymous = ["/api/v1/auth/login", "/api/v1/auth/refresh"];
+    private static readonly string[] Anonymous = ["api/v1/auth/login", "api/v1/auth/refresh"];
 
     [Fact]
     public void AC_004_8_Every_api_endpoint_except_login_and_refresh_requires_authorization()
     {
         var endpoints = api.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>()
-            .Where(e => e.RoutePattern.RawText?.StartsWith("/api/v1", StringComparison.Ordinal) == true)
+            // Controller route templates have no leading slash; normalize so the sweep is routing-style agnostic.
+            .Where(e => e.RoutePattern.RawText?.TrimStart('/').StartsWith("api/v1", StringComparison.Ordinal) == true)
             .ToList();
 
         Assert.True(endpoints.Count >= 14, $"expected all /api/v1 endpoints, found {endpoints.Count}");
@@ -24,7 +25,7 @@ public class AuthorizationTests(ApiFactory api)
         {
             var anonymous = e.Metadata.GetMetadata<IAllowAnonymous>() is not null;
             var authorized = e.Metadata.GetOrderedMetadata<IAuthorizeData>().Count > 0;
-            if (Anonymous.Contains(e.RoutePattern.RawText)) Assert.True(anonymous, e.DisplayName);
+            if (Anonymous.Contains(e.RoutePattern.RawText!.TrimStart('/'))) Assert.True(anonymous, e.DisplayName);
             else Assert.True(authorized && !anonymous, $"{e.DisplayName} must require authorization");
         });
     }
