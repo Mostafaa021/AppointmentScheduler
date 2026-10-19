@@ -107,8 +107,9 @@ optimistic concurrency token → `409 CONCURRENCY_CONFLICT` instead of a lost up
 - "Now" comes from an injected `TimeProvider`, so past/future rules are deterministic in tests (`FakeTimeProvider`).
 
 ## 7. Architecture
-Clean Architecture ([ADR-0001](docs/adr/0001-clean-architecture.md)): `Domain` (rules) ← `Application` (use cases, `IAppDbContext`
-port) ← `Infrastructure` (EF Core/Npgsql, constraint → error translation, seed) ← `Api` (thin controllers, global exception
+Clean Architecture ([ADR-0001](docs/adr/0001-clean-architecture.md)): `Domain` (rules + repository / unit-of-work
+contracts) ← `Application` (use cases, no EF Core) ← `Infrastructure` (EF Core/Npgsql repositories, unit of work, constraint →
+error translation, seed; [ADR-0016](docs/adr/0016-repository-unit-of-work.md)) ← `Api` (thin controllers, global exception
 handler, auth; responses are `ApiResponse<T>`, [ADR-0015](docs/adr/0015-api-response-envelope.md)). The Api is the only host: background jobs run in it via **Hangfire** ([ADR-0014](docs/adr/0014-hangfire-background-jobs.md),
 PostgreSQL storage, hourly expired-refresh-token purge). Layer rules are enforced by `ArchitectureTests`. Frontend: Angular 22 +
 Material, feature folders `features/schedule` and `features/auth`.
