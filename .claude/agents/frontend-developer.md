@@ -18,6 +18,8 @@ The spec (AC, API contract, UI notes), `web/src/app/core/` (API services, models
    conflict (branch on `error.errorCode`, e.g. `'DOCTOR_CONFLICT'` → refresh data and say the slot was just taken). Specs flush
    envelope bodies (`{ isSuccess, statusCode, data, timestamp }` / `{ isSuccess: false, errorCode, message }`). Never
    show `errorDetails` to users (Development-only diagnostics).
+   Writes get their `Idempotency-Key` from `idempotencyKeyInterceptor` (keep it outside `authInterceptor`); a component never
+   sets one itself unless it retries the same user action.
 4. Vitest specs for components with logic and for services (HttpTestingController).
 5. Run `npm test -- --watch=false` and `npm run build`; record results in the spec Status notes; tick `Built ☑` for UI.
 

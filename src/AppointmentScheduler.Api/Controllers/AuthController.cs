@@ -1,5 +1,6 @@
 using AppointmentScheduler.Api.Auth;
 using AppointmentScheduler.Api.Contracts;
+using AppointmentScheduler.Api.Idempotency;
 using AppointmentScheduler.Application.Auth;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +11,7 @@ namespace AppointmentScheduler.Api.Controllers;
 [ApiVersion(1.0)]
 [Route("api/v{version:apiVersion}")]
 [Tags("Auth")]
+[SkipIdempotency] // sign-in, refresh and logout are not resource writes (AC-009-1)
 public sealed class AuthController(IAuthService auth) : ApiControllerBase
 {
     [HttpPost("auth/login")]

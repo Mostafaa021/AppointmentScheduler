@@ -33,6 +33,16 @@ public static class ApiErrorCodes
     /// <summary>The route exists but not for this HTTP method.</summary>
     public const string MethodNotAllowed = "METHOD_NOT_ALLOWED";
 
+    // ── Idempotency (spec 009) ───────────────────────────────────────────────────────────────────────
+    /// <summary>A write without an <c>Idempotency-Key</c> header (or one longer than 100 characters).</summary>
+    public const string IdempotencyKeyRequired = "IDEMPOTENCY_KEY_REQUIRED";
+
+    /// <summary>The key was already used for a different method, path or body (422).</summary>
+    public const string IdempotencyKeyReused = "IDEMPOTENCY_KEY_REUSED";
+
+    /// <summary>The first request with this key is still running; retry after <c>Retry-After</c> seconds (409).</summary>
+    public const string IdempotencyRequestInProgress = "IDEMPOTENCY_REQUEST_IN_PROGRESS";
+
     // ── Server ───────────────────────────────────────────────────────────────────────────────────────
     /// <summary>The catch-all for an unhandled fault. Accompanied by a trace id, never by internals.</summary>
     public const string InternalError = "INTERNAL_ERROR";

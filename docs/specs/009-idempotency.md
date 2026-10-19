@@ -1,6 +1,6 @@
 # 009 — Idempotent writes
 
-| Status | Refined ☑ · Designed ☑ · Built ☐ · Tested ☐ · Reviewed ☐ · Released ☐ · Documented ☐ |
+| Status | Refined ☑ · Designed ☑ · Built ☑ · Tested ☑ · Reviewed ☐ · Released ☐ · Documented ☑ |
 |---|---|
 | Milestone | M3 |
 
@@ -21,11 +21,37 @@ A client (or network retry) can safely resend any write without creating duplica
 - **AC-009-8** Keys are scoped per user: two users using the same key do not collide.
 
 ## Data changes
-`idempotency_records(id, user_id, key, method, path, request_hash, status, response_status_code, response_body jsonb,
-response_headers jsonb, created_at_utc, expires_at_utc)`, unique `(user_id, key)`, index on `expires_at_utc`.
+`idempotency_records(id, user_id, key, method, path, request_hash, status, response_status_code, response_body text,
+response_headers jsonb, created_at_utc, expires_at_utc)` (migration `AddIdempotencyRecords`; the body is `text`, not `jsonb`, because
+replay must be byte-for-byte and jsonb normalises whitespace and key order), unique `(user_id, key)`, index on `expires_at_utc`.
 
 ## Design
-ADR-0006. Implemented as an `IEndpointFilter` applied to mutating route groups; the unique index is the lock (no distributed lock).
+ADR-0006 (amended). Plan: `.claude/plans/009-sprint-3-reliability.md`.
+
+- **Filter:** `Api/Idempotency/IdempotencyFilter`, a global MVC **resource filter** (the API moved to controllers). It wraps model
+  binding, the action and the result, so the stored bytes are what the client received.
+  - Scope: POST/PUT/PATCH/DELETE, except on `[SkipIdempotency]` controllers (`AuthController`).
+  - Exceptions from the handler are written into the captured response by the global `IExceptionHandler`, so rule
+    rejections (409/422) are stored and replayed like any other 4xx.
+  - Kept headers: `Location`, `ETag`, `Content-Type`. Replays add `Idempotent-Replayed: true`.
+- **Store:** port `Application/Idempotency/IIdempotencyStore`, implemented by `Infrastructure/Idempotency/EfIdempotencyStore`.
+  - `INSERT … ON CONFLICT (user_id, key) DO NOTHING` claims the key, so **the unique index is the lock**.
+  - Reads are `AsNoTracking` and writes are `ExecuteUpdate`/`ExecuteDelete`, so nothing joins the handler's unit of work.
+- **Fingerprint:** SHA-256 of method + path-and-query + body (`RequestFingerprint`).
+- **Stale `InProgress` takeover:** a record older than `Idempotency:InProgressTimeoutSeconds` (60) is taken over with a
+  compare-and-swap, so a crash between handler and completion doesn't block the key for 24 h.
+- **Expired but not yet purged:** the key starts over. The hourly Hangfire job `PurgeExpiredIdempotencyRecordsJob` deletes the
+  rest (`Idempotency:RecordTtlHours`, 24).
+- **Clients:**
+  - Angular `idempotencyKeyInterceptor` adds `crypto.randomUUID()` to writes. It sits outside the auth interceptor, so the
+    retry after a token refresh reuses the key.
+  - OpenAPI marks the header required on every write.
+
+## Test plan
+| AC | Test |
+|---|---|
+| AC-009-1…8 | IntegrationTests › IdempotencyTests (11 tests, incl. stale takeover and expired-key restart) |
+| interceptor | web › idempotency-key.interceptor.spec.ts |
 
 ## Out of scope
 Cross-region replication of keys.

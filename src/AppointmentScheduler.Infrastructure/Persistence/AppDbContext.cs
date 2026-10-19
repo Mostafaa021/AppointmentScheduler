@@ -5,6 +5,7 @@ using AppointmentScheduler.Domain.Common;
 using AppointmentScheduler.Domain.Doctors;
 using AppointmentScheduler.Domain.Patients;
 using AppointmentScheduler.Infrastructure.Auth;
+using AppointmentScheduler.Infrastructure.Idempotency;
 using AppointmentScheduler.Infrastructure.Persistence.Configurations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -21,6 +22,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuditRecord> AuditRecords => Set<AuditRecord>();
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

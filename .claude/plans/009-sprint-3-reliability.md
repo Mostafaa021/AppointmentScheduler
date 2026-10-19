@@ -1,7 +1,8 @@
 # 009 — Sprint 3: M3 reliability
 
 - Status: **In progress** · Approved 2026-10-19 · Backlog S-30, S-32, S-33 (S-31 set aside) · Spec 009 · ADR-0006, 0008, 0009
-- Progress: Step P ☑ · Step 0 ☑ · S-30 ☐ · S-32 ☐ · S-33 ☐ (ticked as each step is verified; commits only when the user says so)
+- Changes: 2026-10-19 — S-32 and S-33 use Polly v8 for every resilience pattern (rate limiting, retry, circuit breaker, timeout).
+- Progress: Step P ☑ · Step 0 ☑ · S-30 ☑ · S-32 ☐ · S-33 ☐ (ticked as each step is verified; commits only when the user says so)
 
 ## Context
 Next is Sprint 3 from `docs/backlog.md`. Sprint 4 (clinics, working hours, patient CRUD) is set aside: the challenge has no
@@ -131,43 +132,70 @@ Today five Api files use `AppointmentScheduler.Domain` directly:
   - backend, frontend and qa agents;
   - CHANGELOG, PROMPTS, backlog.
 
-## S-32 — Rate limiting (NFR-6, ADR-0009)
-- **`Api/Configuration/RateLimitingConfig.cs`** (extension block; `AddRateLimitingConfiguration()` + `UseRateLimitingConfiguration()`)
-  with built-in `Microsoft.AspNetCore.RateLimiting`. Limits come from section `RateLimiting`:
-  - **Global chained limiter:**
-    - concurrency 200;
-    - per partition (user id, else client IP): `reads` sliding window 300/min (6 segments) for GET/HEAD, and `writes` token
-      bucket 30/min with burst 10 for other methods;
-    - `/health` excluded.
-  - **Named policy `auth`:** fixed window 5/min per IP, applied with `[EnableRateLimiting("auth")]` on login and refresh.
-  - **`OnRejected`:** 429 `ApiResponse` error `RATE_LIMITED` (`ApiErrorCodes`) via `ApiErrorWriter`, `Retry-After` from lease metadata, and a counter
-    `scheduler.rate_limit.rejected` on a `Meter("AppointmentScheduler")`. `ObservabilityConfig` adds `.AddMeter("AppointmentScheduler")`.
-- **Pipeline:** `UseRateLimiter()` right after `UseAuthentication()`, so partitions see the user.
+## S-32 — Rate limiting with Polly (NFR-6, ADR-0009 revised)
+> Changed 2026-10-19 (user): every resilience pattern (rate limiting, retry, circuit breaker, timeout) goes through **Polly v8**,
+> not ASP.NET's built-in rate limiter.
+
+- **Packages:** `Polly.Core`, `Polly.RateLimiting`, `Polly.Extensions` (central versions, 8.6.x).
+- **Pipelines** are registered in `Api/Configuration/RateLimitingConfig.cs` (extension block `AddRateLimitingConfiguration()`)
+  through `services.AddResiliencePipeline(name, …)`. Limits come from section `RateLimiting`.
+  - **`rate-limit:global`**: Polly concurrency limiter, 200 concurrent requests.
+  - **`rate-limit:reads`** (GET/HEAD) and **`rate-limit:writes`** (other methods): Polly `AddRateLimiter` whose limiter is a
+    `PartitionedRateLimiter` keyed by user id, falling back to client IP.
+    - reads: sliding window 300/min, 6 segments;
+    - writes: token bucket 30/min, burst 10.
+  - **`rate-limit:auth`**: fixed window 5/min per IP, for login and refresh, chosen by `[RateLimitPolicy("auth")]` on those actions.
+- **Middleware** `Api/RateLimiting/PollyRateLimitingMiddleware` (`UseRateLimitingConfiguration()`), placed right after
+  `UseAuthentication()`:
+  - picks the pipeline for the endpoint and runs the rest of the request inside `pipeline.ExecuteAsync`;
+  - `/health` is excluded;
+  - `RateLimiterRejectedException` → 429 `ApiResponse` error `RATE_LIMITED` (`ApiErrorCodes`) with `Retry-After` from the
+    exception's `RetryAfter`;
+  - every rejection increments the counter `scheduler.rate_limit.rejected` (tags: policy) on `Meter("AppointmentScheduler")`,
+    and `ObservabilityConfig` adds `.AddMeter("AppointmentScheduler")`.
 - **Tests:**
-  - `ApiFactory` sets very high limits, so the suite never trips them;
-  - new `RateLimitedFactory` (low limits) + `RateLimitTests`:
+  - `ApiFactory` sets very high limits;
+  - `RateLimitedFactory` (low limits) + `RateLimitTests`:
     - 6th login in a minute → 429 + `Retry-After` + envelope;
     - writes burst → 429;
     - another user is unaffected;
-    - health is never limited.
-- **Docs:** ADR-0009 status, NFR-6, README config table, architecture host-composition row, CLAUDE.md, devops agent, CHANGELOG,
-  PROMPTS, backlog.
+    - health is never limited;
+  - unit test for partition-key selection (user vs IP).
+- **Docs:**
+  - ADR-0009 revised (Polly instead of `Microsoft.AspNetCore.RateLimiting`, and why);
+  - ADR-0008 (Polly is the single resilience library);
+  - NFR-6, README config table, architecture row, CLAUDE.md ("resilience = Polly pipelines, registered by name"), devops agent;
+  - CHANGELOG, PROMPTS, backlog.
 
-## S-33 — Npgsql retry (output caching skipped)
-- **`AddPersistence`:** `UseNpgsql(cs, o => o.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: 2 s))` (NFR-7).
-- **Required companion change:** EF retry strategies forbid user-started transactions. The four `BeginTransactionAsync` blocks are
-  wrapped in `db.Database.CreateExecutionStrategy().ExecuteAsync(...)`, so each whole transaction retries as a unit:
+## S-33 — Database resilience with Polly (output caching skipped)
+- **Named pipeline `database`** in Infrastructure `Persistence/DatabaseResilience.cs` (registered in `AddPersistence`), in this
+  order: timeout (5 s per attempt) → retry → circuit breaker.
+  - **Retry:** 3 attempts, exponential backoff with jitter, only for transient Npgsql errors (`NpgsqlException.IsTransient`,
+    `TimeoutException`).
+  - **Circuit breaker:** opens at 50 % failures over 30 s with at least 10 calls, then stays open for 15 s.
+  - Limits come from section `Resilience:Database`.
+- **EF integration:** `PollyExecutionStrategy : IExecutionStrategy` runs every EF operation through the `database` pipeline. It is
+  installed with `UseNpgsql(cs, o => o.ExecutionStrategy(deps => new PollyExecutionStrategy(...)))`, so retries cover all
+  queries and `SaveChanges`.
+- **Required companion change:** a retrying strategy forbids user-started transactions. The four `BeginTransactionAsync` blocks
+  are wrapped in `db.Database.CreateExecutionStrategy().ExecuteAsync(...)`, so each whole transaction retries as a unit:
   - `IdentityAuthService` (login reservation, refresh-family revoke);
   - `IdentityUserAdminService` (create, set roles).
-- **Tests:** the existing auth/user-admin integration tests prove the transactions still work under the strategy, and a new test
-  asserts the configured execution strategy is `NpgsqlRetryingExecutionStrategy`.
-- **Backlog:** S-33 → "Versioning + Npgsql retry done; output caching won't do for now (nothing safely cacheable: availability
-  must be live)". ADR-0008 resilience status updated.
+- **Open circuit:** `BrokenCircuitException` → 503 `SERVICE_UNAVAILABLE` (`ApiErrorCodes`) with `Retry-After`, mapped in
+  `GlobalExceptionHandler`. It is not a 500, because the API is healthy and only its database is.
+- **Tests:**
+  - unit: the strategy retries a transient fault then succeeds; it does not retry a non-transient fault; the breaker opens after
+    the threshold;
+  - integration: the existing auth/user-admin tests prove the transactions still work under the strategy;
+  - integration: an open circuit maps to 503 + `Retry-After`.
+- **Backlog:** S-33 → "Versioning + DB resilience (Polly) done; output caching won't do for now (nothing safely cacheable:
+  availability must be live)". ADR-0008 status updated (NFR-7 DB part done; SMTP pipeline reuses the same pattern in M5).
 
 ## Verification (per story, then end to end)
 - `dotnet build -warnaserror`; `dotnet test` (background); `cd web && npm test && npm run build`.
 - Live API + browser:
   - book (request carries `Idempotency-Key`), replay the same request with curl → `Idempotent-Replayed: true` and one appointment;
   - 6 quick logins with curl → 429 `RATE_LIMITED` with `Retry-After`;
+  - stop Postgres → requests fail fast with 503 `SERVICE_UNAVAILABLE` once the breaker opens; start it again → requests recover;
   - normal receptionist booking, cancel, reschedule and the doctor read-only view still work.
 - Five steps (P, 0, S-30, S-32, S-33). After each I stop and ask "commit or leave in the working tree"; I never commit unasked.

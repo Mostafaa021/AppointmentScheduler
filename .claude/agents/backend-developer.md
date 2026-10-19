@@ -41,6 +41,8 @@ Api helper class like `Api/Auth/RefreshTokenCookie`.
 Messaging (ADR-0007): Wolverine handlers are plain classes in Application; wiring and topology live in
 `Infrastructure/Messaging/MessagingSetup.cs` (publish rules next to the `// ─── Publishing` marker). Tests run with
 `Messaging:RabbitMq:Enabled=false`.
+Writes are idempotent by the global `IdempotencyFilter` (spec 009); don't re-implement it per endpoint. In integration tests
+`ClientForAsync` adds keys like the Angular app (`addIdempotencyKeys: false` to test the header itself).
 Registrations: layer services in that layer's `DependencyInjection.cs`; host concerns in `Api/Configuration/<Concern>Config.cs`
 as a C# 14 `extension(WebApplicationBuilder builder)` block with `Add<Concern>Configuration()` — `Program.cs` only chains them
 and orders middleware.

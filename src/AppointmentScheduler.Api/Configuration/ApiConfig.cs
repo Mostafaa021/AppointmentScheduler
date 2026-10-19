@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using AppointmentScheduler.Api.Errors;
+using AppointmentScheduler.Api.Idempotency;
 using AppointmentScheduler.Application;
 using AppointmentScheduler.Application.Common;
 using AppointmentScheduler.Infrastructure;
@@ -33,7 +34,12 @@ public static class ApiConfig
 
             // Controllers. Required-ness is checked by FluentValidation in Application (400 VALIDATION_FAILED, ADR-0013),
             // so MVC must not reject missing non-nullable members first.
-            services.AddControllers(o => o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
+            services.AddControllers(o =>
+                {
+                    o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+                    // Spec 009: every write needs an Idempotency-Key (except [SkipIdempotency] controllers).
+                    o.Filters.Add<IdempotencyFilter>();
+                })
                 .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
                 // Unreadable input → 400 BAD_REQUEST envelope (AC-001-7).
                 .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = BadRequestResponse.FromModelState);

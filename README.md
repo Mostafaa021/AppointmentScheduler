@@ -69,6 +69,7 @@ cd web && npm test -- --watch=false
 | `Seed:Enabled` | `true` | Seed fictional data on an empty database (demo users only in Development) |
 | `Jwt:SigningKey` (env `Jwt__SigningKey` / `JWT_SIGNING_KEY`) | dev-only value in `appsettings.Development.json` | ≥ 32-byte HS256 key; never commit a real one |
 | `BackgroundJobs:Enabled` | `true` | Run the Hangfire server and recurring jobs in the API process |
+| `Idempotency:RecordTtlHours` / `InProgressTimeoutSeconds` | `24` / `60` | How long a key is remembered; when a stuck in-progress key may be taken over |
 | `Observability:ServiceName` | `appointment-scheduler-api` | OpenTelemetry service name (as shown in Jaeger) |
 | `Observability:OtlpEndpoint` (env `Observability__OtlpEndpoint`) | empty; `http://localhost:4317` in Development | OTLP traces target (Jaeger); empty = no export |
 | `Observability:MetricsEndpoint` | empty | OTLP metrics target (Jaeger has no metrics); empty = no export |

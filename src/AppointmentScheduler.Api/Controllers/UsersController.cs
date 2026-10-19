@@ -20,6 +20,7 @@ public sealed class UsersController(IUserAdminService users) : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)] // IDEMPOTENCY_KEY_REUSED
     public async Task<IActionResult> Create(
         [FromBody] CreateUserRequest request,
         CancellationToken cancellationToken = default)
@@ -34,6 +35,8 @@ public sealed class UsersController(IUserAdminService users) : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)] // IDEMPOTENCY_REQUEST_IN_PROGRESS
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status422UnprocessableEntity)] // IDEMPOTENCY_KEY_REUSED
     public async Task<IActionResult> SetRoles(
         [FromRoute] Guid id,
         [FromBody] SetUserRolesRequest request,

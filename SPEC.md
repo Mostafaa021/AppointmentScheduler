@@ -53,6 +53,13 @@ Response envelope ([ADR-0015](docs/adr/0015-api-response-envelope.md)); members 
 Reads without a specific message say "Request completed successfully".
 `POST /auth/logout` is the one exception: **204** with no body.
 
+**Idempotency** ([spec 009](docs/specs/009-idempotency.md)): every POST/PUT/PATCH/DELETE except `/auth/*` needs an
+`Idempotency-Key` header (1–100 chars, a UUID per user action):
+- a repeat with the same key and request replays the stored response with `Idempotent-Replayed: true`;
+- the same key with a different request → 422;
+- while the first request is still running → 409 + `Retry-After: 1`;
+- keys live 24 h, per user.
+
 **Versioning** ([ADR-0017](docs/adr/0017-api-versioning.md)): the version is in the URL (`/api/v1/…`); responses carry
 `api-supported-versions`. An optional `X-Api-Version` header or `api-version` query must match the URL (else 400
 `UNSUPPORTED_API_VERSION`). An unknown URL version such as `/api/v2/…` → 404 `UNSUPPORTED_API_VERSION`.
@@ -78,6 +85,7 @@ Reads without a specific message say "Request completed successfully".
 | 405 | `METHOD_NOT_ALLOWED` |
 | 404 / 400 | `UNSUPPORTED_API_VERSION` (unknown URL version / mismatched header or query version) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` (body is not JSON) |
+| 400 / 409 / 422 | `IDEMPOTENCY_KEY_REQUIRED` / `IDEMPOTENCY_REQUEST_IN_PROGRESS` / `IDEMPOTENCY_KEY_REUSED` (spec 009) |
 | 409 | `DOCTOR_CONFLICT`, `PATIENT_CONFLICT`, `CONCURRENCY_CONFLICT`, `EMAIL_TAKEN` |
 | 422 | `APPOINTMENT_IN_PAST`, `INVALID_SLOT`, `APPOINTMENT_NOT_MODIFIABLE` |
 | 500 | `INTERNAL_ERROR` — generic message only; details go to the server log with the `traceId` |

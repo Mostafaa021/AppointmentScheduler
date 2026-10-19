@@ -3,6 +3,8 @@ using AppointmentScheduler.Application.Auth;
 using AppointmentScheduler.Application.Common;
 using AppointmentScheduler.Infrastructure.Auth;
 using AppointmentScheduler.Infrastructure.BackgroundJobs;
+using AppointmentScheduler.Infrastructure.Idempotency;
+using AppointmentScheduler.Application.Idempotency;
 using AppointmentScheduler.Infrastructure.Persistence;
 using AppointmentScheduler.Infrastructure.Persistence.Seed;
 using AppointmentScheduler.Infrastructure.Persistence.Repositories;
@@ -58,6 +60,10 @@ public static class DependencyInjection
         services.AddScoped<IDoctorRepository, DoctorRepository>();
         services.AddScoped<IPatientRepository, PatientRepository>();
         services.AddScoped<IAuditRecordRepository, AuditRecordRepository>();
+
+        // Idempotent writes (spec 009): the Api filter talks to this port; records live in idempotency_records.
+        services.AddOptions<IdempotencyOptions>().Bind(configuration.GetSection(IdempotencyOptions.Section));
+        services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
         return services;
     }
 
@@ -115,6 +121,7 @@ public static class DependencyInjection
             });
 
         return services
+                
             .AddSingleton<TokenIssuer>()
             .AddScoped<IAuthService, IdentityAuthService>()
             .AddScoped<IUserAdminService, IdentityUserAdminService>();

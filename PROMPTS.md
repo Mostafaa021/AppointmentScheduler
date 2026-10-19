@@ -268,3 +268,20 @@ Format per entry: **Phase · Prompt (abridged) · Outcome: Accepted / Changed / 
   - **Debugging:** cleaning the blank lines left by the removed `using`s also swallowed two neighbouring lines
     (`using Microsoft.AspNetCore.Mvc;`, a `namespace`). The build caught both, and the git diff was checked line by line to
     confirm only the Domain usings went.
+- **S-30 (idempotent writes):**
+  - The spec's `IEndpointFilter` became an MVC resource filter, because the API is on controllers now.
+  - Handler exceptions are written into the captured response by the global exception handler, so 409/422 rule rejections are
+    stored and replayed like other 4xx.
+  - Body stored as `text`, not jsonb, for byte-for-byte replay.
+  - **Added beyond the spec:** stale in-progress takeover (compare-and-swap), and expired-but-not-purged keys restart.
+  - Test clients add keys through a `DelegatingHandler` that mirrors the Angular interceptor, so the 103 existing integration
+    tests didn't change. 11 new tests cover AC-009-1…8.
+  - **Verified live:**
+    - no key → 400;
+    - repeat → same appointment id + `Idempotent-Replayed: true`;
+    - other body → 422;
+    - OpenAPI lists the header on the five writes only;
+    - the browser booking sends a key.
+- **Mid-sprint change:** the user asked for Polly for every resilience pattern. Plan 009 was amended in place: S-32 rate
+  limiting uses Polly rate-limiter pipelines, and S-33 DB resilience is a Polly timeout + retry + circuit breaker behind an EF
+  execution strategy.

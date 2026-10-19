@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
 
 ## [Unreleased]
 ### Added
+- Idempotent writes (spec 009, S-30): every POST/PUT/PATCH/DELETE except auth needs `Idempotency-Key`; replay with
+  `Idempotent-Replayed: true`, 422 on reuse, 409 + `Retry-After` while in progress, 5xx not stored. `idempotency_records` table
+  (unique `(user_id, key)` as the lock), hourly purge job, Angular `idempotencyKeyInterceptor`, header documented in OpenAPI.
 - `.claude/plans/`: every approved plan saved as `NNN-<slug>.md` with a status header and an index (`plansDirectory` set in
   `.claude/settings.json`); plans 001–008 backfilled from history, 009 = Sprint 3.
 - M2 security: ASP.NET Identity + JWT (15 min) with rotating refresh-token cookie and reuse detection; roles Admin /

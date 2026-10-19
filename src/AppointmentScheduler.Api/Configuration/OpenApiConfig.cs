@@ -1,3 +1,4 @@
+using AppointmentScheduler.Api.Idempotency;
 using Scalar.AspNetCore;
 
 namespace AppointmentScheduler.Api.Configuration;
@@ -9,7 +10,8 @@ public static class OpenApiConfig
         /// <summary>Built-in .NET OpenAPI document (<c>v1</c>); every action declares its statuses (ADR-0015).</summary>
         public WebApplicationBuilder AddOpenApiConfiguration()
         {
-            builder.Services.AddOpenApi();
+            // Writes document their required Idempotency-Key header (spec 009).
+            builder.Services.AddOpenApi(o => o.AddOperationTransformer<IdempotencyKeyOperationTransformer>());
             return builder;
         }
     }

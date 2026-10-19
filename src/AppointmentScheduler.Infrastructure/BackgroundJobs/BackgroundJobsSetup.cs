@@ -1,4 +1,5 @@
 using AppointmentScheduler.Infrastructure.Auth;
+using AppointmentScheduler.Infrastructure.Idempotency;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Builder;
@@ -26,7 +27,9 @@ public static class BackgroundJobsSetup
 
         if (configuration.GetValue(EnabledKey, true)) services.AddHangfireServer();
 
-        return services.AddScoped<PurgeExpiredRefreshTokensJob>();
+        return services
+            .AddScoped<PurgeExpiredRefreshTokensJob>()
+            .AddScoped<PurgeExpiredIdempotencyRecordsJob>();
     }
 
     /// <summary>Registers recurring jobs and, in Development, the dashboard at <c>/hangfire</c> (local requests only).</summary>
@@ -34,8 +37,11 @@ public static class BackgroundJobsSetup
     {
         if (!configuration.GetValue(EnabledKey, true)) return app;
 
-        app.ApplicationServices.GetRequiredService<IRecurringJobManager>().AddOrUpdate<PurgeExpiredRefreshTokensJob>(
+        var recurring = app.ApplicationServices.GetRequiredService<IRecurringJobManager>();
+        recurring.AddOrUpdate<PurgeExpiredRefreshTokensJob>(
             PurgeExpiredRefreshTokensJob.RecurringJobId, job => job.RunAsync(CancellationToken.None), Cron.Hourly());
+        recurring.AddOrUpdate<PurgeExpiredIdempotencyRecordsJob>(
+            PurgeExpiredIdempotencyRecordsJob.RecurringJobId, job => job.RunAsync(CancellationToken.None), Cron.Hourly());
 
         // Browser navigation can't carry our in-memory JWT, so the dashboard is a local developer tool only.
         if (isDevelopment) app.UseHangfireDashboard("/hangfire");

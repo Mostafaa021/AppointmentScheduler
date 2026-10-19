@@ -122,10 +122,14 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>A user whose only role is Doctor, linked to <paramref name="doctorId"/> (BR-7).</summary>
     public Task<string> CreateDoctorUserAsync(int doctorId) => CreateUserAsync(role: "Doctor", doctorId: doctorId);
 
-    /// <summary>A client that logged in through the real <c>/auth/login</c> and sends the bearer token.</summary>
-    public async Task<HttpClient> ClientForAsync(string email, string password = TestUsers.Password)
+    /// <summary>
+    /// A client that logged in through the real <c>/auth/login</c> and sends the bearer token. Like the Angular app it adds a
+    /// fresh <c>Idempotency-Key</c> to every write that has none (spec 009); <paramref name="addIdempotencyKeys"/> = false
+    /// gives a client that sends exactly what the test sets.
+    /// </summary>
+    public async Task<HttpClient> ClientForAsync(string email, string password = TestUsers.Password, bool addIdempotencyKeys = true)
     {
-        var client = CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        var client = addIdempotencyKeys ? CreateDefaultClient(new IdempotencyKeyHandler()) : CreateDefaultClient();
         var response = await client.LoginAsync(email, password);
         response.EnsureSuccessStatusCode();
         var token = (await response.DataAsync()).GetProperty("accessToken").GetString();
@@ -217,4 +221,15 @@ internal static class RoleSets
     public static readonly string[] Receptionist = ["Receptionist"];
     public static readonly string[] Doctor = ["Doctor"];
     public static readonly string[] AdminReceptionist = ["Admin", "Receptionist"];
+}
+
+/// <summary>Adds a fresh <c>Idempotency-Key</c> to writes that have none, mirroring the Angular interceptor (spec 009).</summary>
+internal sealed class IdempotencyKeyHandler : DelegatingHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.Method != HttpMethod.Get && request.Method != HttpMethod.Head && !request.Headers.Contains("Idempotency-Key"))
+            request.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString());
+        return base.SendAsync(request, cancellationToken);
+    }
 }

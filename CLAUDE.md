@@ -68,7 +68,9 @@ Simulates a production system (auth, idempotency, rate limiting, messaging, obse
   tests keep the two classes disjoint). Use a message safe to show users, and put diagnostics in `LogDetail` (ids only,
   never PII). `GlobalExceptionHandler` turns them into `ApiResponse` errors via `ApplicationError`; anything else becomes a logged, generic 500
   `INTERNAL_ERROR`. Never catch-and-return errors in controllers.
-- Every mutating endpoint requires an `Idempotency-Key` header (M3+).
+- Every write (POST/PUT/PATCH/DELETE) requires an `Idempotency-Key` header, enforced by the global `IdempotencyFilter`
+  (spec 009). New write endpoints get it for free. Only `[SkipIdempotency]` (auth) is exempt. Don't add idempotency logic
+  in a service.
 - Never log patient names, phone numbers or emails — log ids only.
 - Fictional data only (seed in `Infrastructure/Persistence/Seed`).
 

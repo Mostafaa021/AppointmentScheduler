@@ -47,7 +47,7 @@ Plan: [`.claude/plans/009-sprint-3-reliability.md`](../.claude/plans/009-sprint-
 
 | ID | Story | Spec | Status |
 |---|---|---|---|
-| S-30 | Idempotency filter + records table + purge job + Angular key interceptor | 009 | Refined |
+| S-30 | Idempotency filter + records table + purge job + Angular key interceptor | 009 | Done |
 | S-31 | ETag / If-Match on appointments | 003 | Refined |
 | S-32 | Rate limiting policies | 000 | Refined |
 | S-33 | API versioning, output caching, Npgsql retry | 000 | Versioning done (ADR-0017); caching + retry Todo |
