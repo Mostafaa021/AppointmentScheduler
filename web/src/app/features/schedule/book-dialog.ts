@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -39,7 +39,7 @@ export interface BookDialogData {
               <mat-option [value]="p">{{ p.fullName }} · {{ p.mrn }}</mat-option>
             }
           </mat-autocomplete>
-          <mat-hint>Start typing to search</mat-hint>
+          <mat-hint>{{ patientHint() || 'Patient selected' }}</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
@@ -82,16 +82,34 @@ export class BookDialog {
   protected readonly confirming = signal(false);
   protected readonly saving = signal(false);
 
-  protected readonly patients = toSignal(
+  // Results remember the term they answer, so "no match" shows only once that exact text was searched (no flicker while typing).
+  private readonly search = toSignal(
     this.patientSearch.valueChanges.pipe(
       startWith(''),
       filter((v): v is string => typeof v === 'string'),
       debounceTime(250),
       distinctUntilChanged(),
-      switchMap((term) => (term.trim().length < 2 ? of([]) : this.api.searchPatients(term).pipe(map((r) => r.items)))),
+      switchMap((term) =>
+        term.trim().length < 2
+          ? of({ term, items: [] as Patient[] })
+          : this.api.searchPatients(term).pipe(map((r) => ({ term, items: r.items }))),
+      ),
     ),
-    { initialValue: [] as Patient[] },
+    { initialValue: { term: '', items: [] as Patient[] } },
   );
+  protected readonly patients = computed(() => this.search().items);
+  private readonly typed = toSignal(this.patientSearch.valueChanges, { initialValue: '' as string | Patient });
+
+  /** Why Review is still disabled: a booking needs an existing patient picked from the list (spec 002; creating one is spec 005). */
+  protected readonly patientHint = computed(() => {
+    const text = this.typed();
+    if (this.patient() || typeof text !== 'string') return '';
+    if (text.trim().length < 2) return 'Type at least 2 letters of a name, or an MRN';
+    if (this.search().term !== text) return 'Searching…';
+    return this.patients().length
+      ? 'Pick a patient from the list to continue'
+      : `No patient matches "${text.trim()}". Try "Nora" or MRN-0002`; // short: a longer hint wraps under the next field
+  });
 
   constructor() {
     // Typing after a selection clears it, so a stale patient can't be booked.
