@@ -81,18 +81,32 @@ uses a dev-only JWT key). Never deploy it as is.
 | Reset all data (fresh seed) | `docker compose down -v` then `docker compose up -d` |
 
 ### Browse the database with pgAdmin
-**Easiest: pgAdmin in Docker.** It's ready to use, with nothing to fill in:
-```bash
-docker compose --profile tools up -d pgadmin
-```
-Open **http://localhost:5050**. There's no pgAdmin login, and **Servers → AppointmentScheduler** connects without a
-password prompt. Select **Databases → scheduler**, then **Tools → Query Tool** (Alt+Shift+Q).
-- The server is defined in `tools/pgadmin/servers.json`, with `gssencmode=disable` and its password written from
-  `POSTGRES_PASSWORD` at start.
-- It listens on `127.0.0.1` only, and starts only with `--profile tools`, so `docker compose up` doesn't run it.
-- Stop it with `docker compose stop pgadmin`.
+> **Note for every user:** the database UI is optional and **doesn't start with a normal `docker compose up`**. Start it
+> with the command below whenever you want to look at the data. It's reachable only from your own machine, because it
+> has no login.
 
-**pgAdmin desktop** (Query Tool workspace ad-hoc connection, or *Register → Server*):
+**Easiest: pgAdmin in Docker.** It's ready to use, with nothing to fill in.
+1. Start it (the first time downloads the image):
+   ```bash
+   docker compose --profile tools up -d pgadmin
+   ```
+2. Open **http://localhost:5050**. There's no pgAdmin login.
+3. In the left tree, open **Servers → AppointmentScheduler**. It connects without asking for a password.
+4. Open **Databases** and select **scheduler**.
+5. Press **Alt+Shift+Q** (or choose **Tools → Query Tool**), type your SQL and press **F5**. For example:
+   ```sql
+   SELECT start_utc, status, reason FROM appointments ORDER BY start_utc DESC LIMIT 20;
+   ```
+6. When you're done, stop it with `docker compose stop pgadmin`.
+
+How it works:
+- the server is defined in `tools/pgadmin/servers.json`, with `gssencmode=disable`;
+- its password is written from `POSTGRES_PASSWORD` when the container starts;
+- it listens on `127.0.0.1` only;
+- it runs on Linux, so the Windows desktop crash below doesn't affect it.
+
+**pgAdmin desktop**, if you prefer the installed app (Query Tool workspace ad-hoc connection, or *Register → Server*).
+The key setting is **GSS encryption mode = `disable`** (last row):
 
 | Field | Value |
 |---|---|
@@ -157,6 +171,7 @@ cd web && npm run build
 | `port is already allocated` | Another process uses 8080 / 5080 / 5432 / 5672 / 15672 / 16686. Stop it, or set `WEB_PORT`, `API_PORT`, `POSTGRES_PORT` in `.env`. |
 | Signed in, but every page bounces back to login | Use Chrome, Edge or Firefox: the refresh cookie is `Secure`, which Safari rejects on `http://localhost`. |
 | `api` keeps restarting | `docker compose logs api`. Usually PostgreSQL isn't healthy yet, or its volume holds an older schema: `docker compose down -v`. |
+| `api` restarts in a loop with `28P01: password authentication failed` after the database password changed | The container still has the **old** password: a container keeps the settings it was created with. Docker Desktop's ▶ (Start) button, `docker start` and `docker compose start` reuse them. Run `docker compose up -d`, which recreates every service whose configuration changed. Check with `docker compose logs api --tail 20`. |
 | `password authentication failed for user "scheduler"` | `POSTGRES_PASSWORD` applies only when the data volume is created. For an older volume, keep the data and set the password: `docker compose exec postgres psql -U scheduler -d scheduler -c "ALTER USER scheduler WITH PASSWORD 'P@ssword!';"` (or reset with `docker compose down -v`). |
 | Log says RabbitMQ is unavailable / degraded mode | The app still works (messages stay in PostgreSQL). Start the broker: `docker compose up -d rabbitmq`. |
 | `429 RATE_LIMITED` on login | Five logins per minute per IP. Behind the Docker nginx all browsers share one IP (no `ForwardedHeaders` yet, S-61); wait a minute. |
