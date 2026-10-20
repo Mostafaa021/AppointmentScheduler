@@ -31,6 +31,10 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow mileston
   `Doctors`, `Patients`, `AuditRecords`; services inject `IUnitOfWork` alone, repositories are no longer registered in DI, and
   ArchitectureTests reject a repository in any constructor. No behaviour change.
 ### Added
+- Optional pgAdmin web UI in Docker Compose (plan 017): `docker compose --profile tools up -d pgadmin` →
+  http://localhost:5050 (127.0.0.1 only, desktop mode, no login). The `scheduler` database is pre-registered
+  (`tools/pgadmin/servers.json`, `gssencmode=disable`, password written to a 0600 pgpass at start), so it opens connected.
+  It works around pgAdmin 9.18's Windows crash ("access violation writing 0x0…"). The README also documents the desktop fix.
 - `GET /api/v1/clinic` (plan 015): the clinic's zone, hours and **clinic-local today**. The schedule pages open on it and
   **Today** returns to it, instead of the browser's date (a browser in New York at 20:00 is already on London's tomorrow).
 - Requirements and architecture documentation (plan 014 step B): `docs/requirements/functional.md` (business rules + every

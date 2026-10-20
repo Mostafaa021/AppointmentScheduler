@@ -71,6 +71,8 @@ flowchart TB
 The images are built from `src/AppointmentScheduler.Api/Dockerfile` (context: the repository root) and `web/Dockerfile`.
 Development mode makes this a demo stack: it migrates on start, seeds fictional data and demo users, and uses the dev-only JWT
 key. Not done yet (S-61): a separate migrator, `ForwardedHeaders` behind nginx, and a production configuration.
+An optional `pgadmin` service (profile `tools`, http://localhost:5050, 127.0.0.1 only) gives a pre-connected database UI
+(plan 017).
 
 ## Layers
 ```mermaid

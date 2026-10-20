@@ -65,6 +65,7 @@ appointments **today and tomorrow**, so the schedule isn't empty.
 | API health | http://localhost:5080/health/live |
 | Traces (Jaeger, service `appointment-scheduler-api`) | http://localhost:16686 |
 | RabbitMQ management (`guest` / `guest`) | http://localhost:15672 |
+| Database UI: pgAdmin, optional (`docker compose --profile tools up -d pgadmin`) | http://localhost:5050 |
 | PostgreSQL (`scheduler` / `P@ssword!`, db `scheduler`) — e.g. pgAdmin, see below | localhost:5432 |
 
 The Docker stack is a **local demo**: the API runs in the Development environment (migrates on start, seeds demo users,
@@ -80,17 +81,29 @@ uses a dev-only JWT key). Never deploy it as is.
 | Reset all data (fresh seed) | `docker compose down -v` then `docker compose up -d` |
 
 ### Browse the database with pgAdmin
-In pgAdmin (desktop), open the Query Tool workspace's ad-hoc connection, or *Register → Server*, and enter:
+**Easiest: pgAdmin in Docker.** It's ready to use, with nothing to fill in:
+```bash
+docker compose --profile tools up -d pgadmin
+```
+Open **http://localhost:5050**. There's no pgAdmin login, and **Servers → AppointmentScheduler** connects without a
+password prompt. Select **Databases → scheduler**, then **Tools → Query Tool** (Alt+Shift+Q).
+- The server is defined in `tools/pgadmin/servers.json`, with `gssencmode=disable` and its password written from
+  `POSTGRES_PASSWORD` at start.
+- It listens on `127.0.0.1` only, and starts only with `--profile tools`, so `docker compose up` doesn't run it.
+- Stop it with `docker compose stop pgadmin`.
+
+**pgAdmin desktop** (Query Tool workspace ad-hoc connection, or *Register → Server*):
 
 | Field | Value |
 |---|---|
 | Server name | any label, e.g. `AppointmentScheduler (local)` |
-| Host name/address | `localhost`. If pgAdmin itself runs in Docker, use `host.docker.internal` |
+| Host name/address | `localhost` (not `.`, which is SQL Server syntax) |
 | Port | `5432` (or your `POSTGRES_PORT`) |
 | Database | `scheduler` |
 | User / Password | `scheduler` / `P@ssword!` |
 | Role, Service | leave empty |
 | SSL mode | `prefer` or `disable` (the local container has no TLS) |
+| Connection parameter **GSS encryption mode** (`gssencmode`) | **`disable`**: pgAdmin **9.18 on Windows** otherwise crashes with `exception: access violation writing 0x0000000000000000` ([pgadmin4#10428](https://github.com/pgadmin-org/pgadmin4/issues/10428)) |
 
 The tables are in four schemas:
 - `public`: `appointments`, `doctors`, `patients`, `audit_records`, `idempotency_records`;

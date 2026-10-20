@@ -60,5 +60,28 @@ services:
     depends_on: [api]
     restart: unless-stopped
 
+  # ── Optional database UI (plan 017): `docker compose --profile tools up -d pgadmin` → http://localhost:5050.
+  # Desktop mode (no pgAdmin login) with the scheduler database pre-registered (tools/pgadmin/servers.json) and its password
+  # written to a 0600 pgpass at start. Bound to 127.0.0.1 only, because there is no login. Local use only.
+  pgadmin:
+    image: dpage/pgadmin4:9
+    profiles: [tools]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin@example.com # required by the image; unused in desktop mode
+      PGADMIN_DEFAULT_PASSWORD: pgadmin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "printf '%s\\n' 'postgres:5432:*:${POSTGRES_USER:-scheduler}:${POSTGRES_PASSWORD:-P@ssword!}' > /tmp/pgpass && chmod 600 /tmp/pgpass && exec /entrypoint.sh"
+    ports: ["127.0.0.1:${PGADMIN_PORT:-5050}:80"]
+    volumes:
+      - ./tools/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres: { condition: service_healthy }
+
 volumes:
   pgdata:
+  pgadmin-data:

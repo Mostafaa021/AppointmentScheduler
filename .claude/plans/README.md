@@ -30,3 +30,4 @@ Every approved implementation plan lives here as its own file, so it can be re-r
 | 014 | [Docker run-anywhere, README, requirements, feature architecture](014-docker-readme-requirements-architecture.md) | Done | S-61 (part), all specs |
 | 015 | [Judgment test 07: clinic-local today, SPEC §4–§6 choices](015-judgment-test-time-zones-concurrency.md) | Done | SPEC §4–§6, ADR-0002/0003/0004 |
 | 016 | [No Angular unit tests (for now)](016-no-angular-unit-tests.md) | Done — rule for all later plans | — |
+| 017 | [pgAdmin web UI in Docker Compose](017-pgadmin-in-docker.md) | Done | S-61 (tooling) |
